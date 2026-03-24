@@ -1,9 +1,9 @@
 // ZaUI stylesheet
 import "zmp-ui/zaui.css";
 // Tailwind stylesheet
-import "@/css/tailwind.scss";
+import "@/css/tailwind.css";
 // Your stylesheet
-import "@/css/app.scss";
+import "@/css/app.css";
 
 // React core
 import React from "react";
