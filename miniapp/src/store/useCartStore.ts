@@ -27,4 +27,5 @@ export const useCartStore = create<CartState>((set) => ({
   clear: () => set({ items: [] }),
 }));
 
-export const cartItemCount = (state: CartState): number => state.items.length;
+export const cartItemCount = (state: CartState): number =>
+  state.items.reduce((sum, i) => sum + i.quantity, 0);

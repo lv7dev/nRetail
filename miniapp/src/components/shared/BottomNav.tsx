@@ -17,7 +17,9 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 flex bg-white border-t border-gray-200 z-50">
       {tabs.map((tab) => {
-        const isActive = location.pathname === tab.path;
+        const isActive = tab.path === '/'
+          ? location.pathname === '/'
+          : location.pathname.startsWith(tab.path);
         return (
           <button
             key={tab.path}
