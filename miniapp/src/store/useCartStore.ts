@@ -10,6 +10,7 @@ interface CartState {
 
 export const useCartStore = create<CartState>((set) => ({
   items: [],
+  /** Adds item to cart. If item already exists (same id), increments quantity by 1. */
   add: (item) =>
     set((s) => {
       const existing = s.items.find((i) => i.id === item.id);

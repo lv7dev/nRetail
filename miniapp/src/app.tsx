@@ -6,7 +6,6 @@ import "@/css/tailwind.css";
 import "@/css/app.css";
 
 // React core
-import React from "react";
 import { createRoot } from "react-dom/client";
 
 // React Query
@@ -26,9 +25,7 @@ const queryClient = new QueryClient();
 
 const root = createRoot(document.getElementById("app")!);
 root.render(
-  React.createElement(
-    QueryClientProvider,
-    { client: queryClient },
-    React.createElement(Layout)
-  )
+  <QueryClientProvider client={queryClient}>
+    <Layout />
+  </QueryClientProvider>
 );
