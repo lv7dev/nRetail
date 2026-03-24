@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "nretail",
+  "project_id": "a9941322-f3f3-4f68-b68b-36cc0329bd3c"
+}
