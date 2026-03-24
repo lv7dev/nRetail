@@ -9,6 +9,9 @@ import "@/css/app.css";
 import React from "react";
 import { createRoot } from "react-dom/client";
 
+// React Query
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 // Mount the app
 import Layout from "@/components/layout";
 
@@ -19,5 +22,13 @@ if (!window.APP_CONFIG) {
   window.APP_CONFIG = appConfig as any;
 }
 
+const queryClient = new QueryClient();
+
 const root = createRoot(document.getElementById("app")!);
-root.render(React.createElement(Layout));
+root.render(
+  React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    React.createElement(Layout)
+  )
+);
