@@ -2,6 +2,10 @@
 # Git worktrees
 .worktrees/
 
+# Claude Code — ignore personal memory and local settings, keep project config
+.claude/settings.local.json
+.claude/projects/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
