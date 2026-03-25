@@ -1,0 +1,20 @@
+{
+  "button": {
+    "submit": "Submit",
+    "back": "Back",
+    "resend": "Resend"
+  },
+  "validation": {
+    "phone": "Invalid phone number",
+    "passwordMin": "Password must be at least 6 characters",
+    "required": "This field is required",
+    "passwordMismatch": "Passwords do not match"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "orders": "Orders",
+    "profile": "Profile"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "button": {
+    "submit": "Xác nhận",
+    "back": "Quay lại",
+    "resend": "Gửi lại"
+  },
+  "validation": {
+    "phone": "Số điện thoại không hợp lệ",
+    "passwordMin": "Mật khẩu phải có ít nhất 6 ký tự",
+    "required": "Trường này là bắt buộc",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "products": "Sản phẩm",
+    "cart": "Giỏ hàng",
+    "orders": "Đơn hàng",
+    "profile": "Tài khoản"
+  }
+}
