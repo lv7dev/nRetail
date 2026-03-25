@@ -323,9 +323,15 @@ Use a global `TransformInterceptor` to enforce this.
 - Add a global `AllExceptionsFilter` to catch and log unhandled errors.
 
 ### Auth
-- Protect routes with `@UseGuards(JwtAuthGuard)`.
-- Use `@Roles()` decorator + `RolesGuard` for RBAC.
-- Roles: `admin`, `staff`, `customer`.
+
+See `src/modules/auth/CLAUDE.md` for the full authentication flow (OTP, registration, token lifecycle, dev overrides, SMS integration point).
+
+Quick reference for consuming modules:
+- Protect routes: `@UseGuards(JwtAuthGuard)`
+- Get current user: `@CurrentUser() user: User`
+- RBAC: `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')`
+- Roles: `admin`, `staff`, `customer`
+- JWT payload: `{ sub: userId, phone, role }` — access via `@CurrentUser()`, not raw payload
 
 ### Pagination
 All list endpoints must support cursor or offset pagination via query params:
