@@ -1,12 +1,5 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
-/**
- * Stub — always passes. Replace with real JWT verification in the auth change.
- */
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  canActivate(_context: ExecutionContext): boolean {
-    return true;
-  }
-}
+export class JwtAuthGuard extends AuthGuard('jwt') {}

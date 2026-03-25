@@ -8,3 +8,48 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  otpHash   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}
+
+model PhoneConfig {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  defaultOtp String   @default("999999")
+  createdAt  DateTime @default(now())
+}
