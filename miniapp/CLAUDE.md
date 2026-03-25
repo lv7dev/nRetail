@@ -202,6 +202,24 @@ npx playwright test --ui  # Run E2E tests with interactive UI
 - **Test location**: Co-located as `*.test.tsx` next to source files
 - **TDD**: Superpowers enforces RED → GREEN → REFACTOR automatically
 
+## Zalo Safe Area
+
+The app runs inside a Zalo iframe with `statusBar: "transparent"` and `actionBarHidden: true` (`app-config.json`). The OS status bar and Zalo's own chrome strip overlap the top of the viewport. Use these CSS custom properties (defined by `zmp-ui` and `src/css/app.css`) to offset UI elements correctly:
+
+| Variable | Value | Covers |
+|---|---|---|
+| `--zaui-safe-area-inset-top` | `env(safe-area-inset-top, 0px)` | OS status bar height |
+| `--zaui-safe-area-inset-bottom` | `env(safe-area-inset-bottom, 0px)` | Home indicator / Android nav |
+| `--zalo-chrome-top` | `calc(--zaui-safe-area-inset-top + 2.6rem)` | OS status bar **+** Zalo chrome strip |
+
+**Rules:**
+- Use `--zalo-chrome-top` for anything that must clear both the OS status bar and the Zalo chrome strip (e.g. `AuthLayout` floating controls)
+- Use `--zaui-safe-area-inset-top` / `.pt-safe` for content that only needs to clear the OS status bar (e.g. `AppLayout` page content)
+- Use `--zaui-safe-area-inset-bottom` / `.pb-safe` for content that must clear the bottom home indicator (e.g. `BottomNav`)
+- All variables default to `0px` outside the Zalo platform — no special handling needed for browser dev or tests
+
+**Important:** `--zaui-safe-area-inset-top` covers the OS status bar only. Even with `actionBarHidden: true`, Zalo renders a thin mini-app controls strip (~2.6rem above content) that is NOT captured by `env(safe-area-inset-top)`. Use `--zalo-chrome-top` whenever you need to clear this strip.
+
 ## Zalo Platform Dependencies
 
 These three packages are **required infrastructure** for Zalo Mini App — never remove them:

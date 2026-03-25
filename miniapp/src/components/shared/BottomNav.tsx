@@ -16,7 +16,7 @@ export default function BottomNav() {
   const cartCount = useCartStore(cartItemCount);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 flex bg-surface border-t border-border z-50">
+    <nav className="fixed left-0 right-0 flex bg-surface border-t border-border z-50" style={{ bottom: 'var(--zaui-safe-area-inset-bottom, 0px)' }}>
       {tabs.map((tab) => {
         const isActive = tab.path === '/'
           ? location.pathname === '/'

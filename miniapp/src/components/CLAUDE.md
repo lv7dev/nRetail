@@ -25,7 +25,7 @@ All components are re-exported from `src/components/ui/index.ts`.
 
 - Always use `cn()` from `@/utils/cn` for class merging — never string concatenation
 - Use semantic design tokens (`bg-primary`, `text-content-muted`, `border-destructive`) — not raw Tailwind scale values (`bg-indigo-600`)
-- No inline `style` props unless the value cannot be expressed in Tailwind (e.g., dynamic pixel values)
+- No inline `style` props unless the value cannot be expressed in Tailwind (e.g., dynamic pixel values, CSS custom property positioning like `var(--zalo-chrome-top)` or `var(--zaui-safe-area-inset-bottom)`)
 - Dark mode via `dark:` prefix — never `[zaui-theme="dark"]` selectors
 
 ## Icon Rules

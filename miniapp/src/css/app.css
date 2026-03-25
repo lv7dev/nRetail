@@ -1,3 +1,15 @@
+:root {
+  --zalo-chrome-top: calc(var(--zaui-safe-area-inset-top, 0px) + 2.6rem);
+}
+
+.pt-safe {
+  padding-top: var(--zaui-safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: var(--zaui-safe-area-inset-bottom, 0px);
+}
+
 .page {
   padding: 16px 16px 96px 16px;
 }
