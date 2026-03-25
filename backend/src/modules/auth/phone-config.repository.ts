@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PhoneConfig } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 @Injectable()
 export class PhoneConfigRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByPhone(phone: string): Promise<PhoneConfig | null> {
+  findByPhone(phone: string) {
     return this.prisma.phoneConfig.findUnique({ where: { phone } });
   }
 

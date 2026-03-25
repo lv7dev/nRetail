@@ -5,21 +5,26 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
-import { UsersService } from '../users/users.service';
 import { OtpRepository } from './otp.repository';
 import { PhoneConfigRepository } from './phone-config.repository';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { UsersService } from '../users/users.service';
 
-interface TokenPair {
+export interface TokenPair {
   accessToken: string;
   refreshToken: string;
 }
 
-interface VerifyOtpResult {
+export interface UserRecord {
+  id: string;
+  phone: string;
+  role: string;
+}
+
+export interface VerifyOtpResult {
   accessToken?: string;
   refreshToken?: string;
-  user?: User;
+  user?: UserRecord;
   registrationToken?: string;
 }
 
@@ -80,7 +85,7 @@ export class AuthService {
   async register(
     registrationToken: string,
     name: string,
-  ): Promise<TokenPair & { user: User }> {
+  ): Promise<TokenPair & { user: UserRecord }> {
     let phone: string;
     try {
       const payload = await this.jwtService.verifyAsync<{ phone: string }>(
@@ -123,7 +128,7 @@ export class AuthService {
     await this.refreshTokenRepository.findAndDelete(rawRefreshToken);
   }
 
-  private async issueTokens(user: User): Promise<TokenPair> {
+  private async issueTokens(user: UserRecord): Promise<TokenPair> {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       phone: user.phone,

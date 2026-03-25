@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 
 interface JwtPayload {
@@ -24,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<User | null> {
+  async validate(payload: JwtPayload) {
     return this.usersService.findById(payload.sub);
   }
 }

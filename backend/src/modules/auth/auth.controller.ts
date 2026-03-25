@@ -8,7 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { User } from '@prisma/client';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -61,7 +60,7 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current authenticated user' })
-  me(@CurrentUser() user: User): User {
+  me(@CurrentUser() user: unknown) {
     return user;
   }
 }

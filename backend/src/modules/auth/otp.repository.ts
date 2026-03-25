@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { OtpVerification } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 const OTP_BCRYPT_ROUNDS = 8;
@@ -10,7 +9,7 @@ const OTP_TTL_MINUTES = 5;
 export class OtpRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByPhone(phone: string): Promise<OtpVerification | null> {
+  findByPhone(phone: string) {
     return this.prisma.otpVerification.findFirst({
       where: { phone },
       orderBy: { createdAt: 'desc' },

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { RefreshToken } from '@prisma/client';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 const REFRESH_BCRYPT_ROUNDS = 10;
@@ -23,7 +22,7 @@ export class RefreshTokenRepository {
     return rawToken;
   }
 
-  async findAndDelete(rawToken: string): Promise<RefreshToken | null> {
+  async findAndDelete(rawToken: string) {
     const tokens = await this.prisma.refreshToken.findMany({
       where: { expiresAt: { gt: new Date() } },
     });
