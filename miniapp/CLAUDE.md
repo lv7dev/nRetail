@@ -4,7 +4,7 @@
 
 Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vietnamese super app). Uses Vite as build tool, Zustand for state management, React Router for navigation, and Tailwind CSS + standard CSS for styling.
 
-> **Note:** `zmp-sdk` and `zmp-ui` are kept as dependencies but are **not used by default**. Only import them when explicitly required.
+> **Note:** `zmp-sdk`, `zmp-ui`, and `zmp-vite-plugin` are **required Zalo platform dependencies** — they must stay installed for the Mini App to build and run. Do NOT remove them. Only import `zmp-sdk` and `zmp-ui` in application code when explicitly required (use lazy imports for `zmp-sdk`).
 
 ## Project Structure
 
@@ -148,8 +148,9 @@ npx playwright test --ui  # Run E2E tests with interactive UI
 | @tanstack/react-query | Server state, async data fetching & caching |
 | react-hook-form + @hookform/resolvers | Form state management |
 | zod | Schema validation (forms + API responses) |
-| zmp-sdk | Zalo Mini App SDK — kept as dep, use only when requested |
-| zmp-ui | Zalo UI components — kept as dep, use only when requested |
+| zmp-sdk | Zalo Mini App SDK — required platform dep, lazy import only |
+| zmp-ui | Zalo UI components — required platform dep, import when needed |
+| zmp-vite-plugin | Zalo Vite plugin — required for Mini App to build and run, do NOT remove |
 | vite + @vitejs/plugin-react | Build tooling |
 | tailwindcss | Styling |
 | vitest + @testing-library/react + @testing-library/jest-dom | Unit & component testing |
@@ -191,3 +192,27 @@ npx playwright test --ui  # Run E2E tests with interactive UI
 1. Create `src/services/myService.ts`
 2. Export async functions that call the API
 3. Call from hooks or store actions — never directly in JSX
+
+## Testing
+
+- **Framework**: Vitest + React Testing Library + @testing-library/jest-dom
+- **Run all tests**: `npm run test`
+- **Run single file**: `npx vitest run path/to/file.test.tsx`
+- **Run E2E**: `npx playwright test`
+- **Test location**: Co-located as `*.test.tsx` next to source files
+- **TDD**: Superpowers enforces RED → GREEN → REFACTOR automatically
+
+## Zalo Platform Dependencies
+
+These three packages are **required infrastructure** for Zalo Mini App — never remove them:
+
+| Package | Why Required |
+|---|---|
+| `zmp-sdk` | Provides Zalo APIs (auth, payment, sharing, etc.) |
+| `zmp-ui` | Zalo-native UI components (matches platform look & feel) |
+| `zmp-vite-plugin` | Vite plugin that enables `zmp start` / `zmp deploy` to work |
+
+**Usage rules:**
+- `zmp-vite-plugin` — configured in `vite.config.mts`, never imported in app code
+- `zmp-sdk` — always use lazy `import()` in a custom hook, never at module top level
+- `zmp-ui` — import components directly when needed for Zalo-native UI
