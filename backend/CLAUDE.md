@@ -6,11 +6,50 @@ NestJS v11 backend for **nRetail**, a multi-service ecommerce platform. This ser
 
 ---
 
+## Running Locally
+
+### 1. Start infrastructure (Docker)
+
+```bash
+docker compose up -d    # start PostgreSQL (port 5434) + Redis (port 6379)
+docker compose down     # stop
+docker compose ps       # check status
+```
+
+### 2. Run the app
+
+```bash
+npm install             # first time only
+npm run start:dev       # dev server with hot reload
+```
+
+- API: `http://localhost:PORT` (PORT from `.env`, default varies — avoid 3000/5000 on macOS)
+- Swagger: `http://localhost:PORT/api/docs`
+
+> **macOS port conflicts:** Port 5000 is reserved by AirPlay/Control Center. Port 3000 may be used by the miniapp dev server. Use `PORT=4000` or `PORT=8000` in `.env`.
+
+### 3. Environment variables
+
+Copy `.env.example` to `.env` and fill in values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `PORT` | `3000` | Change if port conflicts — avoid 3000, 5000 on macOS |
+| `NODE_ENV` | `development` | `development` \| `production` \| `test` |
+| `DATABASE_URL` | — | PostgreSQL URL — Docker: `postgresql://nretail:nretail@localhost:5434/nretail` |
+| `REDIS_URL` | — | Redis URL — Docker: `redis://localhost:6379` |
+| `JWT_SECRET` | — | Min 16 chars |
+| `JWT_EXPIRES_IN` | `7d` | e.g. `7d`, `24h` |
+
 ## Build & Test
 
 ```bash
-npm install          # install deps
-npm run start:dev    # dev server with hot reload (port 3000)
 npm run build        # compile to dist/
 npm run start:prod   # run compiled output
 npm run lint         # ESLint + Prettier auto-fix
@@ -149,17 +188,20 @@ npm i @nestjs/config class-validator class-transformer @nestjs/swagger @nestjs/t
 
 ### Database & ORM
 
-Use **PostgreSQL** as the primary store and **Prisma** for type-safe queries.
+Use **PostgreSQL** as the primary store and **Prisma v7** for type-safe queries.
 
 | Purpose | Package(s) |
 |---|---|
 | ORM | `prisma` `@prisma/client` |
-| OR (alternative) | `@nestjs/typeorm` `typeorm` `pg` |
+| PostgreSQL adapter (required in Prisma v7) | `@prisma/adapter-pg` `pg` `@types/pg` |
 
 ```bash
-npm i prisma @prisma/client
+npm i prisma @prisma/client @prisma/adapter-pg pg
+npm i -D @types/pg
 npx prisma init
 ```
+
+> **Prisma v7 note:** `PrismaClient` must be constructed with either an `adapter` or `accelerateUrl` — an empty `new PrismaClient()` throws. `PrismaService` injects `ConfigService` and passes `new PrismaPg({ connectionString })` as the adapter. The `prisma.config.ts` file is only used by the Prisma CLI (migrations, generate).
 
 ### Auth & Security
 
@@ -292,16 +334,14 @@ GET /products?page=1&limit=20&sort=createdAt:desc
 ```
 
 ### Environment Variables
-Use `@nestjs/config` with a typed `ConfigService`. Define validation schema with `zod`.
+Use `@nestjs/config` with a typed `ConfigService`. Validated at startup via Zod in `src/config/config.schema.ts` — app refuses to start if any required var is missing or invalid.
 
 ```
-PORT=3000
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
-JWT_SECRET=...
+PORT=4000
+DATABASE_URL=postgresql://nretail:nretail@localhost:5434/nretail
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=<min 16 chars>
 JWT_EXPIRES_IN=7d
-STRIPE_SECRET_KEY=...
-AWS_BUCKET=...
 ```
 
 ---
