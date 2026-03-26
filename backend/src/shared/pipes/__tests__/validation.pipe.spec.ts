@@ -34,6 +34,7 @@ describe('globalValidationPipe', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].field).toBe('password');
     expect(errors[0].constraint).toBe('minLength');
+    expect(errors[0].params).toEqual({ min: 6 });
     expect(typeof errors[0].message).toBe('string');
   });
 

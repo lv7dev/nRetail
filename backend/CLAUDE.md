@@ -335,7 +335,7 @@ Failing to validate means users get cryptic "Bad Request" instead of knowing wha
   "statusCode": 400,
   "message": "Validation failed",
   "errors": [
-    { "field": "password", "constraint": "minLength", "message": "password must be longer than or equal to 6 characters" }
+    { "field": "password", "constraint": "minLength", "params": { "min": 6 }, "message": "password must be longer than or equal to 6 characters" }
   ]
 }
 ```

@@ -1,5 +1,6 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import type { ValidationError } from 'class-validator';
+import { extractConstraintParams } from './extract-constraint-params';
 
 export const globalValidationPipe = new ValidationPipe({
   whitelist: true,
@@ -11,9 +12,11 @@ export const globalValidationPipe = new ValidationPipe({
         ? Object.keys(err.constraints)[0]
         : 'unknown';
       const constraintMessage = err.constraints?.[constraintKey] ?? '';
+      const params = extractConstraintParams(err, constraintKey);
       return {
         field: err.property,
         constraint: constraintKey,
+        ...(params !== undefined ? { params } : {}),
         message: constraintMessage,
       };
     });

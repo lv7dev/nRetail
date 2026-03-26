@@ -28,7 +28,12 @@ type ErrorBody = {
   statusCode: number;
   message: string;
   code?: string;
-  errors?: { field: string; constraint?: string; message: string }[];
+  errors?: {
+    field: string;
+    constraint?: string;
+    params?: Record<string, unknown>;
+    message: string;
+  }[];
 };
 
 const TEST_JWT_SECRET = 'test-jwt-secret-integration';
@@ -395,6 +400,7 @@ describe('Auth (integration)', () => {
           expect.objectContaining({
             field: 'password',
             constraint: 'minLength',
+            params: { min: 6 },
           }),
         ]),
       );
