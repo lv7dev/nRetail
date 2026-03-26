@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Auth endpoints are rate-limited per IP
 The system SHALL apply rate limiting to `POST /auth/login`, `POST /auth/otp/register`, and `POST /auth/otp/forgot-password` via per-route overrides on the global throttle guard. `POST /auth/login` SHALL be limited to 10 requests per 60-second window per IP. `POST /auth/otp/register` and `POST /auth/otp/forgot-password` SHALL each be limited to 6 requests per 300-second window per IP (aligned with OTP TTL). When the limit is exceeded the system SHALL return `429 Too Many Requests`.

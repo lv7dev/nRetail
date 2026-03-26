@@ -257,6 +257,21 @@ interface UserRecord {
 
 ---
 
+## Rate Limiting
+
+The global `ThrottlerGuard` (registered as `APP_GUARD` in `AppModule`) covers all routes automatically. Auth endpoints override the global default with stricter per-route limits:
+
+| Endpoint | Limit | Window |
+|---|---|---|
+| `POST /auth/login` | 10 req | 60s |
+| `POST /auth/otp/register` | 6 req | 300s (aligned with OTP TTL) |
+| `POST /auth/otp/forgot-password` | 6 req | 300s (aligned with OTP TTL) |
+| All other auth endpoints | 100 req (global default) | 60s |
+
+Overrides are set via `@Throttle({ default: { limit, ttl } })` on the controller method. `@UseGuards(ThrottlerGuard)` is **not** needed — the global guard handles it.
+
+---
+
 ## Guards & Decorators
 
 ```ts
@@ -293,14 +308,18 @@ AuthModule
             PassportModule
             JwtModule (async, reads JWT_SECRET + JWT_EXPIRES_IN from ConfigService)
   exports:  AuthService
+
+Note: ThrottlerModule is NOT imported here — it lives in AppModule as a global guard.
 ```
 
 ---
 
 ## Testing
 
-Unit tests: `__tests__/auth.service.spec.ts`
+Unit tests: `__tests__/auth.controller.spec.ts`, `__tests__/auth.service.spec.ts`
 Integration tests: `test/auth.e2e-spec.ts`
+
+**Test module setup:** Controller specs import `ThrottlerModule.forRoot([{ limit: 999, ttl: 1 }])` directly — do **not** use `overrideGuard(ThrottlerGuard)`. The high limit (999) prevents tests from hitting the throttle accidentally.
 
 Key scenarios covered:
 - OTP expired → 401 `OTP_EXPIRED`
@@ -313,3 +332,5 @@ Key scenarios covered:
 - Cross-flow token rejection (register token used in reset and vice versa)
 - Validation errors (short password, missing fields) → 400 with `errors` array
 - Refresh with unknown token → 401 `REFRESH_TOKEN_INVALID`
+- Session cap: evicts oldest token when user has 5 active sessions
+- Rate limit: login returns 429 after 10 requests within 60s

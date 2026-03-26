@@ -1,4 +1,4 @@
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Role } from '@prisma/client';
 import { AuthController } from '../auth.controller';
@@ -34,14 +34,10 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ThrottlerModule.forRoot([{ limit: 999, ttl: 1 }])],
       controllers: [AuthController],
       providers: [{ provide: AuthService, useValue: mockAuthService }],
-    })
-      .overrideGuard(ThrottlerGuard)
-      .useValue({
-        canActivate: () => true,
-      })
-      .compile();
+    }).compile();
 
     controller = module.get<AuthController>(AuthController);
     jest.clearAllMocks();

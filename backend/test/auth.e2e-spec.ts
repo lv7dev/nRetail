@@ -1,7 +1,8 @@
 import { INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
@@ -445,6 +446,7 @@ describe('Auth (integration)', () => {
         ],
         controllers: [AuthController],
         providers: [
+          { provide: APP_GUARD, useClass: ThrottlerGuard },
           AuthService,
           JwtStrategy,
           { provide: OtpRepository, useValue: mockOtpRepo },
@@ -479,18 +481,16 @@ describe('Auth (integration)', () => {
     it('returns 429 after exceeding login rate limit', async () => {
       mockUsersService.findByPhone.mockResolvedValue(null); // all logins fail with 401
 
-      // First 2 requests succeed (get through throttle, fail auth)
-      await request(throttleApp.getHttpServer())
-        .post('/auth/login')
-        .send({ phone: TEST_PHONE, password: 'wrong' })
-        .expect(401);
+      // Login has @Throttle({ default: { limit: 10, ttl: 60_000 } }) override
+      // Send 10 requests that pass through throttle (but fail auth → 401)
+      for (let i = 0; i < 10; i++) {
+        await request(throttleApp.getHttpServer())
+          .post('/auth/login')
+          .send({ phone: TEST_PHONE, password: 'wrong' })
+          .expect(401);
+      }
 
-      await request(throttleApp.getHttpServer())
-        .post('/auth/login')
-        .send({ phone: TEST_PHONE, password: 'wrong' })
-        .expect(401);
-
-      // 3rd request hits the rate limit
+      // 11th request hits the rate limit
       const res = await request(throttleApp.getHttpServer())
         .post('/auth/login')
         .send({ phone: TEST_PHONE, password: 'wrong' })

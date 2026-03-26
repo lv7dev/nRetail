@@ -46,6 +46,8 @@ Required variables:
 | `REDIS_URL` | — | Redis URL — Docker: `redis://localhost:6379` |
 | `JWT_SECRET` | — | Min 16 chars |
 | `JWT_EXPIRES_IN` | `7d` | e.g. `7d`, `24h` |
+| `THROTTLE_LIMIT` | `100` | Global rate limit — requests per window |
+| `THROTTLE_TTL` | `60` | Global rate limit window in seconds |
 
 ## Build & Test
 
@@ -381,6 +383,17 @@ Quick reference for consuming modules:
 - RBAC: `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')`
 - Roles: `admin`, `staff`, `customer`
 - JWT payload: `{ sub: userId, phone, role }` — access via `@CurrentUser()`, not raw payload
+
+### Rate Limiting
+
+`ThrottlerGuard` is registered globally via `APP_GUARD` in `AppModule`. Every route is covered automatically with no per-controller work.
+
+- **Default:** 100 req / 60s per IP, configurable via `THROTTLE_LIMIT` / `THROTTLE_TTL` env vars
+- **Per-route override:** Use `@Throttle({ default: { limit, ttl } })` on a controller method to override for that route
+- **Opt out:** Use `@SkipThrottle()` on health check routes or other high-frequency internal calls
+- **New modules get rate limiting for free** — no extra code needed
+
+Auth endpoints have stricter overrides (see `src/modules/auth/CLAUDE.md`).
 
 ### Pagination
 All list endpoints must support cursor or offset pagination via query params:
