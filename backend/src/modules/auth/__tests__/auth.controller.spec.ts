@@ -18,9 +18,12 @@ const mockTokens = {
 };
 
 const mockAuthService = {
-  requestOtp: jest.fn(),
+  requestRegisterOtp: jest.fn(),
+  requestForgotPasswordOtp: jest.fn(),
   verifyOtp: jest.fn(),
   register: jest.fn(),
+  login: jest.fn(),
+  resetPassword: jest.fn(),
   refresh: jest.fn(),
   logout: jest.fn(),
 };
@@ -38,43 +41,40 @@ describe('AuthController', () => {
     jest.clearAllMocks();
   });
 
-  describe('POST /auth/otp/request', () => {
-    it('calls authService.requestOtp and returns void', async () => {
-      mockAuthService.requestOtp.mockResolvedValue(undefined);
+  describe('POST /auth/otp/register', () => {
+    it('calls requestRegisterOtp and returns void', async () => {
+      mockAuthService.requestRegisterOtp.mockResolvedValue(undefined);
 
-      await controller.requestOtp({ phone: '+84901234567' });
+      await controller.requestRegisterOtp({ phone: '+84901234567' });
 
-      expect(mockAuthService.requestOtp).toHaveBeenCalledWith('+84901234567');
+      expect(mockAuthService.requestRegisterOtp).toHaveBeenCalledWith(
+        '+84901234567',
+      );
+    });
+  });
+
+  describe('POST /auth/otp/forgot-password', () => {
+    it('calls requestForgotPasswordOtp and returns void', async () => {
+      mockAuthService.requestForgotPasswordOtp.mockResolvedValue(undefined);
+
+      await controller.requestForgotPasswordOtp({ phone: '+84901234567' });
+
+      expect(mockAuthService.requestForgotPasswordOtp).toHaveBeenCalledWith(
+        '+84901234567',
+      );
     });
   });
 
   describe('POST /auth/otp/verify', () => {
-    it('returns tokens when existing user verifies OTP', async () => {
-      mockAuthService.verifyOtp.mockResolvedValue({
-        ...mockTokens,
-        user: mockUser,
-      });
+    it('returns otpToken on successful OTP verification', async () => {
+      mockAuthService.verifyOtp.mockResolvedValue({ otpToken: 'otp-jwt' });
 
       const result = await controller.verifyOtp({
         phone: '+84901234567',
         otp: '999999',
       });
 
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
-    });
-
-    it('returns registrationToken for new user', async () => {
-      mockAuthService.verifyOtp.mockResolvedValue({
-        registrationToken: 'reg-token',
-      });
-
-      const result = await controller.verifyOtp({
-        phone: '+84999999999',
-        otp: '999999',
-      });
-
-      expect(result).toHaveProperty('registrationToken');
+      expect(result).toEqual({ otpToken: 'otp-jwt' });
     });
   });
 
@@ -86,15 +86,59 @@ describe('AuthController', () => {
       });
 
       const result = await controller.register({
-        registrationToken: 'reg-token',
+        otpToken: 'otp-jwt',
         name: 'Test User',
+        password: 'password123',
+        confirmPassword: 'password123',
       });
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('user');
       expect(mockAuthService.register).toHaveBeenCalledWith(
-        'reg-token',
+        'otp-jwt',
         'Test User',
+        'password123',
+        'password123',
+      );
+    });
+  });
+
+  describe('POST /auth/login', () => {
+    it('returns tokens and user on successful login', async () => {
+      mockAuthService.login.mockResolvedValue({
+        ...mockTokens,
+        user: mockUser,
+      });
+
+      const result = await controller.login({
+        phone: '+84901234567',
+        password: 'password123',
+      });
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('user');
+      expect(mockAuthService.login).toHaveBeenCalledWith(
+        '+84901234567',
+        'password123',
+      );
+    });
+  });
+
+  describe('POST /auth/reset-password', () => {
+    it('returns tokens on successful password reset', async () => {
+      mockAuthService.resetPassword.mockResolvedValue(mockTokens);
+
+      const result = await controller.resetPassword({
+        otpToken: 'otp-jwt',
+        newPassword: 'newpassword123',
+        confirmPassword: 'newpassword123',
+      });
+
+      expect(result).toEqual(mockTokens);
+      expect(mockAuthService.resetPassword).toHaveBeenCalledWith(
+        'otp-jwt',
+        'newpassword123',
+        'newpassword123',
       );
     });
   });

@@ -22,11 +22,11 @@ export class OtpRepository {
       .then(() => undefined);
   }
 
-  async create(phone: string, otp: string): Promise<void> {
+  async create(phone: string, otp: string, purpose: string): Promise<void> {
     const otpHash = await bcrypt.hash(otp, OTP_BCRYPT_ROUNDS);
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
     await this.prisma.otpVerification.create({
-      data: { phone, otpHash, expiresAt },
+      data: { phone, otpHash, purpose, expiresAt },
     });
   }
 
