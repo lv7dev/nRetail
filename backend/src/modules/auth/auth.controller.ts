@@ -7,6 +7,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
@@ -26,6 +27,7 @@ export class AuthController {
 
   @Post('otp/register')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   @ApiOperation({
     summary: 'Request OTP — register flow (phone must not exist)',
   })
@@ -35,6 +37,7 @@ export class AuthController {
 
   @Post('otp/forgot-password')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   @ApiOperation({
     summary: 'Request OTP — forgot-password flow (phone must exist)',
   })
@@ -64,6 +67,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   @ApiOperation({ summary: 'Login with phone and password' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.phone, dto.password);

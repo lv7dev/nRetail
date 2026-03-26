@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
@@ -67,6 +68,9 @@ const mockRefreshTokenRepo = {
   create: jest.fn(),
   findAndDelete: jest.fn(),
   deleteAllByUserId: jest.fn(),
+  deleteExpiredByUserId: jest.fn(),
+  countActiveByUserId: jest.fn(),
+  deleteOldestByUserId: jest.fn(),
 };
 
 const mockUsersService = {
@@ -89,6 +93,7 @@ describe('Auth (integration)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         PassportModule,
+        ThrottlerModule.forRoot([{ limit: 100, ttl: 60000 }]),
         JwtModule.register({
           secret: TEST_JWT_SECRET,
           signOptions: { expiresIn: '7d' },
@@ -126,6 +131,9 @@ describe('Auth (integration)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRefreshTokenRepo.create.mockResolvedValue('test-refresh-token');
+    mockRefreshTokenRepo.deleteExpiredByUserId.mockResolvedValue(undefined);
+    mockRefreshTokenRepo.countActiveByUserId.mockResolvedValue(0);
+    mockRefreshTokenRepo.deleteOldestByUserId.mockResolvedValue(undefined);
     mockPhoneConfigRepo.findByPhone.mockResolvedValue(null);
     mockOtpRepo.deleteByPhone.mockResolvedValue(undefined);
     mockOtpRepo.create.mockResolvedValue(undefined);
@@ -416,6 +424,109 @@ describe('Auth (integration)', () => {
       expect(body.message).toBe('Validation failed');
       expect(body.errors).toBeDefined();
       expect(Array.isArray(body.errors)).toBe(true);
+    });
+  });
+
+  // ─── Rate limiting ────────────────────────────────────────────────────────────
+
+  describe('Rate limiting', () => {
+    let throttleApp: INestApplication<App>;
+
+    beforeAll(async () => {
+      // Separate app with a very low limit (2 per window) to test 429
+      const moduleFixture: TestingModule = await Test.createTestingModule({
+        imports: [
+          PassportModule,
+          ThrottlerModule.forRoot([{ limit: 2, ttl: 60000 }]),
+          JwtModule.register({
+            secret: TEST_JWT_SECRET,
+            signOptions: { expiresIn: '7d' },
+          }),
+        ],
+        controllers: [AuthController],
+        providers: [
+          AuthService,
+          JwtStrategy,
+          { provide: OtpRepository, useValue: mockOtpRepo },
+          { provide: PhoneConfigRepository, useValue: mockPhoneConfigRepo },
+          { provide: RefreshTokenRepository, useValue: mockRefreshTokenRepo },
+          { provide: UsersService, useValue: mockUsersService },
+          { provide: 'JWT_SECRET', useValue: TEST_JWT_SECRET },
+        ],
+      })
+        .overrideProvider(JwtStrategy)
+        .useValue({})
+        .compile();
+
+      throttleApp = moduleFixture.createNestApplication();
+      throttleApp.useGlobalPipes(globalValidationPipe);
+      throttleApp.useGlobalInterceptors(new ResponseInterceptor());
+      throttleApp.useGlobalFilters(new AllExceptionsFilter());
+      await throttleApp.init();
+    });
+
+    afterAll(async () => {
+      await throttleApp.close();
+    });
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockRefreshTokenRepo.deleteExpiredByUserId.mockResolvedValue(undefined);
+      mockRefreshTokenRepo.countActiveByUserId.mockResolvedValue(0);
+      mockRefreshTokenRepo.deleteOldestByUserId.mockResolvedValue(undefined);
+    });
+
+    it('returns 429 after exceeding login rate limit', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(null); // all logins fail with 401
+
+      // First 2 requests succeed (get through throttle, fail auth)
+      await request(throttleApp.getHttpServer())
+        .post('/auth/login')
+        .send({ phone: TEST_PHONE, password: 'wrong' })
+        .expect(401);
+
+      await request(throttleApp.getHttpServer())
+        .post('/auth/login')
+        .send({ phone: TEST_PHONE, password: 'wrong' })
+        .expect(401);
+
+      // 3rd request hits the rate limit
+      const res = await request(throttleApp.getHttpServer())
+        .post('/auth/login')
+        .send({ phone: TEST_PHONE, password: 'wrong' })
+        .expect(429);
+
+      expect(res.status).toBe(429);
+    });
+  });
+
+  // ─── Session cap ──────────────────────────────────────────────────────────────
+
+  describe('Session cap', () => {
+    it('evicts oldest token when user already has 5 active sessions on login', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(mockUser);
+      mockRefreshTokenRepo.countActiveByUserId.mockResolvedValue(5);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
+        .expect(200);
+
+      expect(mockRefreshTokenRepo.deleteOldestByUserId).toHaveBeenCalledWith(
+        'user-1',
+      );
+    });
+
+    it('does not evict when user has fewer than 5 active sessions', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(mockUser);
+      mockRefreshTokenRepo.countActiveByUserId.mockResolvedValue(3);
+
+      await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
+        .expect(200);
+
+      expect(mockRefreshTokenRepo.deleteOldestByUserId).not.toHaveBeenCalled();
     });
   });
 });

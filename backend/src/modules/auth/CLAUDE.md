@@ -197,11 +197,23 @@ The `purpose` claim enforces flow isolation — a `register` token cannot be use
 | Property | Value |
 |---|---|
 | Generation | `crypto.randomBytes(32).toString('hex')` |
-| Storage | bcrypt hash in `RefreshToken` table (rounds=10) |
+| Storage | bcrypt hash + `tokenPrefix` (first 8 hex chars) in `RefreshToken` table (rounds=10) |
 | TTL | 30 days |
 | Rotation | Deleted on use, new one issued |
+| Max per user | **5 active sessions** (cap enforced in `issueTokens`) |
 
-**Scaling note:** `findAndDelete` does a full table scan + bcrypt compare. Safe at low volume. Future fix: store a fast-lookup prefix column.
+**Session cap behaviour:**
+1. On every `issueTokens` call: delete all expired tokens for the user (lazy cleanup — no cron needed)
+2. Count remaining active tokens
+3. If count ≥ 5: delete the oldest (earliest `expiresAt`) → evicted device gets 401 on next refresh
+4. Create new token
+
+**`findAndDelete` lookup strategy:**
+- Query `WHERE tokenPrefix = :prefix AND expiresAt > now()` → at most 1-2 rows
+- bcrypt-compare only the matched row(s) → O(1) instead of O(n) full table scan
+- Fallback to legacy scan for rows with empty `tokenPrefix` (old rows expire within 30 days)
+
+**Future — global cleanup job (E):** A scheduled cron (`@nestjs/schedule`) to `DELETE WHERE expiresAt < now()` globally has been deferred until self-hosting or a paid plan with multiple cron slots is available. The per-user lazy cleanup above is sufficient for current scale.
 
 ### OTP
 

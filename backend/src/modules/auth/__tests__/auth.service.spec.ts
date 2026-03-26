@@ -41,6 +41,9 @@ const mockRefreshTokenRepository = {
   create: jest.fn(),
   findAndDelete: jest.fn(),
   deleteAllByUserId: jest.fn(),
+  deleteExpiredByUserId: jest.fn(),
+  countActiveByUserId: jest.fn(),
+  deleteOldestByUserId: jest.fn(),
 };
 
 const mockUsersService = {
@@ -593,6 +596,62 @@ describe('AuthService', () => {
       mockRefreshTokenRepository.findAndDelete.mockResolvedValue(null);
 
       await expect(service.logout('unknown-token')).resolves.not.toThrow();
+    });
+  });
+
+  describe('issueTokens — session cap', () => {
+    beforeEach(() => {
+      mockRefreshTokenRepository.deleteExpiredByUserId.mockResolvedValue(
+        undefined,
+      );
+      mockRefreshTokenRepository.deleteOldestByUserId.mockResolvedValue(
+        undefined,
+      );
+      mockRefreshTokenRepository.create.mockResolvedValue('new-token');
+      mockJwtService.signAsync.mockResolvedValue('access-token');
+    });
+
+    it('issues tokens without eviction when count is 3 (under cap)', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(mockUser);
+      jest.spyOn(service as any, 'compareOtp').mockResolvedValue(true);
+      mockRefreshTokenRepository.countActiveByUserId.mockResolvedValue(3);
+
+      await service.login('+84901234567', 'password123');
+
+      expect(
+        mockRefreshTokenRepository.deleteOldestByUserId,
+      ).not.toHaveBeenCalled();
+      expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
+    });
+
+    it('evicts oldest token when user already has 5 active tokens', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(mockUser);
+      jest.spyOn(service as any, 'compareOtp').mockResolvedValue(true);
+      mockRefreshTokenRepository.countActiveByUserId.mockResolvedValue(5);
+
+      await service.login('+84901234567', 'password123');
+
+      expect(
+        mockRefreshTokenRepository.deleteOldestByUserId,
+      ).toHaveBeenCalledWith('user-1');
+      expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
+    });
+
+    it('cleans expired tokens before cap check so they do not count', async () => {
+      mockUsersService.findByPhone.mockResolvedValue(mockUser);
+      jest.spyOn(service as any, 'compareOtp').mockResolvedValue(true);
+      // After expired cleanup, 0 active remain
+      mockRefreshTokenRepository.countActiveByUserId.mockResolvedValue(0);
+
+      await service.login('+84901234567', 'password123');
+
+      expect(
+        mockRefreshTokenRepository.deleteExpiredByUserId,
+      ).toHaveBeenCalledWith('user-1');
+      expect(
+        mockRefreshTokenRepository.deleteOldestByUserId,
+      ).not.toHaveBeenCalled();
+      expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
     });
   });
 });

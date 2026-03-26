@@ -13,6 +13,7 @@ import { RefreshTokenRepository } from './refresh-token.repository';
 import { UsersService } from '../users/users.service';
 
 const PASSWORD_BCRYPT_ROUNDS = 10;
+const MAX_SESSIONS_PER_USER = 5;
 
 export interface TokenPair {
   accessToken: string;
@@ -250,6 +251,15 @@ export class AuthService {
       phone: user.phone,
       role: user.role,
     });
+
+    await this.refreshTokenRepository.deleteExpiredByUserId(user.id);
+    const activeCount = await this.refreshTokenRepository.countActiveByUserId(
+      user.id,
+    );
+    if (activeCount >= MAX_SESSIONS_PER_USER) {
+      await this.refreshTokenRepository.deleteOldestByUserId(user.id);
+    }
+
     const refreshToken = await this.refreshTokenRepository.create(user.id);
     return { accessToken, refreshToken };
   }
