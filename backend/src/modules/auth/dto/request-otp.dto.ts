@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 
 export class RequestOtpDto {
-  @ApiProperty({ example: '+84901234567', description: 'Phone number' })
+  @ApiProperty({ example: '0901234567', description: 'Phone number (format: 0xxxxxxxxx)' })
   @IsString()
-  @IsNotEmpty()
+  @Matches(/^0[0-9]{9}$/, { message: 'Phone number must be in format 0xxxxxxxxx' })
   phone: string;
 }

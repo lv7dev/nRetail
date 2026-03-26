@@ -14,7 +14,7 @@ export class ResetPasswordDto {
     description: 'New password (min 6 chars)',
   })
   @IsString()
-  @MinLength(6)
+  @MinLength(6, { message: 'New password must be at least 6 characters' })
   newPassword: string;
 
   @ApiProperty({

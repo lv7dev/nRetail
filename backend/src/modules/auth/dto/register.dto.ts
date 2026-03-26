@@ -19,7 +19,7 @@ export class RegisterDto {
     description: 'Password (min 6 chars)',
   })
   @IsString()
-  @MinLength(6)
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
   password: string;
 
   @ApiProperty({ example: 'password123', description: 'Confirm password' })

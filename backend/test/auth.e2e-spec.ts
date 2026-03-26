@@ -37,7 +37,7 @@ type ErrorBody = {
 };
 
 const TEST_JWT_SECRET = 'test-jwt-secret-integration';
-const TEST_PHONE = '+84901234567';
+const TEST_PHONE = '0901234567';
 const TEST_PASSWORD = 'password123';
 
 const mockUser = {

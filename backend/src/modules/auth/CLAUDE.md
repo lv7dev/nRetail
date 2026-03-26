@@ -149,6 +149,21 @@ All business errors include a machine-readable `code` field for client-side i18n
 | `PASSWORD_MISMATCH` | 400 | `register`, `resetPassword` |
 
 Password fields require a minimum of **6 characters** (`@MinLength(6)` in `RegisterDto.password` and `ResetPasswordDto.newPassword`). This matches the frontend schema (`z.string().min(6, ...)`). Validation errors include a `constraint` field (e.g. `"minLength"`) so the frontend can translate via `t('validation.minLength')`.
+
+## Input Format Rules
+
+These rules are enforced at the DTO layer (before any business logic runs). They **must stay in sync** with the miniapp zod schemas:
+
+| Field | Rule | Regex | Applied in |
+|---|---|---|---|
+| `phone` | Vietnamese local format | `/^0[0-9]{9}$/` | `RequestOtpDto`, `LoginDto` |
+| `otp` | Exactly 6 digits | `/^[0-9]{6}$/` | `VerifyOtpDto` |
+| `password` / `newPassword` | Min 6 characters | — | `RegisterDto`, `ResetPasswordDto` |
+
+**Miniapp counterparts** (must match):
+- Phone: `z.string().regex(/^0[0-9]{9}$/)` in `register/schema.ts`, `login/schema.ts`, `forgot-password/schema.ts`
+- OTP: OtpInput component enforces digits; backend regex is the server-side guard
+- Password: `z.string().min(6)` in register and reset schemas
 | `REFRESH_TOKEN_INVALID` | 401 | `refresh` |
 
 ---
