@@ -31,42 +31,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const statusCode = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    // ValidationPipe shape: { statusCode, message: string[], error: 'Bad Request' }
-    if (
-      typeof exceptionResponse === 'object' &&
-      Array.isArray((exceptionResponse as Record<string, unknown>).message)
-    ) {
-      const messages = (exceptionResponse as Record<string, unknown>)
-        .message as string[];
-      const errors = messages.map((msg) => {
-        const spaceIndex = msg.indexOf(' ');
-        return spaceIndex > -1
-          ? {
-              field: msg.slice(0, spaceIndex),
-              message: msg.slice(spaceIndex + 1),
-            }
-          : { field: 'unknown', message: msg };
-      });
-      response.status(statusCode).json({
-        statusCode,
-        message: 'Validation failed',
-        errors,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      });
-      return;
-    }
-
-    // Business error with object payload — pass through message and optional code
+    // Structured object payload — pass through message, errors, and optional code
     if (typeof exceptionResponse === 'object') {
-      const { message, code } = exceptionResponse as {
+      const payload = exceptionResponse as {
         message?: string;
+        errors?: unknown[];
         code?: string;
       };
       response.status(statusCode).json({
         statusCode,
-        message: message ?? exception.message,
-        ...(code !== undefined ? { code } : {}),
+        message: payload.message ?? exception.message,
+        ...(payload.errors !== undefined ? { errors: payload.errors } : {}),
+        ...(payload.code !== undefined ? { code: payload.code } : {}),
         timestamp: new Date().toISOString(),
         path: request.url,
       });

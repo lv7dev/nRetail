@@ -28,11 +28,22 @@ describe('AllExceptionsFilter', () => {
     jest.spyOn(filter['logger'], 'error').mockImplementation(() => undefined);
   });
 
-  it('formats ValidationPipe array message into field-level errors', () => {
-    const exception = new BadRequestException([
-      'password must be longer than or equal to 8 characters',
-      'phone should not be empty',
-    ]);
+  it('passes through structured validation errors with constraint field', () => {
+    const exception = new BadRequestException({
+      message: 'Validation failed',
+      errors: [
+        {
+          field: 'password',
+          constraint: 'minLength',
+          message: 'password must be longer than or equal to 6 characters',
+        },
+        {
+          field: 'phone',
+          constraint: 'isNotEmpty',
+          message: 'phone should not be empty',
+        },
+      ],
+    });
     const { host, status, json } = makeHost();
 
     filter.catch(exception, host);
@@ -45,9 +56,14 @@ describe('AllExceptionsFilter', () => {
         errors: [
           {
             field: 'password',
-            message: 'must be longer than or equal to 8 characters',
+            constraint: 'minLength',
+            message: 'password must be longer than or equal to 6 characters',
           },
-          { field: 'phone', message: 'should not be empty' },
+          {
+            field: 'phone',
+            constraint: 'isNotEmpty',
+            message: 'phone should not be empty',
+          },
         ],
       }),
     );

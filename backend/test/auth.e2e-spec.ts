@@ -28,7 +28,7 @@ type ErrorBody = {
   statusCode: number;
   message: string;
   code?: string;
-  errors?: { field: string; message: string }[];
+  errors?: { field: string; constraint?: string; message: string }[];
 };
 
 const TEST_JWT_SECRET = 'test-jwt-secret-integration';
@@ -383,8 +383,8 @@ describe('Auth (integration)', () => {
         .send({
           otpToken,
           name: 'Test User',
-          password: '123456',
-          confirmPassword: '123456',
+          password: '12345',
+          confirmPassword: '12345',
         })
         .expect(400);
 
@@ -392,7 +392,10 @@ describe('Auth (integration)', () => {
       expect(body.message).toBe('Validation failed');
       expect(body.errors).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ field: 'password' }),
+          expect.objectContaining({
+            field: 'password',
+            constraint: 'minLength',
+          }),
         ]),
       );
     });

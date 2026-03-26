@@ -1,19 +1,23 @@
 ## Requirements
 
 ### Requirement: Validation errors expose field-level detail
-The system SHALL return structured field-level errors for all `400 Bad Request` responses caused by `ValidationPipe`. The response body SHALL use the shape `{ statusCode, message, errors }` where `errors` is an array of `{ field, message }` objects. The `field` value SHALL match the DTO property name. The top-level `message` SHALL be `"Validation failed"`.
+The system SHALL return structured field-level errors for all `400 Bad Request` responses caused by `ValidationPipe`. The response body SHALL use the shape `{ statusCode, message, errors }` where `errors` is an array of `{ field, constraint, message }` objects. The `field` value SHALL match the DTO property name. The `constraint` value SHALL be the class-validator constraint key in camelCase (e.g. `minLength`, `isNotEmpty`, `matches`). The top-level `message` SHALL be `"Validation failed"`.
 
 #### Scenario: Single field fails validation
 - **WHEN** a request DTO fails validation on one field (e.g. password too short)
-- **THEN** the response is `400` with `{ message: "Validation failed", errors: [{ field: "password", message: "<constraint description>" }] }`
+- **THEN** the response is `400` with `{ message: "Validation failed", errors: [{ field: "password", constraint: "minLength", message: "<constraint description>" }] }`
 
 #### Scenario: Multiple fields fail validation
 - **WHEN** a request DTO fails validation on more than one field
-- **THEN** all failing fields are listed in the `errors` array
+- **THEN** all failing fields are listed in the `errors` array, each with a `constraint` key
 
 #### Scenario: Non-validation 4xx errors are unaffected
 - **WHEN** a service throws a `NotFoundException`, `ConflictException`, etc. (not ValidationPipe)
 - **THEN** the response uses the standard `{ statusCode, message, code? }` shape without an `errors` array
+
+#### Scenario: Frontend uses constraint for i18n
+- **WHEN** the frontend receives `{ errors: [{ field: "password", constraint: "minLength" }] }`
+- **THEN** it can render `t('validation.minLength', { min: 6 })` regardless of the English `message` string
 
 ### Requirement: Business errors include a machine-readable code
 The system SHALL include a `code` field (SCREAMING_SNAKE_CASE string) in all 4xx business error responses. This `code` SHALL be stable across releases and usable by the frontend as an i18n translation key. The English `message` field SHALL also be present alongside `code`.
