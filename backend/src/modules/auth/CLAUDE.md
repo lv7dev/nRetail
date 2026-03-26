@@ -2,65 +2,115 @@
 
 ## Purpose
 
-Phone-based OTP authentication with JWT access tokens and rotating refresh tokens. No passwords — identity is proven by receiving an OTP on a known phone number.
+Phone OTP + password authentication. Identity is proven by receiving an OTP on a known phone number. After OTP verification, the client either registers with a password or logs in with a password. Auth tokens are **never** issued directly from OTP verification — OTP only proves phone ownership.
 
 ---
 
-## Authentication Flow
+## Endpoints
 
-### Login (existing user)
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| POST | `/auth/otp/register` | — | Request OTP (phone must NOT exist) |
+| POST | `/auth/otp/forgot-password` | — | Request OTP (phone MUST exist) |
+| POST | `/auth/otp/verify` | — | Verify OTP → returns `otpToken` |
+| POST | `/auth/register` | — | Register new user with `otpToken` + password |
+| POST | `/auth/login` | — | Login with phone + password |
+| POST | `/auth/reset-password` | — | Reset password with `otpToken` + new password |
+| POST | `/auth/refresh` | — | Rotate refresh token |
+| POST | `/auth/logout` | JWT | Invalidate refresh token |
+| GET | `/auth/me` | JWT | Get current authenticated user |
 
-```
-Client                          Server
-  │                               │
-  │  POST /auth/otp/request       │
-  │  { phone }                    │
-  │ ─────────────────────────────▶│
-  │                               │ 1. PhoneConfigRepo: check for defaultOtp override
-  │                               │ 2. OtpRepo: delete any existing OTPs for this phone
-  │                               │ 3. OtpRepo: create new OTP (bcrypt hash, 5min TTL)
-  │                               │    (OTP delivery to user is NOT implemented here —
-  │                               │     currently a no-op; SMS integration goes here)
-  │  200 OK (no body)             │
-  │◀─────────────────────────────-│
-  │                               │
-  │  POST /auth/otp/verify        │
-  │  { phone, otp }               │
-  │ ─────────────────────────────▶│
-  │                               │ 4. Find OTP record for phone
-  │                               │ 5. Check expiry (5 min)
-  │                               │ 6. Check attempts (max 3)
-  │                               │ 7. bcrypt.compare(otp, otpHash)
-  │                               │    - fail → increment attempts, throw 401
-  │                               │    - pass → delete OTP record
-  │                               │ 8. UsersService.findByPhone(phone)
-  │                               │    - found → issueTokens(user)
-  │  200 { accessToken,           │
-  │        refreshToken, user }   │
-  │◀─────────────────────────────-│
-```
+---
 
-### Registration (new user)
+## Authentication Flows
 
-After step 8 above, if the phone is not found:
+### Register flow
 
 ```
-  │                               │ 8b. Phone not found → sign registrationToken JWT
-  │                               │     payload: { phone }, expiresIn: 5min
-  │  200 { registrationToken }    │
-  │◀─────────────────────────────-│
-  │                               │
-  │  POST /auth/register          │
-  │  { registrationToken, name }  │
-  │ ─────────────────────────────▶│
-  │                               │ 9.  jwtService.verifyAsync(registrationToken)
-  │                               │     → extract phone
-  │                               │ 10. UsersService.create({ phone, name })
-  │                               │ 11. PhoneConfigRepo.upsert(phone) — init dev config
-  │                               │ 12. issueTokens(user)
-  │  201 { accessToken,           │
-  │        refreshToken, user }   │
-  │◀─────────────────────────────-│
+Client                              Server
+  │                                   │
+  │  POST /auth/otp/register          │
+  │  { phone }                        │
+  │ ─────────────────────────────────▶│
+  │                                   │ 1. Check phone NOT in User table
+  │                                   │    → 409 PHONE_ALREADY_EXISTS if exists
+  │                                   │ 2. PhoneConfigRepo: check for defaultOtp
+  │                                   │ 3. OtpRepo: delete old OTP, create new
+  │                                   │    (SMS delivery stub — integrate here)
+  │  200 OK                           │
+  │◀─────────────────────────────────-│
+  │                                   │
+  │  POST /auth/otp/verify            │
+  │  { phone, otp }                   │
+  │ ─────────────────────────────────▶│
+  │                                   │ 4. Find OTP record, check expiry/attempts
+  │                                   │ 5. bcrypt.compare(otp, otpHash)
+  │                                   │ 6. Delete OTP record on success
+  │                                   │ 7. Sign otpToken JWT { phone, purpose:'register' }
+  │  200 { otpToken }                 │     (5-min expiry)
+  │◀─────────────────────────────────-│
+  │                                   │
+  │  POST /auth/register              │
+  │  { otpToken, name,                │
+  │    password, confirmPassword }    │
+  │ ─────────────────────────────────▶│
+  │                                   │ 8. Verify otpToken, assert purpose='register'
+  │                                   │    → 401 OTP_PURPOSE_MISMATCH if wrong purpose
+  │                                   │ 9. Assert password === confirmPassword
+  │                                   │    → 400 PASSWORD_MISMATCH if differ
+  │                                   │ 10. UsersService.create({ phone, name, hashedPassword })
+  │                                   │ 11. issueTokens(user)
+  │  201 { accessToken,               │
+  │        refreshToken, user }       │
+  │◀─────────────────────────────────-│
+```
+
+### Login flow
+
+```
+  POST /auth/login { phone, password }
+    → UsersService.findByPhone(phone)
+      - not found or no password → 401 INVALID_CREDENTIALS
+    → bcrypt.compare(password, user.password)
+      - fail → 401 INVALID_CREDENTIALS
+    → issueTokens(user)
+    ← 200 { accessToken, refreshToken, user }
+```
+
+### Forgot-password / Reset flow
+
+```
+Client                              Server
+  │                                   │
+  │  POST /auth/otp/forgot-password   │
+  │  { phone }                        │
+  │ ─────────────────────────────────▶│
+  │                                   │ 1. Check phone IS in User table
+  │                                   │    → 404 PHONE_NOT_FOUND if missing
+  │                                   │ 2. Send OTP with purpose='reset'
+  │  200 OK                           │
+  │◀─────────────────────────────────-│
+  │                                   │
+  │  POST /auth/otp/verify            │
+  │  { phone, otp }                   │
+  │ ─────────────────────────────────▶│
+  │                                   │ 3. Verify OTP, sign otpToken { phone, purpose:'reset' }
+  │  200 { otpToken }                 │
+  │◀─────────────────────────────────-│
+  │                                   │
+  │  POST /auth/reset-password        │
+  │  { otpToken, newPassword,         │
+  │    confirmPassword }              │
+  │ ─────────────────────────────────▶│
+  │                                   │ 4. Verify otpToken, assert purpose='reset'
+  │                                   │    → 401 OTP_PURPOSE_MISMATCH if wrong purpose
+  │                                   │ 5. Assert newPassword === confirmPassword
+  │                                   │    → 400 PASSWORD_MISMATCH if differ
+  │                                   │ 6. UsersService.updatePassword(userId, hashedPassword)
+  │                                   │ 7. issueTokens(user)
+  │  200 { accessToken,               │
+  │        refreshToken, user }       │
+  │◀─────────────────────────────────-│
 ```
 
 ### Token Refresh
@@ -68,11 +118,10 @@ After step 8 above, if the phone is not found:
 ```
   POST /auth/refresh { refreshToken }
     → RefreshTokenRepo.findAndDelete(rawToken)
-      - linear scan of non-expired tokens, bcrypt.compare each
-      - deletes matched record (rotate on use)
+      - not found → 401 REFRESH_TOKEN_INVALID
     → UsersService.findById(token.userId)
     → issueTokens(user)
-    ← { accessToken, refreshToken }
+    ← 200 { accessToken, refreshToken }
 ```
 
 ### Logout
@@ -85,19 +134,46 @@ After step 8 above, if the phone is not found:
 
 ---
 
+## Error Codes
+
+All business errors include a machine-readable `code` field for client-side i18n.
+
+| Code | HTTP | Thrown by |
+|------|------|-----------|
+| `PHONE_ALREADY_EXISTS` | 409 | `requestRegisterOtp`, `register` |
+| `PHONE_NOT_FOUND` | 404/401 | `requestForgotPasswordOtp`, `resetPassword` |
+| `OTP_INVALID` | 401 | `verifyOtp` (wrong/blocked/missing), `verifyOtpToken` (bad JWT) |
+| `OTP_EXPIRED` | 401 | `verifyOtp` (past `expiresAt`) |
+| `OTP_PURPOSE_MISMATCH` | 401 | `verifyOtpToken` (wrong purpose claim) |
+| `INVALID_CREDENTIALS` | 401 | `login` |
+| `PASSWORD_MISMATCH` | 400 | `register`, `resetPassword` |
+| `REFRESH_TOKEN_INVALID` | 401 | `refresh` |
+
+---
+
 ## Token Details
 
 ### Access Token (JWT)
 
 | Property | Value |
 |---|---|
-| Algorithm | HS256 (passport-jwt default) |
+| Algorithm | HS256 |
 | Secret | `JWT_SECRET` env var |
 | Expiry | `JWT_EXPIRES_IN` env var (e.g. `7d`) |
 | Payload | `{ sub: userId, phone, role }` |
 | Extraction | `Authorization: Bearer <token>` header |
 
-`JwtStrategy.validate()` re-fetches the full user from DB on every authenticated request — so revoked users are blocked immediately even with a valid token (at the cost of one DB query per request).
+`JwtStrategy.validate()` re-fetches the full user from DB on every authenticated request — revoked users are blocked immediately.
+
+### OTP Token (JWT)
+
+| Property | Value |
+|---|---|
+| Payload | `{ phone, purpose: 'register' \| 'reset' }` |
+| Expiry | 5 minutes |
+| Purpose | One-time bridge between OTP verification and register/reset-password |
+
+The `purpose` claim enforces flow isolation — a `register` token cannot be used in the reset-password endpoint and vice versa.
 
 ### Refresh Token
 
@@ -108,7 +184,7 @@ After step 8 above, if the phone is not found:
 | TTL | 30 days |
 | Rotation | Deleted on use, new one issued |
 
-**Scaling note:** `findAndDelete` does a full table scan + bcrypt compare on all non-expired tokens. This is safe at low volume but becomes a bottleneck if one user accumulates many active sessions or token count grows large. A future fix: store a fast-lookup prefix (first 8 hex chars) as a plain column, filter by prefix first, then bcrypt compare the candidates.
+**Scaling note:** `findAndDelete` does a full table scan + bcrypt compare. Safe at low volume. Future fix: store a fast-lookup prefix column.
 
 ### OTP
 
@@ -117,18 +193,19 @@ After step 8 above, if the phone is not found:
 | Format | 6-digit numeric string |
 | Storage | bcrypt hash in `OtpVerification` table (rounds=8) |
 | TTL | 5 minutes |
-| Max attempts | 3 (counted per OTP record) |
-| On success | OTP record deleted immediately |
+| Max attempts | 3 |
+| `purpose` column | `'register'` or `'reset'` (set at creation time) |
+| On success | Record deleted immediately |
 
 ---
 
 ## PhoneConfig — Dev/Test Override
 
-`PhoneConfigRepository` stores per-phone configuration. Currently its only field is `defaultOtp`.
+`PhoneConfigRepository` stores per-phone configuration. The only field is `defaultOtp`.
 
-**If a phone has a `defaultOtp` set, that value is used instead of generating a random OTP.**
+**If a phone has a `defaultOtp` set, that value is used instead of `'999999'` (the global fallback).** If no `PhoneConfig` row exists, or `defaultOtp` is null, the fallback `'999999'` is used.
 
-This exists so test accounts can always use a known code (e.g. `123456`) without needing SMS delivery. In production, `defaultOtp` should never be set. The `register` flow calls `PhoneConfigRepo.upsert(phone)` after creating a new user to initialize the row (with no defaultOtp).
+This exists so test accounts can always use a known code without SMS delivery. In production, `defaultOtp` should never be set.
 
 There is currently no admin API to manage these overrides — do it directly in the DB.
 
@@ -137,14 +214,6 @@ There is currently no admin API to manage these overrides — do it directly in 
 ## Key Interfaces
 
 ```ts
-// Returned by verifyOtp — shape depends on whether phone is known
-interface VerifyOtpResult {
-  accessToken?: string;       // present if existing user
-  refreshToken?: string;      // present if existing user
-  user?: UserRecord;          // present if existing user
-  registrationToken?: string; // present if new user (mutually exclusive with above)
-}
-
 interface TokenPair {
   accessToken: string;
   refreshToken: string;
@@ -157,8 +226,6 @@ interface UserRecord {
 }
 ```
 
-`VerifyOtpResult` intentionally uses all-optional fields to represent the two-path response. The two paths are mutually exclusive: either `{ accessToken, refreshToken, user }` (existing) or `{ registrationToken }` (new). Do not add a third path here without updating both `verifyOtp` and `register`.
-
 ---
 
 ## Guards & Decorators
@@ -170,22 +237,22 @@ interface UserRecord {
 // Get the authenticated user in a controller method
 @CurrentUser() user: User
 
-// Combine for most authenticated endpoints
+// RBAC
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
 ```
 
-JWT validation is handled by `JwtStrategy` (Passport). Do not call `jwtService.verify` manually in controllers or services.
+JWT validation is handled by `JwtStrategy` (Passport). Do not call `jwtService.verify` manually in controllers or services — use `verifyOtpToken()` in `AuthService` for OTP tokens only.
 
 ---
 
 ## Where SMS Delivery Goes
 
-`AuthService.requestOtp()` generates and stores the OTP but does **not** send it anywhere. SMS delivery is a stub. When integrating an SMS provider:
+The private `sendOtp(phone, purpose)` method in `AuthService` generates and stores the OTP but does **not** send it. When integrating an SMS provider:
 
 1. Inject an SMS service into `AuthService`
-2. Call it after `this.otpRepository.create(phone, otp)` — passing the raw `otp` (before it's hashed)
-3. Keep the delivery call outside the repository — repositories are pure data access
+2. In `sendOtp()`, call it after `this.otpRepository.create(phone, otp, purpose)` — passing the raw `otp` (before hashing)
+3. Keep delivery outside the repository
 
 ---
 
@@ -196,23 +263,24 @@ AuthModule
   imports:  UsersModule (for UsersService — cross-module via service, not repo)
             PassportModule
             JwtModule (async, reads JWT_SECRET + JWT_EXPIRES_IN from ConfigService)
-  exports:  AuthService (consumed by any module that needs to validate auth state)
+  exports:  AuthService
 ```
-
-`AuthModule` imports `UsersModule` and uses `UsersService` — this is the correct pattern. It does **not** import `UsersRepository` directly.
 
 ---
 
 ## Testing
 
-Unit tests live in `__tests__/auth.service.spec.ts` and `__tests__/auth.controller.spec.ts`. All repositories and `UsersService` are mocked.
+Unit tests: `__tests__/auth.service.spec.ts`
+Integration tests: `test/auth.e2e-spec.ts`
 
-Key scenarios to keep covered:
-- OTP expired → 401
-- OTP max attempts → 401
-- Invalid OTP → increments attempts
-- Valid OTP + existing user → token pair
-- Valid OTP + new user → registrationToken only
-- Invalid registrationToken on register → 401
-- Refresh with unknown/expired token → 401
-- Refresh rotates token (old one invalidated)
+Key scenarios covered:
+- OTP expired → 401 `OTP_EXPIRED`
+- OTP max attempts → 401 `OTP_INVALID`
+- Wrong OTP → increments attempts, 401 `OTP_INVALID`
+- Correct OTP → returns `otpToken` (never auth tokens directly)
+- Register with wrong-purpose otpToken → 401 `OTP_PURPOSE_MISMATCH`
+- Password mismatch on register/reset → 400 `PASSWORD_MISMATCH`
+- Login wrong credentials → 401 `INVALID_CREDENTIALS`
+- Cross-flow token rejection (register token used in reset and vice versa)
+- Validation errors (short password, missing fields) → 400 with `errors` array
+- Refresh with unknown token → 401 `REFRESH_TOKEN_INVALID`
