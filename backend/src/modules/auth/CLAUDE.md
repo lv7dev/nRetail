@@ -147,6 +147,7 @@ All business errors include a machine-readable `code` field for client-side i18n
 | `OTP_PURPOSE_MISMATCH` | 401 | `verifyOtpToken` (wrong purpose claim) |
 | `INVALID_CREDENTIALS` | 401 | `login` |
 | `PASSWORD_MISMATCH` | 400 | `register`, `resetPassword` |
+| `REFRESH_TOKEN_INVALID` | 401 | `refresh` |
 
 Password fields require a minimum of **6 characters** (`@MinLength(6)` in `RegisterDto.password` and `ResetPasswordDto.newPassword`). This matches the frontend schema (`z.string().min(6, ...)`). Validation errors include a `constraint` field (e.g. `"minLength"`) so the frontend can translate via `t('validation.minLength')`.
 
@@ -164,7 +165,6 @@ These rules are enforced at the DTO layer (before any business logic runs). They
 - Phone: `z.string().regex(/^0[0-9]{9}$/)` in `register/schema.ts`, `login/schema.ts`, `forgot-password/schema.ts`
 - OTP: OtpInput component enforces digits; backend regex is the server-side guard
 - Password: `z.string().min(6)` in register and reset schemas
-| `REFRESH_TOKEN_INVALID` | 401 | `refresh` |
 
 ---
 
