@@ -126,7 +126,7 @@ describe('AllExceptionsFilter', () => {
     filter.catch(exception, host);
 
     expect(status).toHaveBeenCalledWith(401);
-    const body = (json.mock.calls as [unknown[]][])[0][0] as Record<
+    const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<
       string,
       unknown
     >;
