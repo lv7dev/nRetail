@@ -307,20 +307,69 @@ modules/products/
 ```
 
 ### DTOs
-- Always use `class-validator` decorators on all request DTOs.
-- Always use `@ApiProperty()` from `@nestjs/swagger` on all DTO fields.
-- Enable `ValidationPipe` globally with `whitelist: true, forbidNonWhitelisted: true`.
+
+**Every field in every request DTO must have:**
+- A `class-validator` decorator (`@IsString()`, `@IsNotEmpty()`, `@MinLength()`, `@IsEmail()`, etc.)
+- An `@ApiProperty()` decorator with `example` and `description`
+
+**Checklist before shipping a new endpoint:**
+- [ ] All required fields have `@IsNotEmpty()` or equivalent
+- [ ] String lengths validated (`@MinLength`, `@MaxLength`) where applicable
+- [ ] Numeric ranges validated (`@Min`, `@Max`) where applicable
+- [ ] Enum fields use `@IsEnum(MyEnum)`
+- [ ] Optional fields marked `@IsOptional()` and still typed/validated
+- [ ] `ValidationPipe` is globally enabled with `whitelist: true, forbidNonWhitelisted: true, transform: true`
+
+Failing to validate means users get cryptic "Bad Request" instead of knowing what to fix.
 
 ### Response Shape
-Standardize API responses:
+
+**Success responses** — wrapped by `ResponseInterceptor`:
 ```ts
 { data: T, meta?: PaginationMeta, message?: string }
 ```
-Use a global `TransformInterceptor` to enforce this.
+
+**Validation error responses** (400) — from `AllExceptionsFilter`:
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "password", "message": "password must be longer than or equal to 8 characters" }
+  ]
+}
+```
+
+**Business error responses** (4xx) — thrown by services:
+```json
+{
+  "statusCode": 409,
+  "message": "Phone number already registered",
+  "code": "PHONE_ALREADY_EXISTS"
+}
+```
+
+The `code` field is a machine-readable key the frontend uses for i18n translation.
 
 ### Error Handling
-- Use NestJS built-in HTTP exceptions (`NotFoundException`, `ConflictException`, etc.).
-- Add a global `AllExceptionsFilter` to catch and log unhandled errors.
+
+**Services must throw NestJS HTTP exceptions — never raw `Error`:**
+```ts
+// GOOD
+throw new ConflictException({ message: 'Phone already registered', code: 'PHONE_ALREADY_EXISTS' });
+throw new NotFoundException({ message: 'User not found', code: 'USER_NOT_FOUND' });
+throw new UnauthorizedException({ message: 'Invalid OTP', code: 'OTP_INVALID' });
+
+// BAD — loses HTTP status code, leaks stack trace
+throw new Error('Phone already registered');
+```
+
+**i18n strategy:** The API returns English messages + a `code` key. The miniapp uses its own i18n to translate by `code`. Do **not** add `nestjs-i18n` to the backend unless the server needs to generate translated content (emails, SMS). See i18n decision in `openspec/specs/` if archived.
+
+**`AllExceptionsFilter`** catches all exceptions and:
+- Surfaces `exception.getResponse()` for `HttpException` (includes field-level validation errors)
+- Returns `500` + logs stack trace for unexpected errors
+- Never leaks internal stack traces to clients
 
 ### Auth
 

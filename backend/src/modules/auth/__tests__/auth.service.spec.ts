@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import {
+  BadRequestException,
   ConflictException,
+  HttpException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -53,6 +55,17 @@ const mockJwtService = {
   verifyAsync: jest.fn(),
 };
 
+/** Catch a rejected promise and assert the error code from getResponse(). */
+async function expectErrorCode(
+  promise: Promise<unknown>,
+  ExpectedError: new (...args: unknown[]) => Error,
+  code: string,
+): Promise<void> {
+  const error = await promise.catch((e: unknown) => e);
+  expect(error).toBeInstanceOf(ExpectedError);
+  expect((error as HttpException).getResponse()).toMatchObject({ code });
+}
+
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -91,13 +104,14 @@ describe('AuthService', () => {
       );
     });
 
-    it('throws ConflictException when phone already registered', async () => {
+    it('throws ConflictException with code PHONE_ALREADY_EXISTS when phone already registered', async () => {
       mockUsersService.findByPhone.mockResolvedValue(mockUser);
 
-      await expect(service.requestRegisterOtp('+84901234567')).rejects.toThrow(
+      await expectErrorCode(
+        service.requestRegisterOtp('+84901234567'),
         ConflictException,
+        'PHONE_ALREADY_EXISTS',
       );
-
       expect(mockOtpRepository.create).not.toHaveBeenCalled();
     });
 
@@ -150,13 +164,14 @@ describe('AuthService', () => {
       );
     });
 
-    it('throws NotFoundException when phone has no associated user', async () => {
+    it('throws NotFoundException with code PHONE_NOT_FOUND when phone has no associated user', async () => {
       mockUsersService.findByPhone.mockResolvedValue(null);
 
-      await expect(
+      await expectErrorCode(
         service.requestForgotPasswordOtp('+84909999999'),
-      ).rejects.toThrow(NotFoundException);
-
+        NotFoundException,
+        'PHONE_NOT_FOUND',
+      );
       expect(mockOtpRepository.create).not.toHaveBeenCalled();
     });
 
@@ -241,15 +256,17 @@ describe('AuthService', () => {
       expect(mockOtpRepository.delete).toHaveBeenCalledWith('otp-1');
     });
 
-    it('throws UnauthorizedException when OTP not found', async () => {
+    it('throws UnauthorizedException with code OTP_INVALID when OTP not found', async () => {
       mockOtpRepository.findByPhone.mockResolvedValue(null);
 
-      await expect(service.verifyOtp('+84901234567', '000000')).rejects.toThrow(
+      await expectErrorCode(
+        service.verifyOtp('+84901234567', '000000'),
         UnauthorizedException,
+        'OTP_INVALID',
       );
     });
 
-    it('throws UnauthorizedException when OTP is expired', async () => {
+    it('throws UnauthorizedException with code OTP_EXPIRED when OTP is expired', async () => {
       mockOtpRepository.findByPhone.mockResolvedValue({
         id: 'otp-1',
         phone: '+84901234567',
@@ -259,12 +276,14 @@ describe('AuthService', () => {
         attempts: 0,
       });
 
-      await expect(service.verifyOtp('+84901234567', '999999')).rejects.toThrow(
+      await expectErrorCode(
+        service.verifyOtp('+84901234567', '999999'),
         UnauthorizedException,
+        'OTP_EXPIRED',
       );
     });
 
-    it('throws UnauthorizedException and increments attempts on wrong OTP', async () => {
+    it('throws UnauthorizedException with code OTP_INVALID and increments attempts on wrong OTP', async () => {
       mockOtpRepository.findByPhone.mockResolvedValue({
         id: 'otp-1',
         phone: '+84901234567',
@@ -275,14 +294,15 @@ describe('AuthService', () => {
       });
       jest.spyOn(service as any, 'compareOtp').mockResolvedValue(false);
 
-      await expect(service.verifyOtp('+84901234567', '000000')).rejects.toThrow(
+      await expectErrorCode(
+        service.verifyOtp('+84901234567', '000000'),
         UnauthorizedException,
+        'OTP_INVALID',
       );
-
       expect(mockOtpRepository.incrementAttempts).toHaveBeenCalledWith('otp-1');
     });
 
-    it('blocks verification when attempts reach 3', async () => {
+    it('throws UnauthorizedException with code OTP_INVALID when attempts reach 3', async () => {
       mockOtpRepository.findByPhone.mockResolvedValue({
         id: 'otp-1',
         phone: '+84901234567',
@@ -292,10 +312,11 @@ describe('AuthService', () => {
         attempts: 3,
       });
 
-      await expect(service.verifyOtp('+84901234567', '000000')).rejects.toThrow(
+      await expectErrorCode(
+        service.verifyOtp('+84901234567', '000000'),
         UnauthorizedException,
+        'OTP_INVALID',
       );
-
       expect(mockOtpRepository.incrementAttempts).not.toHaveBeenCalled();
     });
   });
@@ -352,46 +373,54 @@ describe('AuthService', () => {
       expect(createCall.password).toMatch(/^\$2[ab]\$/);
     });
 
-    it('throws UnauthorizedException when otpToken is invalid', async () => {
+    it('throws UnauthorizedException with code OTP_INVALID when otpToken is invalid', async () => {
       mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
 
-      await expect(
+      await expectErrorCode(
         service.register('expired-token', 'Test User', 'pass', 'pass'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'OTP_INVALID',
+      );
     });
 
-    it('throws UnauthorizedException when otpToken purpose is not register', async () => {
+    it('throws UnauthorizedException with code OTP_PURPOSE_MISMATCH when otpToken purpose is not register', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'reset',
       });
 
-      await expect(
+      await expectErrorCode(
         service.register('reset-token', 'Test User', 'pass', 'pass'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'OTP_PURPOSE_MISMATCH',
+      );
     });
 
-    it('throws UnauthorizedException when passwords do not match', async () => {
+    it('throws BadRequestException with code PASSWORD_MISMATCH when passwords do not match', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'register',
       });
 
-      await expect(
+      await expectErrorCode(
         service.register('valid-otp-token', 'Test User', 'pass1', 'pass2'),
-      ).rejects.toThrow(UnauthorizedException);
+        BadRequestException,
+        'PASSWORD_MISMATCH',
+      );
     });
 
-    it('throws ConflictException when phone already registered', async () => {
+    it('throws ConflictException with code PHONE_ALREADY_EXISTS when phone already registered', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'register',
       });
       mockUsersService.findByPhone.mockResolvedValue(mockUser);
 
-      await expect(
+      await expectErrorCode(
         service.register('valid-otp-token', 'Test User', 'pass', 'pass'),
-      ).rejects.toThrow(ConflictException);
+        ConflictException,
+        'PHONE_ALREADY_EXISTS',
+      );
     });
   });
 
@@ -409,32 +438,38 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('user');
     });
 
-    it('throws UnauthorizedException when user not found', async () => {
+    it('throws UnauthorizedException with code INVALID_CREDENTIALS when user not found', async () => {
       mockUsersService.findByPhone.mockResolvedValue(null);
 
-      await expect(
+      await expectErrorCode(
         service.login('+84909999999', 'password123'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'INVALID_CREDENTIALS',
+      );
     });
 
-    it('throws UnauthorizedException when user has no password set', async () => {
+    it('throws UnauthorizedException with code INVALID_CREDENTIALS when user has no password set', async () => {
       mockUsersService.findByPhone.mockResolvedValue({
         ...mockUser,
         password: null,
       });
 
-      await expect(
+      await expectErrorCode(
         service.login('+84901234567', 'password123'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'INVALID_CREDENTIALS',
+      );
     });
 
-    it('throws UnauthorizedException when password does not match', async () => {
+    it('throws UnauthorizedException with code INVALID_CREDENTIALS when password does not match', async () => {
       mockUsersService.findByPhone.mockResolvedValue(mockUser);
       jest.spyOn(service as any, 'compareOtp').mockResolvedValue(false);
 
-      await expect(
+      await expectErrorCode(
         service.login('+84901234567', 'wrongpassword'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'INVALID_CREDENTIALS',
+      );
     });
   });
 
@@ -463,46 +498,81 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('refreshToken');
     });
 
-    it('throws UnauthorizedException when otpToken is invalid', async () => {
+    it('throws UnauthorizedException with code OTP_INVALID when otpToken is invalid', async () => {
       mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
 
-      await expect(
+      await expectErrorCode(
         service.resetPassword('expired-token', 'pass', 'pass'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'OTP_INVALID',
+      );
     });
 
-    it('throws UnauthorizedException when otpToken purpose is not reset', async () => {
+    it('throws UnauthorizedException with code OTP_PURPOSE_MISMATCH when otpToken purpose is not reset', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'register',
       });
 
-      await expect(
+      await expectErrorCode(
         service.resetPassword('register-token', 'pass', 'pass'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'OTP_PURPOSE_MISMATCH',
+      );
     });
 
-    it('throws UnauthorizedException when passwords do not match', async () => {
+    it('throws BadRequestException with code PASSWORD_MISMATCH when passwords do not match', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'reset',
       });
 
-      await expect(
+      await expectErrorCode(
         service.resetPassword('valid-otp-token', 'pass1', 'pass2'),
-      ).rejects.toThrow(UnauthorizedException);
+        BadRequestException,
+        'PASSWORD_MISMATCH',
+      );
     });
 
-    it('throws UnauthorizedException when user not found', async () => {
+    it('throws UnauthorizedException with code PHONE_NOT_FOUND when user not found', async () => {
       mockJwtService.verifyAsync.mockResolvedValue({
         phone: '+84901234567',
         purpose: 'reset',
       });
       mockUsersService.findByPhone.mockResolvedValue(null);
 
-      await expect(
+      await expectErrorCode(
         service.resetPassword('valid-otp-token', 'pass', 'pass'),
-      ).rejects.toThrow(UnauthorizedException);
+        UnauthorizedException,
+        'PHONE_NOT_FOUND',
+      );
+    });
+  });
+
+  describe('refresh', () => {
+    it('issues new tokens when refresh token is valid', async () => {
+      mockRefreshTokenRepository.findAndDelete.mockResolvedValue({
+        id: 'rt-1',
+        userId: 'user-1',
+      });
+      mockUsersService.findById.mockResolvedValue(mockUser);
+      mockRefreshTokenRepository.create.mockResolvedValue('new-refresh-token');
+      mockJwtService.signAsync.mockResolvedValue('new-access-token');
+
+      const result = await service.refresh('valid-refresh-token');
+
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+    });
+
+    it('throws UnauthorizedException with code REFRESH_TOKEN_INVALID when token not found', async () => {
+      mockRefreshTokenRepository.findAndDelete.mockResolvedValue(null);
+
+      await expectErrorCode(
+        service.refresh('unknown-token'),
+        UnauthorizedException,
+        'REFRESH_TOKEN_INVALID',
+      );
     });
   });
 

@@ -13,6 +13,7 @@ import { PhoneConfigRepository } from '../src/modules/auth/phone-config.reposito
 import { RefreshTokenRepository } from '../src/modules/auth/refresh-token.repository';
 import { JwtStrategy } from '../src/modules/auth/jwt.strategy';
 import { UsersService } from '../src/modules/users/users.service';
+import { AllExceptionsFilter } from '../src/shared/filters/http-exception.filter';
 import { ResponseInterceptor } from '../src/shared/interceptors/response.interceptor';
 import { globalValidationPipe } from '../src/shared/pipes/validation.pipe';
 
@@ -23,6 +24,12 @@ type AuthResponse = {
   user: Record<string, unknown>;
 };
 type ApiBody<T> = { data: T };
+type ErrorBody = {
+  statusCode: number;
+  message: string;
+  code?: string;
+  errors?: { field: string; message: string }[];
+};
 
 const TEST_JWT_SECRET = 'test-jwt-secret-integration';
 const TEST_PHONE = '+84901234567';
@@ -103,6 +110,7 @@ describe('Auth (integration)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(globalValidationPipe);
     app.useGlobalInterceptors(new ResponseInterceptor());
+    app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
   });
 
@@ -277,8 +285,8 @@ describe('Auth (integration)', () => {
 
       const { otpToken } = (verifyRes.body as ApiBody<OtpVerifyResponse>).data;
 
-      // Using register token in reset-password → 401
-      await request(app.getHttpServer())
+      // Using register token in reset-password → 401 with OTP_PURPOSE_MISMATCH
+      const res = await request(app.getHttpServer())
         .post('/auth/reset-password')
         .send({
           otpToken,
@@ -286,6 +294,8 @@ describe('Auth (integration)', () => {
           confirmPassword: 'newpassword123',
         })
         .expect(401);
+
+      expect((res.body as ErrorBody).code).toBe('OTP_PURPOSE_MISMATCH');
     });
 
     it('rejects a reset-purpose otpToken in register endpoint', async () => {
@@ -306,8 +316,8 @@ describe('Auth (integration)', () => {
 
       const { otpToken } = (verifyRes.body as ApiBody<OtpVerifyResponse>).data;
 
-      // Using reset token in register → 401
-      await request(app.getHttpServer())
+      // Using reset token in register → 401 with OTP_PURPOSE_MISMATCH
+      const res = await request(app.getHttpServer())
         .post('/auth/register')
         .send({
           otpToken,
@@ -316,32 +326,87 @@ describe('Auth (integration)', () => {
           confirmPassword: 'password123',
         })
         .expect(401);
+
+      expect((res.body as ErrorBody).code).toBe('OTP_PURPOSE_MISMATCH');
     });
   });
 
   // ─── Precondition enforcement ────────────────────────────────────────────────
 
   describe('OTP request preconditions', () => {
-    it('returns 409 when requesting register OTP for an already-registered phone', async () => {
+    it('returns 409 with code PHONE_ALREADY_EXISTS when requesting register OTP for an already-registered phone', async () => {
       mockUsersService.findByPhone.mockResolvedValue(mockUser);
 
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/auth/otp/register')
         .send({ phone: TEST_PHONE })
         .expect(409);
 
+      expect((res.body as ErrorBody).code).toBe('PHONE_ALREADY_EXISTS');
       expect(mockOtpRepo.create).not.toHaveBeenCalled();
     });
 
-    it('returns 404 when requesting forgot-password OTP for unknown phone', async () => {
+    it('returns 404 with code PHONE_NOT_FOUND when requesting forgot-password OTP for unknown phone', async () => {
       mockUsersService.findByPhone.mockResolvedValue(null);
 
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/auth/otp/forgot-password')
         .send({ phone: TEST_PHONE })
         .expect(404);
 
+      expect((res.body as ErrorBody).code).toBe('PHONE_NOT_FOUND');
       expect(mockOtpRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Validation error surface ─────────────────────────────────────────────────
+
+  describe('Validation error responses', () => {
+    it('returns field-level errors when password is too short', async () => {
+      mockOtpRepo.findByPhone.mockResolvedValue({
+        id: 'otp-1',
+        phone: TEST_PHONE,
+        otpHash: testOtpHash,
+        purpose: 'register',
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        attempts: 0,
+      });
+      const verifyRes = await request(app.getHttpServer())
+        .post('/auth/otp/verify')
+        .send({ phone: TEST_PHONE, otp: '999999' })
+        .expect(200);
+
+      const { otpToken } = (verifyRes.body as ApiBody<OtpVerifyResponse>).data;
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          otpToken,
+          name: 'Test User',
+          password: '123456',
+          confirmPassword: '123456',
+        })
+        .expect(400);
+
+      const body = res.body as ErrorBody;
+      expect(body.message).toBe('Validation failed');
+      expect(body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'password' }),
+        ]),
+      );
+    });
+
+    it('returns field-level errors when required fields are missing on login', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({})
+        .expect(400);
+
+      const body = res.body as ErrorBody;
+      expect(body.message).toBe('Validation failed');
+      expect(body.errors).toBeDefined();
+      expect(Array.isArray(body.errors)).toBe(true);
     });
   });
 });
