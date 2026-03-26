@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { ThrottlerException } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -16,6 +17,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    if (exception instanceof ThrottlerException) {
+      response.status(HttpStatus.TOO_MANY_REQUESTS).json({
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        message: 'Too many requests',
+        code: 'RATE_LIMIT_EXCEEDED',
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      });
+      return;
+    }
 
     if (!(exception instanceof HttpException)) {
       this.logger.error(exception);

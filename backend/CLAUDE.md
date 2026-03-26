@@ -372,6 +372,9 @@ throw new Error('Phone already registered');
 - Surfaces `exception.getResponse()` for `HttpException` (includes field-level validation errors)
 - Returns `500` + logs stack trace for unexpected errors
 - Never leaks internal stack traces to clients
+- Detects `ThrottlerException` and responds with `code: 'RATE_LIMIT_EXCEEDED'`
+
+**Rule: every error response MUST include a `code` field.** This applies to service exceptions, guards, filters, and middleware. `AllExceptionsFilter` is the enforcement point — add handling there for any system-level exception (e.g. `ThrottlerException`) that doesn't carry a `code` from the throwing layer.
 
 ### Auth
 

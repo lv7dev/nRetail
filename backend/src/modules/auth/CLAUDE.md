@@ -148,6 +148,7 @@ All business errors include a machine-readable `code` field for client-side i18n
 | `INVALID_CREDENTIALS` | 401 | `login` |
 | `PASSWORD_MISMATCH` | 400 | `register`, `resetPassword` |
 | `REFRESH_TOKEN_INVALID` | 401 | `refresh` |
+| `RATE_LIMIT_EXCEEDED` | 429 | any endpoint (injected by `AllExceptionsFilter`) |
 
 Password fields require a minimum of **6 characters** (`@MinLength(6)` in `RegisterDto.password` and `ResetPasswordDto.newPassword`). This matches the frontend schema (`z.string().min(6, ...)`). Validation errors include a `constraint` field (e.g. `"minLength"`) so the frontend can translate via `t('validation.minLength')`.
 

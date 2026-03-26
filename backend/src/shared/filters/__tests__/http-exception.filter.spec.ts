@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ThrottlerException } from '@nestjs/throttler';
 import { AllExceptionsFilter } from '../http-exception.filter';
 
 function makeHost(url = '/test') {
@@ -115,6 +116,22 @@ describe('AllExceptionsFilter', () => {
       expect.objectContaining({
         statusCode: 500,
         message: 'Internal server error',
+      }),
+    );
+  });
+
+  it('returns 429 with code RATE_LIMIT_EXCEEDED for ThrottlerException', () => {
+    const exception = new ThrottlerException();
+    const { host, status, json } = makeHost('/auth/otp/register');
+
+    filter.catch(exception, host);
+
+    expect(status).toHaveBeenCalledWith(429);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        statusCode: 429,
+        code: 'RATE_LIMIT_EXCEEDED',
+        path: '/auth/otp/register',
       }),
     );
   });
