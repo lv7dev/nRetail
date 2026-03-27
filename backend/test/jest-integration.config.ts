@@ -8,6 +8,7 @@ const config: Config = {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   testEnvironment: 'node',
+  testEnvironmentOptions: { env: { NODE_ENV: 'test' } },
   passWithNoTests: true,
   globalSetup: '<rootDir>/test/global-setup.ts',
   globalTeardown: '<rootDir>/test/global-teardown.ts',

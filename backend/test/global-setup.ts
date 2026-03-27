@@ -1,8 +1,7 @@
 import { execSync } from 'child_process';
+import path from 'path';
 import { Client } from 'pg';
-
-const TEST_DB_URL =
-  'postgresql://postgres:postgres@localhost:5433/test_nretail';
+import { TEST_DB_URL } from './constants';
 const CONTAINER_NAME = 'nretail-test-db';
 const CONTAINER_IMAGE = 'postgres:15-alpine';
 
@@ -94,13 +93,17 @@ export default async function globalSetup(): Promise<void> {
   // Step 3: Create test_nretail database if it doesn't exist
   await createDatabase();
 
-  // Step 4: Set DATABASE_URL so the process and Prisma CLI can use it
+  // Step 4: Set env vars so AppModule and Prisma CLI can initialise correctly
   process.env.DATABASE_URL = TEST_DB_URL;
+  process.env.REDIS_URL = 'redis://localhost:6379';
+  process.env.JWT_SECRET = 'integration-test-secret-minimum-32-chars';
+  process.env.JWT_EXPIRES_IN = '15m';
+  process.env.NODE_ENV = 'test';
 
   // Step 5: Run Prisma migrations
   console.log('[global-setup] Running prisma migrate deploy...');
   execSync('npx prisma migrate deploy', {
-    cwd: process.cwd(),
+    cwd: path.resolve(__dirname, '..'),
     env: {
       ...process.env,
       DATABASE_URL: TEST_DB_URL,

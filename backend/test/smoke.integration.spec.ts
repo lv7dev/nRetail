@@ -3,9 +3,7 @@
  * and the test DB is accessible. No real business logic tested here.
  */
 import { Client } from 'pg';
-
-const TEST_DB_URL =
-  'postgresql://postgres:postgres@localhost:5433/test_nretail';
+import { TEST_DB_URL } from './constants';
 
 describe('Integration test infrastructure (smoke)', () => {
   it('can connect to the test database', async () => {

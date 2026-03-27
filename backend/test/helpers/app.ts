@@ -7,13 +7,15 @@ import { ResponseInterceptor } from '../../src/shared/interceptors/response.inte
 import { globalValidationPipe } from '../../src/shared/pipes/validation.pipe';
 
 /**
- * Bootstrap a full NestJS test application connected to the real test database.
+ * Creates and initialises a NestJS test application connected to the test DB.
  *
  * Uses the same AppModule, pipes, interceptors, and filters as main.ts so that
  * HTTP response shapes match production exactly. No repositories are mocked.
  *
- * The DATABASE_URL environment variable must already point to the test DB before
- * this function is called (set by global-setup.ts).
+ * DATABASE_URL must be set before calling this (done by global-setup.ts).
+ *
+ * **IMPORTANT**: Callers must call `await closeTestApp(app)` in `afterAll()`
+ * to release the Prisma connection pool, or the Jest process may hang.
  */
 export async function createTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({
@@ -29,4 +31,9 @@ export async function createTestApp(): Promise<INestApplication> {
 
   await app.init();
   return app;
+}
+
+/** Call in afterAll() to close the app and release DB connections. */
+export async function closeTestApp(app: INestApplication): Promise<void> {
+  await app.close();
 }
