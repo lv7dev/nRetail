@@ -52,13 +52,46 @@ Required variables:
 ## Build & Test
 
 ```bash
-npm run build        # compile to dist/
-npm run start:prod   # run compiled output
-npm run lint         # ESLint + Prettier auto-fix
-npm run test         # unit tests (Jest)
-npm run test:e2e     # end-to-end tests
-npm run test:cov     # coverage report
+npm run build             # compile to dist/
+npm run start:prod        # run compiled output
+npm run lint              # ESLint + Prettier auto-fix
+npm run test              # unit tests (Jest)
+npm run test:integration  # integration tests (Jest + real Postgres on port 5433)
+npm run test:e2e          # end-to-end tests
+npm run test:cov          # coverage report
 ```
+
+### TDD Rule — Always Test First
+
+Pure TDD is enforced across all three tiers:
+1. **Write the test** and commit it (RED — test fails because feature doesn't exist yet)
+2. **Write the implementation** and commit it (GREEN — test passes)
+3. **Refactor** if needed (tests stay green)
+
+Never write implementation code before a failing test exists for it.
+
+### Three-Tier Test Structure
+
+| Tier | Files | Runner | What it tests |
+|------|-------|--------|---------------|
+| **Unit** | `__tests__/*.spec.ts` co-located | `npm run test` | Service/controller logic with mocked dependencies |
+| **Integration** | `test/auth/*.integration.spec.ts` | `npm run test:integration` | HTTP endpoints against real Postgres |
+| **E2E** | Playwright in `miniapp/e2e/` | `npx playwright test` | Full user flows from the frontend |
+
+### Integration Test Prerequisites
+
+Integration tests start their own Docker Postgres container on **port 5433** (separate from dev DB on 5434). You need Docker running, but do **not** need to manually start any container — the global setup does it.
+
+```bash
+# Start Docker (if not already running), then:
+npm run test:integration
+```
+
+- **Config**: `test/jest-integration.config.ts`
+- **Global setup**: `test/global-setup.ts` — starts `postgres:15-alpine` on port 5433, creates `test_nretail` DB, runs `prisma migrate deploy`
+- **Global teardown**: `test/global-teardown.ts` — truncates all tables (container stays running for fast re-runs)
+- **App helper**: `test/helpers/app.ts` — `createTestApp()` / `closeTestApp()` for full NestJS app bootstrap
+- **OTP bypass**: Insert a `PhoneConfig` row with `defaultOtp` to bypass real SMS in tests (code `999999` by convention)
 
 ---
 

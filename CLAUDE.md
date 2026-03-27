@@ -106,31 +106,40 @@ bd ready → claim task → /opsx:propose → implement with TDD → /opsx:verif
 
 ```bash
 cd miniapp
-npm install              # Install dependencies
-npm run start            # Dev server (zmp start, localhost:3000)
-npm run test             # Unit/component tests (Vitest)
+npm install                   # Install dependencies
+npm run start                 # Dev server (zmp start, localhost:3000)
+npm run test                  # Unit/component tests (Vitest)
+npm run test:integration      # Integration tests (Vitest + MSW)
 npm run test -- path/to/file.test.tsx  # Run single test file
-npx playwright test      # E2E tests
-npx playwright test --ui # E2E tests with interactive UI
+npx playwright test           # E2E tests (requires backend + Redis)
+npx playwright test --ui      # E2E tests with interactive UI
 ```
 
 ### Backend
 
 ```bash
 cd backend
-npm install              # Install dependencies
-npm run start:dev        # Dev server with hot reload (port 3000)
-npm run build            # Compile to dist/
-npm run lint             # ESLint + Prettier auto-fix
-npm run test             # Unit tests (Jest)
-npm run test:cov         # Tests with coverage
-npm run test:e2e         # End-to-end tests
+npm install                   # Install dependencies
+npm run start:dev             # Dev server with hot reload (port 3000)
+npm run build                 # Compile to dist/
+npm run lint                  # ESLint + Prettier auto-fix
+npm run test                  # Unit tests (Jest)
+npm run test:integration      # Integration tests (Jest + real Docker Postgres on port 5433)
+npm run test:cov              # Tests with coverage
+npm run test:e2e              # End-to-end tests
 ```
 
 ### Quality Gates (run before closing a session)
 
 ```bash
+# Unit tests + lint (fast, always run)
 cd miniapp && npm run test && cd ../backend && npm run test && npm run lint
+
+# Integration tests (requires Docker for backend)
+cd miniapp && npm run test:integration && cd ../backend && npm run test:integration
+
+# E2E tests (requires Docker + Redis + both servers)
+cd miniapp && npx playwright test
 ```
 
 ---
