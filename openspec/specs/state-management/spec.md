@@ -13,8 +13,29 @@ The app SHALL organize Zustand stores into `src/store/use<Domain>Store.ts` files
 
 ---
 
+### Requirement: Auth store shape
+`src/store/useAuthStore.ts` SHALL export a `useAuthStore` hook with the following shape: `user: User | null`, `isReady: boolean`, `setAuth(user: User): void`, `clearAuth(): void`. Token storage is handled by `nativeStorage`, not Zustand — the store holds only the in-memory user object and app-ready flag.
+
+#### Scenario: Auth store exists with correct shape
+- **WHEN** a component imports from `src/store/useAuthStore.ts`
+- **THEN** it SHALL find `user`, `isReady`, `setAuth`, and `clearAuth`
+
+#### Scenario: setAuth updates user in store
+- **WHEN** `setAuth(user)` is called after a successful login or register
+- **THEN** `useAuthStore.user` SHALL be set to the provided user and `isReady` SHALL be `true`
+
+#### Scenario: clearAuth resets store
+- **WHEN** `clearAuth()` is called
+- **THEN** `useAuthStore.user` SHALL be set to `null`
+
+#### Scenario: isReady gates route rendering
+- **WHEN** `isReady` is `false` (during app init rehydration)
+- **THEN** `ProtectedRoute` SHALL not render its children, allowing `AuthProvider` to show `SplashPage`
+
+---
+
 ### Requirement: Initial store files for cart and auth domains
-The structure SHALL ship with initial store files for the two domains needed by the navigation shell: `src/store/useCartStore.ts` (cart item count for badge) and `src/store/useAuthStore.ts` (logged-in user identity).
+The structure SHALL ship with initial store files for the two domains needed by the navigation shell: `src/store/useCartStore.ts` (cart item count for badge) and `src/store/useAuthStore.ts` (logged-in user identity, ready state, and auth actions).
 
 #### Scenario: Cart count store exists
 - **WHEN** a component imports from `src/store/useCartStore.ts`
@@ -22,7 +43,7 @@ The structure SHALL ship with initial store files for the two domains needed by 
 
 #### Scenario: Auth store exists
 - **WHEN** a component imports from `src/store/useAuthStore.ts`
-- **THEN** it SHALL find a `useAuthStore` hook exposing current user (or null) and auth actions
+- **THEN** it SHALL find a `useAuthStore` hook exposing `user`, `isReady`, `setAuth`, and `clearAuth`
 
 ---
 
@@ -36,8 +57,8 @@ All store definitions SHALL use explicit TypeScript interfaces so that consumers
 ---
 
 ### Requirement: No Provider required
-Zustand stores SHALL be importable and usable in any component without wrapping the tree in a Provider. This is the default Zustand behavior and SHALL be preserved (no custom context wrappers).
+Zustand stores SHALL be importable and usable in any component without wrapping the tree in a Provider.
 
 #### Scenario: Using a store in a deeply nested component
-- **WHEN** a component at any depth in the tree calls `useCartStore()`
+- **WHEN** a component at any depth in the tree calls `useAuthStore()`
 - **THEN** it SHALL receive the current state without any Provider in the component tree

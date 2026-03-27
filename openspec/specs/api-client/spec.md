@@ -1,19 +1,19 @@
 ## ADDED Requirements
 
-### Requirement: HTTP client wrapper in `src/services/api.ts`
-The app SHALL provide a typed HTTP client wrapper at `src/services/api.ts` that encapsulates the base URL, default headers, and error handling for all outbound API requests. All feature service modules SHALL use this wrapper exclusively.
+### Requirement: HTTP client wrapper in `src/services/axios.ts`
+The app SHALL provide a typed HTTP client at `src/services/axios.ts` using an Axios instance that encapsulates the base URL, auth header injection, silent token refresh, and error normalization for all outbound API requests. All feature service modules SHALL use this instance exclusively. The previous `src/services/api.ts` (raw `fetch` wrapper) is removed.
 
 #### Scenario: Successful GET request
-- **WHEN** a service calls the HTTP client with a valid path and the server returns 2xx
-- **THEN** the client SHALL return the parsed JSON response typed to the caller's expected type
+- **WHEN** a service calls the Axios instance with a valid path and the server returns 2xx
+- **THEN** the instance SHALL return the parsed response data typed to the caller's expected type
 
 #### Scenario: Non-2xx HTTP response
 - **WHEN** the server returns a 4xx or 5xx status
-- **THEN** the client SHALL throw a typed `ApiError` containing the status code and response body
+- **THEN** the instance SHALL throw a typed `ApiError` containing the status code, message, and backend error code
 
 #### Scenario: Network failure
 - **WHEN** the network is unavailable and the request cannot complete
-- **THEN** the client SHALL propagate an error that callers can handle
+- **THEN** the instance SHALL propagate an error that callers can handle
 
 ---
 
@@ -31,7 +31,7 @@ The HTTP client's base URL SHALL be read from `import.meta.env.VITE_API_BASE_URL
 ---
 
 ### Requirement: Typed ApiError class
-The HTTP client SHALL export an `ApiError` class with `status: number` and `body: unknown` properties so that callers can narrow error handling.
+The HTTP client SHALL export an `ApiError` class with `status: number`, `message: string`, and `code: string | undefined` properties so that callers can narrow error handling.
 
 #### Scenario: Caller catches ApiError
 - **WHEN** a feature service catches an error from the HTTP client
@@ -40,11 +40,11 @@ The HTTP client SHALL export an `ApiError` class with `status: number` and `body
 ---
 
 ### Requirement: Feature service pattern
-Feature-specific API calls SHALL live in `src/services/<domain>Service.ts` files (e.g., `src/services/productService.ts`). This change SHALL only scaffold the directory and the `api.ts` base client; domain service files are added by future changes.
+Feature-specific API calls SHALL live in `src/services/<domain>Service.ts` files (e.g., `src/services/authService.ts`). Domain service files import the Axios instance and export typed async functions.
 
 #### Scenario: Adding a new service
 - **WHEN** a developer adds `src/services/productService.ts`
-- **THEN** it SHALL import from `src/services/api.ts` and export typed async functions (not raw fetch calls)
+- **THEN** it SHALL import the Axios instance from `src/services/axios.ts` and export typed async functions (not raw fetch calls)
 
 ---
 
@@ -53,7 +53,7 @@ All data fetching in components SHALL go through `@tanstack/react-query` hooks. 
 
 #### Scenario: Fetching data in a component
 - **WHEN** a component needs remote data
-- **THEN** it SHALL call a custom hook (e.g., `useProducts()`) that uses `useQuery` internally, not call the service directly
+- **THEN** it SHALL call a custom hook (e.g., `useProducts()`) that uses `useQuery` or `useMutation` internally
 
 #### Scenario: QueryClientProvider at root
 - **WHEN** the app mounts
