@@ -1,21 +1,21 @@
 ## 1. Frontend — MSW Integration Test Infrastructure
 
-- [ ] 1.1 Install `msw` as devDependency in miniapp (`npm install msw --save-dev`)
-- [ ] 1.2 Create `src/mocks/handlers/auth.ts` with MSW handlers for all auth endpoints (`/auth/login`, `/auth/register`, `/auth/otp/register`, `/auth/otp/forgot-password`, `/auth/otp/verify`, `/auth/refresh`, `/auth/logout`, `/auth/reset-password`, `/auth/me`)
-- [ ] 1.3 Create `src/mocks/server.ts` that sets up the MSW Node server with the auth handlers
-- [ ] 1.4 Update `src/setupTests.ts` (or create one) to start the MSW server before all integration tests and reset handlers after each test
-- [ ] 1.5 Add `test:integration` npm script to `miniapp/package.json` using `vitest --run --include "**/*.integration.test.{ts,tsx}"`
-- [ ] 1.6 Update existing `test` npm script to exclude `*.integration.test.tsx` files
+- [x] 1.1 Install `msw` as devDependency in miniapp (`npm install msw --save-dev`)
+- [x] 1.2 Create `src/mocks/handlers/auth.ts` with MSW handlers for all auth endpoints (`/auth/login`, `/auth/register`, `/auth/otp/register`, `/auth/otp/forgot-password`, `/auth/otp/verify`, `/auth/refresh`, `/auth/logout`, `/auth/reset-password`, `/auth/me`)
+- [x] 1.3 Create `src/mocks/server.ts` that sets up the MSW Node server with the auth handlers
+- [x] 1.4 Update `src/setupTests.ts` (or create one) to start the MSW server before all integration tests and reset handlers after each test
+- [x] 1.5 Add `test:integration` npm script to `miniapp/package.json` using `vitest --run --include "**/*.integration.test.{ts,tsx}"`
+- [x] 1.6 Update existing `test` npm script to exclude `*.integration.test.tsx` files
 
 ## 2. Frontend — Axios Interceptor Integration Tests
 
-- [ ] 2.1 Write `src/services/axios.integration.test.ts` — test: Bearer token injected on authenticated request (RED)
-- [ ] 2.2 Write test: silent refresh on 401 from authenticated request (RED)
-- [ ] 2.3 Write test: forced logout when no refresh token (RED)
-- [ ] 2.4 Write test: forced logout when refresh endpoint returns 401 (RED)
-- [ ] 2.5 Write test: concurrent 401s use a single refresh call (RED)
-- [ ] 2.6 Write test: unauthenticated 401 propagates as ApiError without redirect (RED)
-- [ ] 2.7 Verify all axios integration tests pass GREEN (no implementation changes needed — interceptor already handles these)
+- [x] 2.1 Write `src/services/axios.integration.test.ts` — test: Bearer token injected on authenticated request (RED)
+- [x] 2.2 Write test: silent refresh on 401 from authenticated request (RED)
+- [x] 2.3 Write test: forced logout when no refresh token (RED)
+- [x] 2.4 Write test: forced logout when refresh endpoint returns 401 (RED)
+- [x] 2.5 Write test: concurrent 401s use a single refresh call (RED)
+- [x] 2.6 Write test: unauthenticated 401 propagates as ApiError without redirect (RED)
+- [x] 2.7 Verify all axios integration tests pass GREEN (no implementation changes needed — interceptor already handles these)
 
 ## 3. Frontend — Auth Page Integration Tests
 

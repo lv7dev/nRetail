@@ -1,4 +1,3 @@
-import { forwardRef } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -23,15 +22,9 @@ vi.mock('react-i18next', () => ({
 }))
 
 // Mock PasswordInput to avoid dynamic icon imports in jsdom
-vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
-  PasswordInput: forwardRef(({ label, error, ...props }: any, ref: any) => (
-    <div>
-      {label && <label>{label}</label>}
-      <input type="password" data-testid="password-input" ref={ref} {...props} />
-      {error && <span>{error}</span>}
-    </div>
-  )),
-}))
+vi.mock('@/components/ui/PasswordInput/PasswordInput', () =>
+  import('@/mocks/components/PasswordInput.mock')
+)
 
 function createWrapper() {
   const queryClient = new QueryClient({

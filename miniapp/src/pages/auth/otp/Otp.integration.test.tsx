@@ -37,6 +37,9 @@ function createWrapper(initialEntries: Array<string | { pathname: string; state:
 }
 
 const fillOtp = (code: string) => {
+  // getAllByRole('textbox') selects all OTP input boxes.
+  // This assumes OtpPage renders no other textbox elements — true for the current page.
+  // If OtpPage ever adds other inputs, scope this query with { container: otpWrapper }.
   const inputs = screen.getAllByRole('textbox')
   code.split('').forEach((digit, i) => {
     fireEvent.change(inputs[i], { target: { value: digit } })
