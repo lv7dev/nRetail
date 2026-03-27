@@ -78,3 +78,21 @@ export function useCreateProduct() {
 - `queryKey` arrays must be consistent across the domain — define them as constants if used in multiple hooks
 - Side effects (cache invalidation, navigation, token storage) belong in `onSuccess` / `onSettled` — never in the service layer
 - Never call `authService.*` or `apiClient.*` directly in a component — always go through a hook
+
+## Testing Pages That Use Hooks
+
+Pages that call hooks require `QueryClientProvider` in tests. Mock the **service layer** (not the hook module) so real TanStack Query lifecycle runs:
+
+```tsx
+// ✅ preferred — mock the service, keep real hook lifecycle
+vi.mock('@/services/authService', () => ({
+  authService: { login: vi.fn().mockResolvedValue({ accessToken: '...', ... }) },
+}))
+
+// Use only when testing the hook's own behaviour in isolation
+vi.mock('@/hooks/useAuth', () => ({
+  useLogin: () => ({ mutate: vi.fn(), isPending: false }),
+}))
+```
+
+See `src/pages/CLAUDE.md` for the full `QueryClientProvider` wrapper pattern.

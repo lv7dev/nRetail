@@ -42,8 +42,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const config = error.config as RetryableConfig;
 
-    // Silent refresh on 401
-    if (error.response?.status === 401 && !config._retry) {
+    // Silent refresh on 401 — only for authenticated requests (those that carried a Bearer token).
+    // Unauthenticated requests (login, OTP verify, etc.) return 401 for business reasons;
+    // we must propagate the error rather than redirecting the user to login.
+    const wasAuthenticated = !!config.headers?.Authorization;
+    if (error.response?.status === 401 && !config._retry && wasAuthenticated) {
       config._retry = true;
 
       const refreshToken = storage.getRefreshToken();

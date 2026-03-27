@@ -1,7 +1,8 @@
 import { vi } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import OtpPage from './index'
 
 const mockNavigate = vi.fn()
@@ -22,28 +23,42 @@ vi.mock('@/components/ui/OtpInput/OtpInput', () => ({
   ),
 }))
 
-const mockSetUser = vi.fn()
-vi.mock('@/store/useAuthStore', () => ({
-  useAuthStore: (selector: any) => {
-    const store = { user: null, setUser: mockSetUser, clearUser: vi.fn() }
-    return selector ? selector(store) : store
+vi.mock('@/services/authService', () => ({
+  authService: {
+    verifyOtp: vi.fn().mockResolvedValue({ otpToken: 'otp-token-123' }),
+    requestForgotPasswordOtp: vi.fn().mockResolvedValue(undefined),
+    requestRegisterOtp: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
-const renderOtp = (state?: object) =>
-  render(
-    <MemoryRouter initialEntries={[{ pathname: '/otp', state }]}>
-      <Routes>
-        <Route path="/otp" element={<OtpPage />} />
-        <Route path="/login" element={<div>Login</div>} />
-        <Route path="/new-password" element={<div>NewPassword</div>} />
-        <Route path="/" element={<div>Home</div>} />
-      </Routes>
-    </MemoryRouter>
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+}
+
+const renderOtp = (state?: object) => {
+  const Wrapper = createWrapper()
+  return render(
+    <Wrapper>
+      <MemoryRouter initialEntries={[{ pathname: '/otp', state }]}>
+        <Routes>
+          <Route path="/otp" element={<OtpPage />} />
+          <Route path="/login" element={<div>Login</div>} />
+          <Route path="/new-password" element={<div>NewPassword</div>} />
+          <Route path="/register/complete" element={<div>RegisterComplete</div>} />
+          <Route path="/" element={<div>Home</div>} />
+        </Routes>
+      </MemoryRouter>
+    </Wrapper>
+  )
+}
 
 describe('OtpPage', () => {
-  beforeEach(() => { mockNavigate.mockClear(); mockSetUser.mockClear() })
+  beforeEach(() => mockNavigate.mockClear())
 
   it('redirects to login when state is missing', () => {
     renderOtp(undefined)
@@ -59,22 +74,21 @@ describe('OtpPage', () => {
     renderOtp({ flow: 'forgot', phone: '0901234567' })
     await userEvent.click(screen.getByTestId('otp-complete'))
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/new-password', expect.objectContaining({
-      state: expect.objectContaining({ phone: '0901234567' }),
+      state: expect.objectContaining({ phone: '0901234567', otpToken: 'otp-token-123' }),
     })))
   })
 
-  it('sets user and navigates home after OTP for register flow', async () => {
+  it('navigates to register/complete after OTP for register flow', async () => {
     renderOtp({ flow: 'register', phone: '0901234567' })
     await userEvent.click(screen.getByTestId('otp-complete'))
-    await waitFor(() => {
-      expect(mockSetUser).toHaveBeenCalled()
-      expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true })
-    })
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/register/complete', expect.objectContaining({
+      state: expect.objectContaining({ phone: '0901234567', otpToken: 'otp-token-123' }),
+    })))
   })
 
   it('shows resend success alert on resend click', async () => {
     renderOtp({ flow: 'forgot', phone: '0901234567' })
     await userEvent.click(screen.getByText(/otp\.resend/i))
-    expect(screen.getByText('otp.resendSuccess')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('otp.resendSuccess')).toBeInTheDocument())
   })
 })

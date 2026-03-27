@@ -76,3 +76,53 @@ export const loginSchema = (t: (k: string) => string) =>
 - Mock `react-router-dom`'s `useNavigate` to assert navigation
 - Mock `react-i18next` so `t(key)` returns the key — makes assertions language-neutral
 - Mock heavy components (PasswordInput, OtpInput) to avoid dynamic import issues in tests
+
+### QueryClientProvider (required)
+
+Any page that uses a TanStack Query hook must be wrapped with `QueryClientProvider`. Use a fresh `QueryClient` per test (no-retry to avoid hanging on failures):
+
+```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+}
+```
+
+### Mocking services for mutation tests
+
+Mock `@/services/<name>Service` directly — do NOT mock the hook module. This keeps real TanStack Query lifecycle (`isPending`, `isSuccess`, `isError`) intact while preventing real HTTP calls:
+
+```tsx
+vi.mock('@/services/authService', () => ({
+  authService: {
+    requestForgotPasswordOtp: vi.fn().mockResolvedValue(undefined),
+    verifyOtp: vi.fn().mockResolvedValue({ otpToken: 'test-token' }),
+    // include only the methods the component calls
+  },
+}))
+```
+
+After a mutation resolves, TanStack Query sets `isSuccess: true` and triggers a re-render — use `waitFor` when asserting post-mutation state:
+
+```tsx
+await userEvent.click(submitButton)
+await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/otp', expect.anything()))
+```
+
+### Router state pages
+
+Pages that require router state (`/otp`, `/register/complete`, `/new-password`) guard against direct access. Tests must pass the required state:
+
+```tsx
+// ✅ correct — provides required state
+renderNewPwd({ phone: '0901234567', otpToken: 'test-token' })
+
+// ❌ wrong — component redirects, no fields rendered
+renderNewPwd({ phone: '0901234567' })
+```

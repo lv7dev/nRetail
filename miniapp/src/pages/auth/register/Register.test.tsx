@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { forwardRef } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import RegisterPage from './index'
 
 const mockNavigate = vi.fn()
@@ -15,43 +15,44 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'vi', changeLanguage: vi.fn() } }),
 }))
 
-vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
-  PasswordInput: forwardRef(({ label, error, ...props }: any, ref: any) => (
-    <div>
-      {label && <label>{label}</label>}
-      <input type="password" ref={ref} {...props} />
-      {error && <span>{error}</span>}
-    </div>
-  )),
+vi.mock('@/services/authService', () => ({
+  authService: {
+    requestRegisterOtp: vi.fn().mockResolvedValue(undefined),
+  },
 }))
 
-const renderRegister = () => render(<MemoryRouter><RegisterPage /></MemoryRouter>)
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+}
+
+const renderRegister = () => {
+  const Wrapper = createWrapper()
+  return render(<Wrapper><MemoryRouter><RegisterPage /></MemoryRouter></Wrapper>)
+}
 
 describe('RegisterPage', () => {
   beforeEach(() => mockNavigate.mockClear())
 
-  it('renders phone, password, confirm password fields', () => {
+  it('renders phone field and submit button', () => {
     renderRegister()
     expect(document.querySelector('input[type="tel"]')).toBeInTheDocument()
-    expect(document.querySelectorAll('input[type="password"]')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: /register\.submit/i })).toBeInTheDocument()
   })
 
-  it('shows password mismatch error', async () => {
+  it('shows phone validation error on invalid phone', async () => {
     renderRegister()
-    await userEvent.type(document.querySelector('input[type="tel"]')!, '0901234567')
-    const pwdInputs = document.querySelectorAll('input[type="password"]')
-    await userEvent.type(pwdInputs[0], 'pass123')
-    await userEvent.type(pwdInputs[1], 'pass456')
     await userEvent.click(screen.getByRole('button', { name: /register\.submit/i }))
-    await waitFor(() => expect(screen.getByText('validation.passwordMismatch')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('validation.phone')).toBeInTheDocument())
   })
 
   it('navigates to OTP with register flow on valid submit', async () => {
     renderRegister()
     await userEvent.type(document.querySelector('input[type="tel"]')!, '0901234567')
-    const pwdInputs = document.querySelectorAll('input[type="password"]')
-    await userEvent.type(pwdInputs[0], 'pass123')
-    await userEvent.type(pwdInputs[1], 'pass123')
     await userEvent.click(screen.getByRole('button', { name: /register\.submit/i }))
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/otp', expect.objectContaining({
       state: expect.objectContaining({ flow: 'register' }),

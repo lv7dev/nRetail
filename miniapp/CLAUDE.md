@@ -58,7 +58,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │       └── bg.svg                  # Background asset
 ├── index.html                      # HTML entry point (<div id="app">)
 ├── package.json
-├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*
+├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*, types: vite/client + vitest/globals
 ├── vite.config.mts                 # Root: ./src, plugins: react
 ├── tailwind.config.js              # Tailwind configuration
 ├── postcss.config.js               # Tailwind + Autoprefixer
@@ -108,14 +108,17 @@ Automatically attaches the Bearer token from `storage.getAccessToken()` to every
 #### Response Interceptor (Silent Refresh)
 
 On `401` responses:
-1. Reads refresh token from `storage.getRefreshToken()`
-2. If missing → clears tokens, redirects to `/login`
-3. Calls `POST /auth/refresh` via a bare `refreshClient` (no interceptors — avoids loops)
-4. Uses a singleton `refreshPromise` — concurrent 401s wait on the same refresh call
-5. Retries the original request with the new token
-6. If refresh fails → clears tokens, redirects to `/login`
+1. **Checks `Authorization` header presence** — if the original request had no Bearer token (e.g., login, OTP verify), the 401 is a business error, not a session expiry. Rejects immediately with `ApiError` so the caller can display it.
+2. If request was authenticated, reads refresh token from `storage.getRefreshToken()`
+3. If no refresh token → clears tokens, redirects to `/login`
+4. Calls `POST /auth/refresh` via a bare `refreshClient` (no interceptors — avoids loops)
+5. Uses a singleton `refreshPromise` — concurrent 401s wait on the same refresh call
+6. Retries the original request with the new token
+7. If refresh fails → clears tokens, redirects to `/login`
 
 The `_retry` flag on the config prevents a retry loop if the retried request also returns 401.
+
+**Key rule:** Only authenticated requests (those with `Authorization: Bearer <token>`) trigger the refresh/redirect logic. Unauthenticated requests that receive 401 (wrong OTP, bad credentials) propagate the error normally — the page's `onError` handler displays it.
 
 ### Error Handling
 
@@ -344,8 +347,48 @@ npx playwright test --ui  # Run E2E tests with interactive UI
 - **Run single file**: `npx vitest run path/to/file.test.tsx`
 - **Test location**: Co-located as `*.test.tsx` next to source files
 - **TDD**: RED → GREEN → REFACTOR
+- **TypeScript globals**: `globals: true` in `vite.config.mts` makes `describe`/`it`/`expect`/`vi` available at runtime. `"vitest/globals"` in `tsconfig.json` `types` array makes them visible to the type checker and IDE. Do NOT install `@types/jest` — it conflicts with Vitest.
 
-**Mocking TanStack Query mutations:**
+**Wrapping with QueryClientProvider (required for any component using hooks):**
+
+Any component that calls a TanStack Query hook (`useMutation`, `useQuery`) must be rendered inside a `QueryClientProvider`. Create a fresh client per test to avoid state bleed:
+
+```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+}
+
+const renderPage = () => {
+  const Wrapper = createWrapper()
+  return render(<Wrapper><MemoryRouter><MyPage /></MemoryRouter></Wrapper>)
+}
+```
+
+**Mocking the service layer for mutation tests:**
+
+Mock `@/services/authService` (or any service) rather than mocking the hook module. This lets real TanStack Query lifecycle run (`isPending`, `isSuccess`, `isError`) while preventing real HTTP calls:
+
+```tsx
+vi.mock('@/services/authService', () => ({
+  authService: {
+    login: vi.fn().mockResolvedValue({
+      accessToken: 'token', refreshToken: 'refresh',
+      user: { id: '1', phone: '0901234567', name: 'Test', role: 'customer' },
+    }),
+    requestRegisterOtp: vi.fn().mockResolvedValue(undefined),
+    // add only methods called by the component under test
+  },
+}))
+```
+
+**Mocking TanStack Query mutations (alternative — use when testing hook behaviour directly):**
 ```tsx
 // Mock the entire hook module
 vi.mock('@/hooks/useAuth', () => ({

@@ -2,6 +2,7 @@ import { vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ForgotPasswordPage from './index'
 
 const mockNavigate = vi.fn()
@@ -14,7 +15,25 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'vi', changeLanguage: vi.fn() } }),
 }))
 
-const renderFP = () => render(<MemoryRouter><ForgotPasswordPage /></MemoryRouter>)
+vi.mock('@/services/authService', () => ({
+  authService: {
+    requestForgotPasswordOtp: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
+}
+
+const renderFP = () => {
+  const Wrapper = createWrapper()
+  return render(<Wrapper><MemoryRouter><ForgotPasswordPage /></MemoryRouter></Wrapper>)
+}
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => mockNavigate.mockClear())
