@@ -62,13 +62,15 @@ export const authHandlers = [
   }),
 
   // Note: /auth/refresh is called by refreshClient (bare axios, no interceptors).
-  // The code does `.then(({ data }) => storage.setTokens(data.accessToken, data.refreshToken))`
-  // where `data` is the raw Axios response body — so this endpoint must return the token pair
-  // directly (NOT wrapped in { data: ... }).
+  // The backend ResponseInterceptor wraps all responses as { data: T }, so the
+  // refreshClient reads data.data.accessToken (double-wrapped). This handler must
+  // return the same envelope shape.
   http.post("*/auth/refresh", () => {
     return HttpResponse.json({
-      accessToken: "default-new-access-token",
-      refreshToken: "default-new-refresh-token",
+      data: {
+        accessToken: "default-new-access-token",
+        refreshToken: "default-new-refresh-token",
+      },
     });
   }),
 
