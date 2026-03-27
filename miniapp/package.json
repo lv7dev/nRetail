@@ -18,7 +18,8 @@
     "login": "zmp login",
     "start": "zmp start",
     "deploy": "zmp deploy",
-    "test": "vitest",
+    "test": "vitest --exclude='**/*.integration.test.{ts,tsx}'",
+    "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -52,6 +53,7 @@
     "axios-mock-adapter": "^2.1.0",
     "cross-env": "^7.0.3",
     "jsdom": "^29.0.1",
+    "msw": "^2.12.14",
     "playwright": "^1.58.2",
     "postcss": "^8.4.38",
     "postcss-cli": "^8.3.1",
