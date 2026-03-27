@@ -33,7 +33,7 @@ describe('Auth Integration Tests', () => {
     await prisma.phoneConfig.upsert({
       where: { phone: TEST_PHONE },
       create: { phone: TEST_PHONE, defaultOtp: TEST_OTP },
-      update: {},
+      update: { defaultOtp: TEST_OTP },
     });
   });
 
@@ -82,6 +82,7 @@ describe('Auth Integration Tests', () => {
   // 5.3 — POST /auth/register with valid otpToken → 201, user in DB, token pair
   // ---------------------------------------------------------------------------
   it('5.3 POST /auth/register with valid otpToken → 201, user created, returns token pair', async () => {
+    if (!otpToken) throw new Error('Prerequisite: test 5.2 (verifyOtp) must have set otpToken');
     const res = await request(app.getHttpServer())
       .post('/auth/register')
       .send({
@@ -113,6 +114,7 @@ describe('Auth Integration Tests', () => {
   // 5.4 — POST /auth/login with valid credentials → 200 with token pair
   // ---------------------------------------------------------------------------
   it('5.4 POST /auth/login with valid credentials → 200 with token pair', async () => {
+    if (!accessToken) throw new Error('Prerequisite: test 5.3 (register) must have set accessToken');
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
@@ -159,12 +161,12 @@ describe('Auth Integration Tests', () => {
     // New tokens must be different from old ones
     expect(res.body.data.refreshToken).not.toBe(oldRefreshToken);
 
-    // Verify old refresh token is no longer in DB (invalidated via rotation)
-    const oldPrefix = oldRefreshToken.substring(0, 8);
-    const oldTokenInDb = await prisma.refreshToken.findFirst({
-      where: { tokenPrefix: oldPrefix },
-    });
-    expect(oldTokenInDb).toBeNull();
+    // After rotation, verify old token is truly invalidated
+    const replayRes = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: oldRefreshToken });
+    expect(replayRes.status).toBe(401);
+    expect(replayRes.body.code).toBe('REFRESH_TOKEN_INVALID');
 
     // Store new tokens for subsequent tests
     accessToken = res.body.data.accessToken;
@@ -206,6 +208,8 @@ describe('Auth Integration Tests', () => {
     const loginRes = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.data.accessToken).toBeTruthy();
     accessToken = loginRes.body.data.accessToken;
     refreshToken = loginRes.body.data.refreshToken;
   });
@@ -214,6 +218,7 @@ describe('Auth Integration Tests', () => {
   // 5.9 — GET /auth/me with valid Bearer → 200 with user fields
   // ---------------------------------------------------------------------------
   it('5.9 GET /auth/me with valid Bearer → 200 with user fields', async () => {
+    if (!accessToken) throw new Error('Prerequisite: test 5.8 (logout + re-login) must have set accessToken');
     const res = await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)
