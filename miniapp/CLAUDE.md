@@ -63,6 +63,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   └── static/
 │       └── bg.svg                  # Background asset
 ├── e2e/                            # Playwright E2E tests (real backend)
+│   ├── tsconfig.json               # E2E-specific TS config: extends root, adds node + @playwright/test types
 │   ├── fixtures/
 │   │   └── auth.ts                 # seedUser, loginAs, setExpiredAccessToken, fillOtpBoxes, API_BASE
 │   ├── global-setup.ts             # Seeds PhoneConfig for OTP bypass (connects to test DB directly)
@@ -74,7 +75,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │       └── token-refresh.spec.ts
 ├── index.html                      # HTML entry point (<div id="app">)
 ├── package.json
-├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*, types: vite/client + vitest/globals
+├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*, types: vite/client + vitest/globals, include: src only
 ├── vite.config.mts                 # Root: ./src, plugins: react
 ├── vitest.integration.config.ts    # Separate Vitest config for *.integration.test.* files
 ├── tailwind.config.js              # Tailwind configuration
@@ -265,6 +266,8 @@ const schema = (t: TFunction) => z.object({
   phone: z.string().regex(/^0\d{9}$/, t('validation.phone')),
   password: z.string().min(6, t('validation.passwordMin')),
 })
+// NEVER wrap fields in z.preprocess — it changes the inferred input type to `unknown`,
+// breaking the zodResolver type contract with react-hook-form.
 ```
 
 ### Button Loading State
@@ -302,6 +305,7 @@ npm run login            # Authenticate with Zalo (zmp login)
 npm run deploy           # Build & deploy to Zalo (zmp deploy)
 npm run test             # Unit/component tests (Vitest, excludes *.integration.test.*)
 npm run test:integration # Integration tests (Vitest + MSW, includes *.integration.test.*)
+npm run format           # Prettier format: src/**/*.{ts,tsx} + e2e/**/*.ts
 npx playwright test      # E2E tests (requires backend + Redis running)
 npx playwright test --ui # E2E tests with interactive UI
 ```

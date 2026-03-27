@@ -19,6 +19,7 @@ Redis must be running before `npx playwright test` — the backend webServer com
 
 ```
 e2e/
+├── tsconfig.json        # E2E TypeScript config: extends root, adds node + @playwright/test types
 ├── fixtures/
 │   └── auth.ts          # Shared helpers: seedUser, loginAs, setExpiredAccessToken, fillOtpBoxes, API_BASE
 ├── global-setup.ts      # Runs once before all tests: seeds PhoneConfig for OTP bypass
@@ -104,6 +105,16 @@ Each spec file uses a dedicated phone number to prevent cross-test contamination
 ## OTP Bypass
 
 All E2E tests use OTP code `999999`. This works because `global-setup.ts` upserts a `PhoneConfig` row for each test phone number. The backend checks `PhoneConfig.defaultOtp` before validating the real OTP.
+
+## TypeScript Config
+
+E2E files run in Node (not browser) and use Playwright and `pg` APIs. A dedicated `e2e/tsconfig.json` extends the root `tsconfig.json` and adds:
+- `types: ["node", "@playwright/test"]` — Node globals and Playwright test APIs
+- `include: ["./**/*.ts"]` — covers all E2E files
+
+The root `tsconfig.json` includes only `src/` — Node types do **not** leak into browser code.
+
+`global-setup.ts` uses `import { Client } from 'pg'` (ESM import, not `require`).
 
 ## Adding a New E2E Test
 

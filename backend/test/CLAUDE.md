@@ -20,7 +20,8 @@ test/
 ├── global-teardown.ts           # Truncate all tables (container stays running)
 ├── constants.ts                 # TEST_DB_URL, TEST_OTP
 ├── helpers/
-│   └── app.ts                   # createTestApp() / closeTestApp()
+│   ├── app.ts                   # createTestApp() / closeTestApp()
+│   └── response.ts              # parseData<T>() / parseError() — typed response helpers
 └── auth/
     └── auth.integration.spec.ts # Auth endpoint integration tests (10 tests)
 ```
@@ -65,6 +66,28 @@ export async function closeTestApp(app: INestApplication): Promise<void>
 
 Creates a full NestJS app instance with the same global pipes, interceptors, and filters as `main.ts`. Always call `closeTestApp(app)` in `afterAll` to release DB connections.
 
+### `helpers/response.ts`
+
+Typed helpers for parsing supertest response bodies. `supertest`'s `res.body` is typed as `any` — these helpers isolate the unsafe cast in one place so test assertions are fully typed.
+
+```ts
+import { parseData, parseError } from '../helpers/response'
+import type { AuthResponse, OtpVerifyResponse, TokenPairResponse } from '../../src/modules/auth/dto/auth.response'
+import type { UserResponse } from '../../src/modules/auth/dto/user.response'
+
+// Success responses — wrapped in { data: T } by ResponseInterceptor
+const data = parseData<AuthResponse>(res)        // → AuthResponse
+const data = parseData<OtpVerifyResponse>(res)   // → OtpVerifyResponse
+const data = parseData<TokenPairResponse>(res)   // → TokenPairResponse
+const data = parseData<UserResponse>(res)        // → UserResponse
+
+// Error responses — NOT wrapped, direct { statusCode, message, code }
+const err = parseError(res)                      // → ErrorResponse
+expect(err.code).toBe('INVALID_CREDENTIALS')
+```
+
+**Rule**: Never use `res.body.data` or `res.body as SomeType` directly in test files. Always go through `parseData<T>` or `parseError`.
+
 ### `constants.ts`
 
 ```ts
@@ -89,21 +112,22 @@ When a `PhoneConfig` row exists for a phone number, the backend accepts `TEST_OT
 ## Writing a New Integration Test
 
 ```ts
+import { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { createTestApp, closeTestApp } from '../helpers/app'
-import { PrismaClient } from '@prisma/client'
+import { parseData, parseError } from '../helpers/response'
+import { PrismaService } from '../../src/shared/database/prisma.service'
 
 describe('POST /products', () => {
   let app: INestApplication
-  let prisma: PrismaClient
+  let prisma: PrismaService
 
   beforeAll(async () => {
     app = await createTestApp()
-    prisma = new PrismaClient({ datasources: { db: { url: TEST_DB_URL } } })
+    prisma = app.get(PrismaService)
   })
 
   afterAll(async () => {
-    await prisma.$disconnect()
     await closeTestApp(app)
   })
 
@@ -114,7 +138,19 @@ describe('POST /products', () => {
       .send({ name: 'Test', price: 10000 })
       .expect(201)
 
-    expect(res.body.data.name).toBe('Test')
+    // Use parseData<T> — never access res.body.data directly
+    const data = parseData<ProductResponse>(res)
+    expect(data.name).toBe('Test')
+  })
+
+  it('rejects invalid input', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/products')
+      .send({})
+      .expect(400)
+
+    // Use parseError — never access res.body.code directly
+    expect(parseError(res).code).toBeDefined()
   })
 })
 ```

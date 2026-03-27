@@ -55,11 +55,14 @@ Required variables:
 npm run build             # compile to dist/
 npm run start:prod        # run compiled output
 npm run lint              # ESLint + Prettier auto-fix
+npm run format            # Prettier format: src/**/*.ts + test/**/*.ts
 npm run test              # unit tests (Jest)
 npm run test:integration  # integration tests (Jest + real Postgres on port 5433)
 npm run test:e2e          # end-to-end tests
 npm run test:cov          # coverage report
 ```
+
+> **Prettier config**: The shared `.prettierrc` lives at the **monorepo root** (`../`). There is no `backend/.prettierrc` — Prettier resolves up to the root automatically.
 
 ### TDD Rule — Always Test First
 
@@ -91,6 +94,7 @@ npm run test:integration
 - **Global setup**: `test/global-setup.ts` — starts `postgres:15-alpine` on port 5433, creates `test_nretail` DB, runs `prisma migrate deploy`
 - **Global teardown**: `test/global-teardown.ts` — truncates all tables (container stays running for fast re-runs)
 - **App helper**: `test/helpers/app.ts` — `createTestApp()` / `closeTestApp()` for full NestJS app bootstrap
+- **Response helpers**: `test/helpers/response.ts` — `parseData<T>(res)` / `parseError(res)` for typed response assertions (never use `res.body.data` directly)
 - **OTP bypass**: Insert a `PhoneConfig` row with `defaultOtp` to bypass real SMS in tests (code `999999` by convention)
 
 ---

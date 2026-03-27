@@ -151,6 +151,8 @@ cd miniapp && npx playwright test
 ```
 nRetail/
 ├── CLAUDE.md              ← You are here (root project rules)
+├── .prettierrc            ← Shared Prettier config (all apps inherit this)
+├── .prettierignore        ← Prettier ignore rules (node_modules, dist, generated, lock files)
 ├── miniapp/               ← Zalo Mini App (React + Vite)
 │   ├── CLAUDE.md          ← Frontend-specific rules
 │   ├── src/
@@ -197,7 +199,9 @@ nRetail/
 
 ### Code Style
 
-- **Miniapp**: Prettier (via Vite), Tailwind utility classes, default exports for components
+- **Prettier**: Single `.prettierrc` at repo root applies to all files in both apps — no per-app overrides
+- **Ignore**: `.prettierignore` at repo root excludes `node_modules/`, `dist/`, generated files, lock files
+- **Miniapp**: Tailwind utility classes, default exports for components
 - **Backend**: ESLint + Prettier (`npm run lint`), `class-validator` on all DTOs
 - **Path aliases**: `@/*` → `./src/*` (miniapp)
 - **TypeScript**: Strict mode in both apps
