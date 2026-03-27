@@ -7,6 +7,7 @@
  * Run: cd backend && npm run test:integration
  */
 import { INestApplication } from '@nestjs/common';
+import { type Server } from 'http';
 import request from 'supertest';
 import {
   AuthResponse,
@@ -52,7 +53,7 @@ describe('Auth Integration Tests', () => {
   // 5.1 — POST /auth/otp/register with valid phone → 200, OTP record created
   // ---------------------------------------------------------------------------
   it('5.1 POST /auth/otp/register with valid phone → 200 and OTP record in DB', async () => {
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/otp/register')
       .send({ phone: TEST_PHONE })
       .expect(200);
@@ -73,7 +74,7 @@ describe('Auth Integration Tests', () => {
   // 5.2 — POST /auth/otp/verify with valid OTP → 200 with otpToken JWT
   // ---------------------------------------------------------------------------
   it('5.2 POST /auth/otp/verify with valid OTP → 200 with otpToken', async () => {
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/otp/verify')
       .send({ phone: TEST_PHONE, otp: TEST_OTP })
       .expect(200);
@@ -91,7 +92,7 @@ describe('Auth Integration Tests', () => {
   // ---------------------------------------------------------------------------
   it('5.3 POST /auth/register with valid otpToken → 201, user created, returns token pair', async () => {
     if (!otpToken) throw new Error('Prerequisite: test 5.2 (verifyOtp) must have set otpToken');
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/register')
       .send({
         otpToken,
@@ -125,7 +126,7 @@ describe('Auth Integration Tests', () => {
   it('5.4 POST /auth/login with valid credentials → 200 with token pair', async () => {
     if (!accessToken)
       throw new Error('Prerequisite: test 5.3 (register) must have set accessToken');
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
       .expect(200);
@@ -145,7 +146,7 @@ describe('Auth Integration Tests', () => {
   // 5.5 — POST /auth/login with wrong password → 401 with INVALID_CREDENTIALS
   // ---------------------------------------------------------------------------
   it('5.5 POST /auth/login with wrong password → 401 INVALID_CREDENTIALS', async () => {
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: 'wrongpassword' })
       .expect(401);
@@ -159,7 +160,7 @@ describe('Auth Integration Tests', () => {
   it('5.6 POST /auth/refresh with valid refresh token → 200 with new token pair, old token invalidated', async () => {
     const oldRefreshToken = refreshToken;
 
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/refresh')
       .send({ refreshToken: oldRefreshToken })
       .expect(200);
@@ -174,7 +175,7 @@ describe('Auth Integration Tests', () => {
     expect(data.refreshToken).not.toBe(oldRefreshToken);
 
     // After rotation, verify old token is truly invalidated
-    const replayRes = await request(app.getHttpServer())
+    const replayRes = await request(app.getHttpServer() as Server)
       .post('/auth/refresh')
       .send({ refreshToken: oldRefreshToken });
     expect(replayRes.status).toBe(401);
@@ -189,7 +190,7 @@ describe('Auth Integration Tests', () => {
   // 5.7 — POST /auth/refresh with invalid token → 401 REFRESH_TOKEN_INVALID
   // ---------------------------------------------------------------------------
   it('5.7 POST /auth/refresh with invalid token → 401 REFRESH_TOKEN_INVALID', async () => {
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/auth/refresh')
       .send({ refreshToken: 'invalid-token-that-does-not-exist-in-db' })
       .expect(401);
@@ -203,7 +204,7 @@ describe('Auth Integration Tests', () => {
   it('5.8 POST /auth/logout → 204, refresh token removed from DB', async () => {
     const tokenToInvalidate = refreshToken;
 
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as Server)
       .post('/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ refreshToken: tokenToInvalidate })
@@ -217,7 +218,7 @@ describe('Auth Integration Tests', () => {
     expect(tokenInDb).toBeNull();
 
     // Login again to restore tokens for remaining tests
-    const loginRes = await request(app.getHttpServer())
+    const loginRes = await request(app.getHttpServer() as Server)
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD });
     expect(loginRes.status).toBe(200);
@@ -234,7 +235,7 @@ describe('Auth Integration Tests', () => {
   it('5.9 GET /auth/me with valid Bearer → 200 with user fields', async () => {
     if (!accessToken)
       throw new Error('Prerequisite: test 5.8 (logout + re-login) must have set accessToken');
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .get('/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
@@ -255,13 +256,13 @@ describe('Auth Integration Tests', () => {
     const NEW_PASSWORD = 'newpassword456';
 
     // Step 1: Request OTP via forgot-password flow (phone must already exist)
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as Server)
       .post('/auth/otp/forgot-password')
       .send({ phone: TEST_PHONE })
       .expect(200);
 
     // Step 2: Verify OTP → get otpToken for reset
-    const verifyRes = await request(app.getHttpServer())
+    const verifyRes = await request(app.getHttpServer() as Server)
       .post('/auth/otp/verify')
       .send({ phone: TEST_PHONE, otp: TEST_OTP })
       .expect(200);
@@ -270,7 +271,7 @@ describe('Auth Integration Tests', () => {
     expect(resetOtpToken).toBeTruthy();
 
     // Step 3: Reset password with the reset otpToken
-    const resetRes = await request(app.getHttpServer())
+    const resetRes = await request(app.getHttpServer() as Server)
       .post('/auth/reset-password')
       .send({
         otpToken: resetOtpToken,
@@ -285,7 +286,7 @@ describe('Auth Integration Tests', () => {
     // reset-password returns TokenPair only (no user field — differs from register/login)
 
     // Step 4: Verify new password works on login
-    const loginRes = await request(app.getHttpServer())
+    const loginRes = await request(app.getHttpServer() as Server)
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: NEW_PASSWORD })
       .expect(200);
@@ -295,7 +296,7 @@ describe('Auth Integration Tests', () => {
     expect(loginData.user.phone).toBe(TEST_PHONE);
 
     // Step 5: Verify old password no longer works
-    await request(app.getHttpServer())
+    await request(app.getHttpServer() as Server)
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
       .expect(401);

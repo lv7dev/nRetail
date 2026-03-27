@@ -9,7 +9,7 @@ describe('Integration test infrastructure (smoke)', () => {
   it('can connect to the test database', async () => {
     const client = new Client({ connectionString: TEST_DB_URL });
     await client.connect();
-    const res = await client.query('SELECT current_database()');
+    const res = await client.query<{ current_database: string }>('SELECT current_database()');
     await client.end();
     expect(res.rows[0].current_database).toBe('test_nretail');
   });
