@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+**/dist/
+**/build/
+
+# Generated files
+**/generated/
+backend/generated/prisma/
+
+# Coverage
+coverage/
+**/coverage/
+.nyc_output/
+
+# Logs
+*.log
+
+# Package lock files
+package-lock.json
+**/package-lock.json
+
+# OpenSpec / docs
+openspec/
+
+# Beads / Dolt
+.beads/
+.dolt/
+
+# Environment files
+.env
+.env.*
+
+# Misc
+.DS_Store
