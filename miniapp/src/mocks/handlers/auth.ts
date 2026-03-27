@@ -1,7 +1,10 @@
 import { http, HttpResponse } from "msw";
 
+// NOTE: MSW v2 Node server requires absolute URLs or wildcard-origin patterns
+// ("*/path") to match intercepted requests. Relative paths ("/path") are only
+// supported in the browser service-worker mode.
 export const authHandlers = [
-  http.post("/auth/login", () => {
+  http.post("*/auth/login", () => {
     return HttpResponse.json({
       data: {
         accessToken: "default-access-token",
@@ -16,19 +19,19 @@ export const authHandlers = [
     });
   }),
 
-  http.post("/auth/otp/register", () => {
+  http.post("*/auth/otp/register", () => {
     return HttpResponse.json({ data: null });
   }),
 
-  http.post("/auth/otp/forgot-password", () => {
+  http.post("*/auth/otp/forgot-password", () => {
     return HttpResponse.json({ data: null });
   }),
 
-  http.post("/auth/otp/verify", () => {
+  http.post("*/auth/otp/verify", () => {
     return HttpResponse.json({ data: { otpToken: "default-otp-token" } });
   }),
 
-  http.post("/auth/register", () => {
+  http.post("*/auth/register", () => {
     return HttpResponse.json({
       data: {
         accessToken: "default-access-token",
@@ -43,7 +46,7 @@ export const authHandlers = [
     });
   }),
 
-  http.post("/auth/reset-password", () => {
+  http.post("*/auth/reset-password", () => {
     return HttpResponse.json({
       data: {
         accessToken: "default-access-token",
@@ -62,18 +65,18 @@ export const authHandlers = [
   // The code does `.then(({ data }) => storage.setTokens(data.accessToken, data.refreshToken))`
   // where `data` is the raw Axios response body — so this endpoint must return the token pair
   // directly (NOT wrapped in { data: ... }).
-  http.post("/auth/refresh", () => {
+  http.post("*/auth/refresh", () => {
     return HttpResponse.json({
       accessToken: "default-new-access-token",
       refreshToken: "default-new-refresh-token",
     });
   }),
 
-  http.post("/auth/logout", () => {
+  http.post("*/auth/logout", () => {
     return HttpResponse.json({ data: null });
   }),
 
-  http.get("/auth/me", () => {
+  http.get("*/auth/me", () => {
     return HttpResponse.json({
       data: {
         id: "user-1",
