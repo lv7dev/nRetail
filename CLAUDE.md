@@ -201,6 +201,7 @@ nRetail/
 - **Backend**: ESLint + Prettier (`npm run lint`), `class-validator` on all DTOs
 - **Path aliases**: `@/*` → `./src/*` (miniapp)
 - **TypeScript**: Strict mode in both apps
+- **Auto-format**: After using `Edit` or `Write` on any `.ts`, `.tsx`, or `.js` file, run `npx prettier --write <filepath>`
 
 ### Testing
 
