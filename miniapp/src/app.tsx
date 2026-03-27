@@ -21,10 +21,12 @@ import AuthLayout from "@/components/AuthLayout";
 
 // Guards
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import AuthProvider from "@/components/AuthProvider";
 
 // Auth pages
 import LoginPage from "@/pages/auth/login";
 import RegisterPage from "@/pages/auth/register";
+import RegisterCompletePage from "@/pages/auth/register/complete";
 import ForgotPasswordPage from "@/pages/auth/forgot-password";
 import OtpPage from "@/pages/auth/otp";
 import NewPasswordPage from "@/pages/auth/new-password";
@@ -49,11 +51,13 @@ const root = createRoot(document.getElementById("app")!);
 root.render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
+      <AuthProvider>
       <Routes>
         {/* Auth routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/complete" element={<RegisterCompletePage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/otp" element={<OtpPage />} />
           <Route path="/new-password" element={<NewPasswordPage />} />
@@ -70,6 +74,7 @@ root.render(
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );

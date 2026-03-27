@@ -1,0 +1,12 @@
+{
+  "PHONE_ALREADY_EXISTS": "Số điện thoại này đã được đăng ký",
+  "PHONE_NOT_FOUND": "Số điện thoại không tồn tại",
+  "OTP_INVALID": "Mã xác thực không đúng",
+  "OTP_EXPIRED": "Mã xác thực đã hết hạn. Vui lòng yêu cầu mã mới",
+  "OTP_PURPOSE_MISMATCH": "Mã xác thực không hợp lệ cho thao tác này",
+  "INVALID_CREDENTIALS": "Số điện thoại hoặc mật khẩu không đúng",
+  "PASSWORD_MISMATCH": "Mật khẩu không khớp",
+  "REFRESH_TOKEN_INVALID": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại",
+  "RATE_LIMIT_EXCEEDED": "Quá nhiều yêu cầu. Vui lòng đợi và thử lại",
+  "unknown": "Đã xảy ra lỗi. Vui lòng thử lại"
+}

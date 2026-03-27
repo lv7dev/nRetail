@@ -2,42 +2,45 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useState } from 'react'
 import { Input } from '@/components/ui/Input/Input'
 import { PasswordInput } from '@/components/ui/PasswordInput/PasswordInput'
 import { Button } from '@/components/ui/Button/Button'
 import { Alert } from '@/components/ui/Alert/Alert'
 import { loginSchema, type LoginFormData } from './schema'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useLogin } from '@/hooks/useAuth'
+import { resolveApiError } from '@/utils/apiError'
 
 export default function LoginPage() {
   const { t } = useTranslation('auth')
+  const { t: tErrors } = useTranslation('errors')
   const { t: tCommon } = useTranslation('common')
   const navigate = useNavigate()
-  const setUser = useAuthStore((s) => s.setUser)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const loginMutation = useLogin()
 
   const schema = loginSchema(tCommon)
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = async (data: LoginFormData) => {
-    setLoading(true)
-    setError('')
-    // TODO(BE): replace with real API call
-    await new Promise((r) => setTimeout(r, 1000))
-    setUser({ id: '1', name: data.phone })
-    navigate('/', { replace: true })
-    setLoading(false)
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(
+      { phone: data.phone, password: data.password },
+      {
+        onSuccess: () => {
+          navigate('/', { replace: true })
+        },
+      },
+    )
   }
 
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6">
         <h1 className="text-2xl font-bold text-content text-center">{t('login.title')}</h1>
-        <Alert message={error} variant="error" />
+        <Alert
+          message={loginMutation.isError ? resolveApiError(loginMutation.error, tErrors) : ''}
+          variant="error"
+        />
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           <Input
             label={t('login.phone')}
@@ -51,7 +54,7 @@ export default function LoginPage() {
             error={errors.password?.message}
             {...register('password')}
           />
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" loading={loginMutation.isPending}>
             {t('login.submit')}
           </Button>
         </form>

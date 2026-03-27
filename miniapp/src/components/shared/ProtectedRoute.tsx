@@ -1,14 +1,18 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '@/store/useAuthStore';
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const ProtectedRoute = () => {
-  const user = useAuthStore((s) => s.user);
+  const { user, isReady } = useAuthStore()
 
-  if (user === null) {
-    return <Navigate to="/login" replace />;
+  if (!isReady) {
+    return null
   }
 
-  return <Outlet />;
-};
+  if (user === null) {
+    return <Navigate to="/login" replace />
+  }
 
-export default ProtectedRoute;
+  return <Outlet />
+}
+
+export default ProtectedRoute

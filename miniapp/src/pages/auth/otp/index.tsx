@@ -3,40 +3,51 @@ import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { OtpInput } from '@/components/ui/OtpInput/OtpInput'
 import { Alert } from '@/components/ui/Alert/Alert'
-import { Button } from '@/components/ui/Button/Button'
-import { useAuthStore } from '@/store/useAuthStore'
+import { useVerifyOtp, useRequestOtp } from '@/hooks/useAuth'
+import { resolveApiError } from '@/utils/apiError'
 
 type OtpState = { flow: 'register' | 'forgot'; phone: string }
 
 export default function OtpPage() {
   const { t } = useTranslation('auth')
+  const { t: tErrors } = useTranslation('errors')
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as OtpState | null
-  const setUser = useAuthStore((s) => s.setUser)
-  const [resent, setResent] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const verifyOtpMutation = useVerifyOtp()
+  const resendMutation = useRequestOtp(state?.flow ?? 'register')
 
   if (!state?.flow || !state?.phone) {
     return <Navigate to="/login" replace />
   }
 
-  const handleComplete = async (code: string) => {
-    setLoading(true)
-    // TODO(BE): replace with real OTP verification API call
-    await new Promise((r) => setTimeout(r, 1000))
-    if (state.flow === 'forgot') {
-      navigate('/new-password', { state: { phone: state.phone } })
-    } else {
-      setUser({ id: '1', name: state.phone })
-      navigate('/', { replace: true })
-    }
-    setLoading(false)
+  const handleComplete = (code: string) => {
+    setError('')
+    verifyOtpMutation.mutate(
+      { phone: state.phone, otp: code },
+      {
+        onSuccess: (data) => {
+          if (state.flow === 'register') {
+            navigate('/register/complete', {
+              state: { phone: state.phone, otpToken: data.otpToken },
+            })
+          } else {
+            navigate('/new-password', {
+              state: { phone: state.phone, otpToken: data.otpToken },
+            })
+          }
+        },
+        onError: (err) => {
+          setError(resolveApiError(err, tErrors))
+        },
+      },
+    )
   }
 
   const handleResend = () => {
-    // TODO(BE): replace with real resend OTP API call
-    setResent(true)
+    resendMutation.mutate(state.phone)
   }
 
   return (
@@ -47,15 +58,20 @@ export default function OtpPage() {
         <p className="text-sm text-content-muted">
           {t('otp.codeSentTo')} <span className="font-medium text-content">{state.phone}</span>
         </p>
-        {resent && <Alert variant="success" message={t('otp.resendSuccess')} />}
+        {resendMutation.isSuccess && <Alert variant="success" message={t('otp.resendSuccess')} />}
+        {resendMutation.isError && (
+          <Alert variant="error" message={resolveApiError(resendMutation.error, tErrors)} />
+        )}
+        {error && <Alert variant="error" message={error} />}
         <OtpInput onComplete={handleComplete} className="justify-center" />
-        {loading && <p className="text-sm text-content-muted">...</p>}
+        {verifyOtpMutation.isPending && <p className="text-sm text-content-muted">...</p>}
         <button
           type="button"
           onClick={handleResend}
-          className="text-sm text-primary hover:underline"
+          disabled={resendMutation.isPending}
+          className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {t('otp.resend')}
+          {resendMutation.isPending ? t('otp.resending') : t('otp.resend')}
         </button>
       </div>
     </div>

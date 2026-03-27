@@ -1,0 +1,12 @@
+{
+  "PHONE_ALREADY_EXISTS": "This phone number is already registered",
+  "PHONE_NOT_FOUND": "Phone number not found",
+  "OTP_INVALID": "Invalid or incorrect verification code",
+  "OTP_EXPIRED": "Verification code has expired. Please request a new one",
+  "OTP_PURPOSE_MISMATCH": "Verification code is not valid for this action",
+  "INVALID_CREDENTIALS": "Incorrect phone number or password",
+  "PASSWORD_MISMATCH": "Passwords do not match",
+  "REFRESH_TOKEN_INVALID": "Your session has expired. Please log in again",
+  "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait and try again",
+  "unknown": "Something went wrong. Please try again"
+}

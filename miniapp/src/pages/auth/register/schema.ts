@@ -1,8 +1,15 @@
 import { z } from 'zod'
 
-export const registerSchema = (t: (k: string) => string) =>
+export const phoneSchema = (t: (k: string) => string) =>
   z.object({
     phone: z.preprocess((v) => v ?? '', z.string().regex(/^0[0-9]{9}$/, t('validation.phone'))),
+  })
+
+export type PhoneFormData = z.infer<ReturnType<typeof phoneSchema>>
+
+export const registerCompleteSchema = (t: (k: string) => string) =>
+  z.object({
+    name: z.preprocess((v) => v ?? '', z.string().min(1, t('validation.required'))),
     password: z.preprocess((v) => v ?? '', z.string().min(6, t('validation.passwordMin'))),
     confirmPassword: z.preprocess((v) => v ?? '', z.string()),
   }).refine((d) => d.password === d.confirmPassword, {
@@ -10,4 +17,4 @@ export const registerSchema = (t: (k: string) => string) =>
     path: ['confirmPassword'],
   })
 
-export type RegisterFormData = z.infer<ReturnType<typeof registerSchema>>
+export type RegisterCompleteFormData = z.infer<ReturnType<typeof registerCompleteSchema>>
