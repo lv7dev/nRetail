@@ -38,9 +38,7 @@ async function createDatabase(): Promise<void> {
   const client = new Client({ connectionString: adminUrl });
   await client.connect();
   try {
-    const res = await client.query(
-      `SELECT 1 FROM pg_database WHERE datname = 'test_nretail'`,
-    );
+    const res = await client.query(`SELECT 1 FROM pg_database WHERE datname = 'test_nretail'`);
     if (res.rowCount === 0) {
       await client.query('CREATE DATABASE test_nretail');
       console.log('[global-setup] Created database test_nretail');
@@ -57,9 +55,7 @@ export default async function globalSetup(): Promise<void> {
 
   // Step 1: Start Docker container if not already running
   if (isContainerRunning()) {
-    console.log(
-      '[global-setup] Container nretail-test-db is already running — reusing it',
-    );
+    console.log('[global-setup] Container nretail-test-db is already running — reusing it');
   } else {
     console.log('[global-setup] Starting Docker Postgres container...');
     try {
@@ -77,17 +73,13 @@ export default async function globalSetup(): Promise<void> {
       );
       console.log('[global-setup] Container started');
     } catch (err) {
-      throw new Error(
-        `Failed to start Docker Postgres container: ${String(err)}`,
-      );
+      throw new Error(`Failed to start Docker Postgres container: ${String(err)}`);
     }
   }
 
   // Step 2: Wait for Postgres to be ready (connect to postgres default DB)
   console.log('[global-setup] Waiting for Postgres to be ready...');
-  await waitForPostgres(
-    'postgresql://postgres:postgres@localhost:5433/postgres',
-  );
+  await waitForPostgres('postgresql://postgres:postgres@localhost:5433/postgres');
   console.log('[global-setup] Postgres is ready');
 
   // Step 3: Create test_nretail database if it doesn't exist

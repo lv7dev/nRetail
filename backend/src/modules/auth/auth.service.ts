@@ -133,10 +133,7 @@ export class AuthService {
     return { ...tokens, user };
   }
 
-  async login(
-    phone: string,
-    password: string,
-  ): Promise<TokenPair & { user: UserRecord }> {
+  async login(phone: string, password: string): Promise<TokenPair & { user: UserRecord }> {
     const user = await this.usersService.findByPhone(phone);
     if (!user || !user.password) {
       throw new UnauthorizedException({
@@ -179,18 +176,14 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(
-      newPassword,
-      PASSWORD_BCRYPT_ROUNDS,
-    );
+    const hashedPassword = await bcrypt.hash(newPassword, PASSWORD_BCRYPT_ROUNDS);
     await this.usersService.updatePassword(user.id, hashedPassword);
 
     return this.issueTokens(user);
   }
 
   async refresh(rawRefreshToken: string): Promise<TokenPair> {
-    const token =
-      await this.refreshTokenRepository.findAndDelete(rawRefreshToken);
+    const token = await this.refreshTokenRepository.findAndDelete(rawRefreshToken);
 
     if (!token) {
       throw new UnauthorizedException({
@@ -253,9 +246,7 @@ export class AuthService {
     });
 
     await this.refreshTokenRepository.deleteExpiredByUserId(user.id);
-    const activeCount = await this.refreshTokenRepository.countActiveByUserId(
-      user.id,
-    );
+    const activeCount = await this.refreshTokenRepository.countActiveByUserId(user.id);
     if (activeCount >= MAX_SESSIONS_PER_USER) {
       await this.refreshTokenRepository.deleteOldestByUserId(user.id);
     }

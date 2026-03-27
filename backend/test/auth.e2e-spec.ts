@@ -153,11 +153,7 @@ describe('Auth (integration)', () => {
         .send({ phone: TEST_PHONE })
         .expect(200);
 
-      expect(mockOtpRepo.create).toHaveBeenCalledWith(
-        TEST_PHONE,
-        '999999',
-        'register',
-      );
+      expect(mockOtpRepo.create).toHaveBeenCalledWith(TEST_PHONE, '999999', 'register');
 
       // Step 2: Verify OTP
       mockOtpRepo.findByPhone.mockResolvedValue({
@@ -232,11 +228,7 @@ describe('Auth (integration)', () => {
         .send({ phone: TEST_PHONE })
         .expect(200);
 
-      expect(mockOtpRepo.create).toHaveBeenCalledWith(
-        TEST_PHONE,
-        '999999',
-        'reset',
-      );
+      expect(mockOtpRepo.create).toHaveBeenCalledWith(TEST_PHONE, '999999', 'reset');
 
       // Step 2: Verify OTP
       mockOtpRepo.findByPhone.mockResolvedValue({
@@ -416,10 +408,7 @@ describe('Auth (integration)', () => {
     });
 
     it('returns field-level errors when required fields are missing on login', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({})
-        .expect(400);
+      const res = await request(app.getHttpServer()).post('/auth/login').send({}).expect(400);
 
       const body = res.body as ErrorBody;
       expect(body.message).toBe('Validation failed');
@@ -512,9 +501,7 @@ describe('Auth (integration)', () => {
         .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
         .expect(200);
 
-      expect(mockRefreshTokenRepo.deleteOldestByUserId).toHaveBeenCalledWith(
-        'user-1',
-      );
+      expect(mockRefreshTokenRepo.deleteOldestByUserId).toHaveBeenCalledWith('user-1');
     });
 
     it('does not evict when user has fewer than 5 active sessions', async () => {

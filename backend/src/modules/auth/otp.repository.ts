@@ -17,9 +17,7 @@ export class OtpRepository {
   }
 
   deleteByPhone(phone: string): Promise<void> {
-    return this.prisma.otpVerification
-      .deleteMany({ where: { phone } })
-      .then(() => undefined);
+    return this.prisma.otpVerification.deleteMany({ where: { phone } }).then(() => undefined);
   }
 
   async create(phone: string, otp: string, purpose: string): Promise<void> {

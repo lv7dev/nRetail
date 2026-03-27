@@ -1,17 +1,15 @@
-import axios from "axios";
-import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
-import { ApiError } from "@/utils/apiError";
-import { storage } from "@/utils/storage";
+import axios from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { ApiError } from '@/utils/apiError';
+import { storage } from '@/utils/storage';
 
 if (import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL) {
-  console.warn(
-    "[axios] VITE_API_BASE_URL is not set – requests will use relative paths",
-  );
+  console.warn('[axios] VITE_API_BASE_URL is not set – requests will use relative paths');
 }
 
 // Bare instance used only for token refresh — no interceptors to avoid loops
 const refreshClient: AxiosInstance = axios.create({
-  baseURL: (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "",
+  baseURL: (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '',
 });
 
 // Singleton refresh promise — prevents concurrent refresh calls
@@ -23,8 +21,8 @@ interface RetryableConfig extends InternalAxiosRequestConfig {
 }
 
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "",
-  headers: { "Content-Type": "application/json" },
+  baseURL: (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '',
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // ─── Request interceptor: inject Bearer token ───────────────────────────────
@@ -60,10 +58,9 @@ apiClient.interceptors.response.use(
           refreshPromise = refreshClient
             // The backend ResponseInterceptor wraps all responses as { data: T },
             // so the actual token pair is at response.data.data (not response.data).
-            .post<{ data: { accessToken: string; refreshToken: string } }>(
-              "/auth/refresh",
-              { refreshToken },
-            )
+            .post<{ data: { accessToken: string; refreshToken: string } }>('/auth/refresh', {
+              refreshToken,
+            })
             .then(({ data }) => {
               storage.setTokens(data.data.accessToken, data.data.refreshToken);
             })
@@ -88,20 +85,18 @@ apiClient.interceptors.response.use(
 
 function handleAuthFailure(): void {
   storage.clearTokens();
-  window.location.replace("/login");
+  window.location.replace('/login');
 }
 
 function normalizeError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status ?? 0;
-    const body = error.response?.data as
-      | { message?: string; code?: string }
-      | undefined;
-    const message = body?.message ?? error.message ?? "Unknown error";
+    const body = error.response?.data as { message?: string; code?: string } | undefined;
+    const message = body?.message ?? error.message ?? 'Unknown error';
     const code = body?.code;
     return new ApiError(status, message, code);
   }
-  return new ApiError(0, "Network error");
+  return new ApiError(0, 'Network error');
 }
 
 // ─── Typed helpers (mirrors old api.ts surface) ──────────────────────────────

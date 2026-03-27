@@ -1,30 +1,30 @@
-import { useLocation, useNavigate, Navigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { useState } from 'react'
-import { OtpInput } from '@/components/ui/OtpInput/OtpInput'
-import { Alert } from '@/components/ui/Alert/Alert'
-import { useVerifyOtp, useRequestOtp } from '@/hooks/useAuth'
-import { resolveApiError } from '@/utils/apiError'
+import { useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import { OtpInput } from '@/components/ui/OtpInput/OtpInput';
+import { Alert } from '@/components/ui/Alert/Alert';
+import { useVerifyOtp, useRequestOtp } from '@/hooks/useAuth';
+import { resolveApiError } from '@/utils/apiError';
 
-type OtpState = { flow: 'register' | 'forgot'; phone: string }
+type OtpState = { flow: 'register' | 'forgot'; phone: string };
 
 export default function OtpPage() {
-  const { t } = useTranslation('auth')
-  const { t: tErrors } = useTranslation('errors')
-  const navigate = useNavigate()
-  const location = useLocation()
-  const state = location.state as OtpState | null
-  const [error, setError] = useState('')
+  const { t } = useTranslation('auth');
+  const { t: tErrors } = useTranslation('errors');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as OtpState | null;
+  const [error, setError] = useState('');
 
-  const verifyOtpMutation = useVerifyOtp()
-  const resendMutation = useRequestOtp(state?.flow ?? 'register')
+  const verifyOtpMutation = useVerifyOtp();
+  const resendMutation = useRequestOtp(state?.flow ?? 'register');
 
   if (!state?.flow || !state?.phone) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
   const handleComplete = (code: string) => {
-    setError('')
+    setError('');
     verifyOtpMutation.mutate(
       { phone: state.phone, otp: code },
       {
@@ -32,23 +32,23 @@ export default function OtpPage() {
           if (state.flow === 'register') {
             navigate('/register/complete', {
               state: { phone: state.phone, otpToken: data.otpToken },
-            })
+            });
           } else {
             navigate('/new-password', {
               state: { phone: state.phone, otpToken: data.otpToken },
-            })
+            });
           }
         },
         onError: (err) => {
-          setError(resolveApiError(err, tErrors))
+          setError(resolveApiError(err, tErrors));
         },
       },
-    )
-  }
+    );
+  };
 
   const handleResend = () => {
-    resendMutation.mutate(state.phone)
-  }
+    resendMutation.mutate(state.phone);
+  };
 
   return (
     <div className="flex flex-1 items-center justify-center p-6">
@@ -75,5 +75,5 @@ export default function OtpPage() {
         </button>
       </div>
     </div>
-  )
+  );
 }

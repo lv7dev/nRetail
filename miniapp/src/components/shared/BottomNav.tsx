@@ -16,11 +16,13 @@ export default function BottomNav() {
   const cartCount = useCartStore(cartItemCount);
 
   return (
-    <nav className="fixed left-0 right-0 flex bg-surface border-t border-border z-50" style={{ bottom: 'var(--zaui-safe-area-inset-bottom, 0px)' }}>
+    <nav
+      className="fixed left-0 right-0 flex bg-surface border-t border-border z-50"
+      style={{ bottom: 'var(--zaui-safe-area-inset-bottom, 0px)' }}
+    >
       {tabs.map((tab) => {
-        const isActive = tab.path === '/'
-          ? location.pathname === '/'
-          : location.pathname.startsWith(tab.path);
+        const isActive =
+          tab.path === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.path);
         return (
           <button
             key={tab.path}

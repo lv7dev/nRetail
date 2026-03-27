@@ -16,10 +16,7 @@ async function bootstrap() {
 
   // Global pipeline
   app.useGlobalPipes(globalValidationPipe);
-  app.useGlobalInterceptors(
-    new ResponseInterceptor(),
-    new LoggingInterceptor(),
-  );
+  app.useGlobalInterceptors(new ResponseInterceptor(), new LoggingInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // CORS

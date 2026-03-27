@@ -100,11 +100,7 @@ describe('AuthService', () => {
 
       await service.requestRegisterOtp('+84909999999');
 
-      expect(mockOtpRepository.create).toHaveBeenCalledWith(
-        '+84909999999',
-        '999999',
-        'register',
-      );
+      expect(mockOtpRepository.create).toHaveBeenCalledWith('+84909999999', '999999', 'register');
     });
 
     it('throws ConflictException with code PHONE_ALREADY_EXISTS when phone already registered', async () => {
@@ -129,11 +125,7 @@ describe('AuthService', () => {
 
       await service.requestRegisterOtp('+84909999999');
 
-      expect(mockOtpRepository.create).toHaveBeenCalledWith(
-        '+84909999999',
-        '111111',
-        'register',
-      );
+      expect(mockOtpRepository.create).toHaveBeenCalledWith('+84909999999', '111111', 'register');
     });
 
     it('deletes previous OTP before creating a new one', async () => {
@@ -144,8 +136,7 @@ describe('AuthService', () => {
 
       await service.requestRegisterOtp('+84909999999');
 
-      const deleteOrder =
-        mockOtpRepository.deleteByPhone.mock.invocationCallOrder[0];
+      const deleteOrder = mockOtpRepository.deleteByPhone.mock.invocationCallOrder[0];
       const createOrder = mockOtpRepository.create.mock.invocationCallOrder[0];
       expect(deleteOrder).toBeLessThan(createOrder);
     });
@@ -160,11 +151,7 @@ describe('AuthService', () => {
 
       await service.requestForgotPasswordOtp('+84901234567');
 
-      expect(mockOtpRepository.create).toHaveBeenCalledWith(
-        '+84901234567',
-        '999999',
-        'reset',
-      );
+      expect(mockOtpRepository.create).toHaveBeenCalledWith('+84901234567', '999999', 'reset');
     });
 
     it('throws NotFoundException with code PHONE_NOT_FOUND when phone has no associated user', async () => {
@@ -189,11 +176,7 @@ describe('AuthService', () => {
 
       await service.requestForgotPasswordOtp('+84901234567');
 
-      expect(mockOtpRepository.create).toHaveBeenCalledWith(
-        '+84901234567',
-        '111111',
-        'reset',
-      );
+      expect(mockOtpRepository.create).toHaveBeenCalledWith('+84901234567', '111111', 'reset');
     });
   });
 
@@ -361,12 +344,7 @@ describe('AuthService', () => {
       mockRefreshTokenRepository.create.mockResolvedValue(undefined);
       mockJwtService.signAsync.mockResolvedValue('access-token');
 
-      await service.register(
-        'valid-otp-token',
-        'Test User',
-        'password123',
-        'password123',
-      );
+      await service.register('valid-otp-token', 'Test User', 'password123', 'password123');
 
       const createCall = (
         mockUsersService.create.mock.calls as Array<[{ password: string }]>
@@ -487,11 +465,7 @@ describe('AuthService', () => {
       mockRefreshTokenRepository.create.mockResolvedValue(undefined);
       mockJwtService.signAsync.mockResolvedValue('access-token');
 
-      const result = await service.resetPassword(
-        'valid-otp-token',
-        'newpass123',
-        'newpass123',
-      );
+      const result = await service.resetPassword('valid-otp-token', 'newpass123', 'newpass123');
 
       expect(mockUsersService.updatePassword).toHaveBeenCalledWith(
         'user-1',
@@ -587,9 +561,7 @@ describe('AuthService', () => {
 
       await service.logout('raw-refresh-token');
 
-      expect(mockRefreshTokenRepository.findAndDelete).toHaveBeenCalledWith(
-        'raw-refresh-token',
-      );
+      expect(mockRefreshTokenRepository.findAndDelete).toHaveBeenCalledWith('raw-refresh-token');
     });
 
     it('returns gracefully when refresh token not found', async () => {
@@ -601,12 +573,8 @@ describe('AuthService', () => {
 
   describe('issueTokens — session cap', () => {
     beforeEach(() => {
-      mockRefreshTokenRepository.deleteExpiredByUserId.mockResolvedValue(
-        undefined,
-      );
-      mockRefreshTokenRepository.deleteOldestByUserId.mockResolvedValue(
-        undefined,
-      );
+      mockRefreshTokenRepository.deleteExpiredByUserId.mockResolvedValue(undefined);
+      mockRefreshTokenRepository.deleteOldestByUserId.mockResolvedValue(undefined);
       mockRefreshTokenRepository.create.mockResolvedValue('new-token');
       mockJwtService.signAsync.mockResolvedValue('access-token');
     });
@@ -618,9 +586,7 @@ describe('AuthService', () => {
 
       await service.login('+84901234567', 'password123');
 
-      expect(
-        mockRefreshTokenRepository.deleteOldestByUserId,
-      ).not.toHaveBeenCalled();
+      expect(mockRefreshTokenRepository.deleteOldestByUserId).not.toHaveBeenCalled();
       expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
     });
 
@@ -631,9 +597,7 @@ describe('AuthService', () => {
 
       await service.login('+84901234567', 'password123');
 
-      expect(
-        mockRefreshTokenRepository.deleteOldestByUserId,
-      ).toHaveBeenCalledWith('user-1');
+      expect(mockRefreshTokenRepository.deleteOldestByUserId).toHaveBeenCalledWith('user-1');
       expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
     });
 
@@ -645,12 +609,8 @@ describe('AuthService', () => {
 
       await service.login('+84901234567', 'password123');
 
-      expect(
-        mockRefreshTokenRepository.deleteExpiredByUserId,
-      ).toHaveBeenCalledWith('user-1');
-      expect(
-        mockRefreshTokenRepository.deleteOldestByUserId,
-      ).not.toHaveBeenCalled();
+      expect(mockRefreshTokenRepository.deleteExpiredByUserId).toHaveBeenCalledWith('user-1');
+      expect(mockRefreshTokenRepository.deleteOldestByUserId).not.toHaveBeenCalled();
       expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
     });
   });

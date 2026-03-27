@@ -1,11 +1,11 @@
-import { nativeStorage } from 'zmp-sdk'
+import { nativeStorage } from 'zmp-sdk';
 
-const ACCESS_TOKEN_KEY = 'accessToken'
-const REFRESH_TOKEN_KEY = 'refreshToken'
+const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 // window.APP_ID is set by the Zalo container before the mini app boots.
 // It is undefined in browser dev and test environments.
-const isZalo = typeof window !== 'undefined' && !!(window as any).APP_ID
+const isZalo = typeof window !== 'undefined' && !!(window as any).APP_ID;
 
 const store = {
   getItem: (key: string): string | null =>
@@ -14,21 +14,21 @@ const store = {
     isZalo ? nativeStorage.setItem(key, value) : localStorage.setItem(key, value),
   removeItem: (key: string): void =>
     isZalo ? nativeStorage.removeItem(key) : localStorage.removeItem(key),
-}
+};
 
 export const storage = {
   getAccessToken(): string | null {
-    return store.getItem(ACCESS_TOKEN_KEY)
+    return store.getItem(ACCESS_TOKEN_KEY);
   },
   getRefreshToken(): string | null {
-    return store.getItem(REFRESH_TOKEN_KEY)
+    return store.getItem(REFRESH_TOKEN_KEY);
   },
   setTokens(accessToken: string, refreshToken: string): void {
-    store.setItem(ACCESS_TOKEN_KEY, accessToken)
-    store.setItem(REFRESH_TOKEN_KEY, refreshToken)
+    store.setItem(ACCESS_TOKEN_KEY, accessToken);
+    store.setItem(REFRESH_TOKEN_KEY, refreshToken);
   },
   clearTokens(): void {
-    store.removeItem(ACCESS_TOKEN_KEY)
-    store.removeItem(REFRESH_TOKEN_KEY)
+    store.removeItem(ACCESS_TOKEN_KEY);
+    store.removeItem(REFRESH_TOKEN_KEY);
   },
-}
+};

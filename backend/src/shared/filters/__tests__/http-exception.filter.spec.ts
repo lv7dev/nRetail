@@ -143,10 +143,7 @@ describe('AllExceptionsFilter', () => {
     filter.catch(exception, host);
 
     expect(status).toHaveBeenCalledWith(401);
-    const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<
-      string,
-      unknown
-    >;
+    const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<string, unknown>;
     expect(body.message).toBe('Invalid credentials');
     expect(body).not.toHaveProperty('code');
   });

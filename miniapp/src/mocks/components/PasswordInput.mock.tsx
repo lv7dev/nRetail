@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef } from 'react';
 
 // Minimal PasswordInput mock for jsdom integration tests.
 // The real component imports SVG icons dynamically which fail in jsdom.
@@ -9,7 +9,7 @@ const MockPasswordInput = forwardRef(({ label, error, ...props }: any, ref: any)
     <input type="password" data-testid="password-input" ref={ref} {...props} />
     {error && <span>{error}</span>}
   </div>
-))
-MockPasswordInput.displayName = 'PasswordInput'
+));
+MockPasswordInput.displayName = 'PasswordInput';
 
-export { MockPasswordInput as PasswordInput }
+export { MockPasswordInput as PasswordInput };

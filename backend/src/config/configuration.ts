@@ -5,9 +5,7 @@ export const configuration = () => {
 
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
-    throw new Error(
-      `Invalid environment configuration:\n${JSON.stringify(errors, null, 2)}`,
-    );
+    throw new Error(`Invalid environment configuration:\n${JSON.stringify(errors, null, 2)}`);
   }
 
   return parsed.data;

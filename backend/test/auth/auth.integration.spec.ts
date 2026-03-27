@@ -114,7 +114,8 @@ describe('Auth Integration Tests', () => {
   // 5.4 — POST /auth/login with valid credentials → 200 with token pair
   // ---------------------------------------------------------------------------
   it('5.4 POST /auth/login with valid credentials → 200 with token pair', async () => {
-    if (!accessToken) throw new Error('Prerequisite: test 5.3 (register) must have set accessToken');
+    if (!accessToken)
+      throw new Error('Prerequisite: test 5.3 (register) must have set accessToken');
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
@@ -218,7 +219,8 @@ describe('Auth Integration Tests', () => {
   // 5.9 — GET /auth/me with valid Bearer → 200 with user fields
   // ---------------------------------------------------------------------------
   it('5.9 GET /auth/me with valid Bearer → 200 with user fields', async () => {
-    if (!accessToken) throw new Error('Prerequisite: test 5.8 (logout + re-login) must have set accessToken');
+    if (!accessToken)
+      throw new Error('Prerequisite: test 5.8 (logout + re-login) must have set accessToken');
     const res = await request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', `Bearer ${accessToken}`)

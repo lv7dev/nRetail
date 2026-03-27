@@ -1,15 +1,15 @@
-import { forwardRef, InputHTMLAttributes, useState } from 'react'
-import { cn } from '@/utils/cn'
-import { Icon } from '@/components/ui/Icon/Icon'
+import { forwardRef, InputHTMLAttributes, useState } from 'react';
+import { cn } from '@/utils/cn';
+import { Icon } from '@/components/ui/Icon/Icon';
 
 export interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label?: string
-  error?: string
+  label?: string;
+  error?: string;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ label, error, id, className, ...props }, ref) => {
-    const [visible, setVisible] = useState(false)
+    const [visible, setVisible] = useState(false);
 
     return (
       <div className="flex flex-col gap-1">
@@ -45,8 +45,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-    )
-  }
-)
+    );
+  },
+);
 
-PasswordInput.displayName = 'PasswordInput'
+PasswordInput.displayName = 'PasswordInput';

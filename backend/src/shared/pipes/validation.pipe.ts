@@ -8,9 +8,7 @@ export const globalValidationPipe = new ValidationPipe({
   transform: true,
   exceptionFactory(errors: ValidationError[]) {
     const errorItems = errors.map((err) => {
-      const constraintKey = err.constraints
-        ? Object.keys(err.constraints)[0]
-        : 'unknown';
+      const constraintKey = err.constraints ? Object.keys(err.constraints)[0] : 'unknown';
       const constraintMessage = err.constraints?.[constraintKey] ?? '';
       const params = extractConstraintParams(err, constraintKey);
       return {

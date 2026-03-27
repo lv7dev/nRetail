@@ -1,8 +1,8 @@
-import { forwardRef, InputHTMLAttributes } from 'react'
-import { cn } from '@/utils/cn'
+import { forwardRef, InputHTMLAttributes } from 'react';
+import { cn } from '@/utils/cn';
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label?: string
+  label?: string;
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
@@ -27,8 +27,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           </label>
         )}
       </div>
-    )
-  }
-)
+    );
+  },
+);
 
-Checkbox.displayName = 'Checkbox'
+Checkbox.displayName = 'Checkbox';

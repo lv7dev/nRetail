@@ -160,9 +160,7 @@ describe('RefreshTokenRepository', () => {
       mockPrisma.refreshToken.deleteMany.mockResolvedValue({ count: 2 });
       await repo.deleteExpiredByUserId('user-1');
       const deleteCall = (
-        mockPrisma.refreshToken.deleteMany.mock.calls as [
-          { where: { userId: string } },
-        ][]
+        mockPrisma.refreshToken.deleteMany.mock.calls as [{ where: { userId: string } }][]
       )[0][0];
       expect(deleteCall.where.userId).toBe('user-1');
     });
@@ -176,9 +174,7 @@ describe('RefreshTokenRepository', () => {
       const count = await repo.countActiveByUserId('user-1');
       expect(count).toBe(3);
       const countCall = (
-        mockPrisma.refreshToken.count.mock.calls as [
-          { where: { userId: string } },
-        ][]
+        mockPrisma.refreshToken.count.mock.calls as [{ where: { userId: string } }][]
       )[0][0];
       expect(countCall.where.userId).toBe('user-1');
     });

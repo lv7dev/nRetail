@@ -16,9 +16,7 @@ export default async function globalTeardown(): Promise<void> {
       WHERE schemaname = 'public' AND tablename != '_prisma_migrations'
     `);
     if (rows[0].tables) {
-      await client.query(
-        `TRUNCATE TABLE ${rows[0].tables} RESTART IDENTITY CASCADE`,
-      );
+      await client.query(`TRUNCATE TABLE ${rows[0].tables} RESTART IDENTITY CASCADE`);
       console.log('[global-teardown] All tables truncated');
     } else {
       console.log('[global-teardown] No tables found — nothing to truncate');

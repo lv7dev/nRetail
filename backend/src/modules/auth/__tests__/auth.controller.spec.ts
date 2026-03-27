@@ -49,9 +49,7 @@ describe('AuthController', () => {
 
       await controller.requestRegisterOtp({ phone: '+84901234567' });
 
-      expect(mockAuthService.requestRegisterOtp).toHaveBeenCalledWith(
-        '+84901234567',
-      );
+      expect(mockAuthService.requestRegisterOtp).toHaveBeenCalledWith('+84901234567');
     });
   });
 
@@ -61,9 +59,7 @@ describe('AuthController', () => {
 
       await controller.requestForgotPasswordOtp({ phone: '+84901234567' });
 
-      expect(mockAuthService.requestForgotPasswordOtp).toHaveBeenCalledWith(
-        '+84901234567',
-      );
+      expect(mockAuthService.requestForgotPasswordOtp).toHaveBeenCalledWith('+84901234567');
     });
   });
 
@@ -119,10 +115,7 @@ describe('AuthController', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('user');
-      expect(mockAuthService.login).toHaveBeenCalledWith(
-        '+84901234567',
-        'password123',
-      );
+      expect(mockAuthService.login).toHaveBeenCalledWith('+84901234567', 'password123');
     });
   });
 

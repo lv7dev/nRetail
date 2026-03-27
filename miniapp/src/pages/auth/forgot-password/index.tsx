@@ -1,34 +1,38 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { Input } from '@/components/ui/Input/Input'
-import { Button } from '@/components/ui/Button/Button'
-import { Alert } from '@/components/ui/Alert/Alert'
-import { forgotPasswordSchema, type ForgotPasswordFormData } from './schema'
-import { useRequestOtp } from '@/hooks/useAuth'
-import { resolveApiError } from '@/utils/apiError'
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Input } from '@/components/ui/Input/Input';
+import { Button } from '@/components/ui/Button/Button';
+import { Alert } from '@/components/ui/Alert/Alert';
+import { forgotPasswordSchema, type ForgotPasswordFormData } from './schema';
+import { useRequestOtp } from '@/hooks/useAuth';
+import { resolveApiError } from '@/utils/apiError';
 
 export default function ForgotPasswordPage() {
-  const { t } = useTranslation('auth')
-  const { t: tCommon } = useTranslation('common')
-  const { t: tErrors } = useTranslation('errors')
-  const navigate = useNavigate()
+  const { t } = useTranslation('auth');
+  const { t: tCommon } = useTranslation('common');
+  const { t: tErrors } = useTranslation('errors');
+  const navigate = useNavigate();
 
-  const requestOtpMutation = useRequestOtp('forgot')
+  const requestOtpMutation = useRequestOtp('forgot');
 
-  const schema = forgotPasswordSchema(tCommon)
-  const { register, handleSubmit, formState: { errors } } = useForm<ForgotPasswordFormData>({
+  const schema = forgotPasswordSchema(tCommon);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(schema),
-  })
+  });
 
   const onSubmit = (data: ForgotPasswordFormData) => {
     requestOtpMutation.mutate(data.phone, {
       onSuccess: () => {
-        navigate('/otp', { state: { flow: 'forgot', phone: data.phone } })
+        navigate('/otp', { state: { flow: 'forgot', phone: data.phone } });
       },
-    })
-  }
+    });
+  };
 
   return (
     <div className="flex flex-1 items-center justify-center p-6">
@@ -36,7 +40,9 @@ export default function ForgotPasswordPage() {
         <h1 className="text-2xl font-bold text-content text-center">{t('forgotPassword.title')}</h1>
         <p className="text-sm text-content-muted text-center">{t('forgotPassword.description')}</p>
         <Alert
-          message={requestOtpMutation.isError ? resolveApiError(requestOtpMutation.error, tErrors) : ''}
+          message={
+            requestOtpMutation.isError ? resolveApiError(requestOtpMutation.error, tErrors) : ''
+          }
           variant="error"
         />
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
@@ -56,5 +62,5 @@ export default function ForgotPasswordPage() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

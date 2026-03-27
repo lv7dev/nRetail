@@ -1,13 +1,13 @@
-import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
-import viAuth from '@/locales/vi/auth.json'
-import enAuth from '@/locales/en/auth.json'
-import viCommon from '@/locales/vi/common.json'
-import enCommon from '@/locales/en/common.json'
-import viErrors from '@/locales/vi/errors.json'
-import enErrors from '@/locales/en/errors.json'
+import viAuth from '@/locales/vi/auth.json';
+import enAuth from '@/locales/en/auth.json';
+import viCommon from '@/locales/vi/common.json';
+import enCommon from '@/locales/en/common.json';
+import viErrors from '@/locales/vi/errors.json';
+import enErrors from '@/locales/en/errors.json';
 
 i18n
   .use(LanguageDetector)
@@ -25,6 +25,6 @@ i18n
       caches: ['localStorage'],
     },
     interpolation: { escapeValue: false },
-  })
+  });
 
-export default i18n
+export default i18n;

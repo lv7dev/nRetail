@@ -1,13 +1,13 @@
-import { ButtonHTMLAttributes } from 'react'
-import { cn } from '@/utils/cn'
+import { ButtonHTMLAttributes } from 'react';
+import { cn } from '@/utils/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive'
-export type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant
-  size?: ButtonSize
-  loading?: boolean
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  loading?: boolean;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -15,13 +15,13 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'bg-surface-muted text-content border border-border hover:bg-surface-overlay',
   ghost: 'bg-transparent text-content hover:bg-surface-muted',
   destructive: 'bg-destructive text-destructive-fg hover:opacity-90',
-}
+};
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-sm',
   md: 'px-4 py-2 text-base',
   lg: 'px-6 py-3 text-lg',
-}
+};
 
 export function Button({
   variant = 'primary',
@@ -32,7 +32,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const isDisabled = disabled || loading
+  const isDisabled = disabled || loading;
   return (
     <button
       className={cn(
@@ -54,7 +54,14 @@ export function Button({
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
           <path
             className="opacity-75"
             fill="currentColor"
@@ -64,5 +71,5 @@ export function Button({
       )}
       {children}
     </button>
-  )
+  );
 }

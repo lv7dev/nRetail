@@ -1,19 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../shared/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -125,8 +112,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description:
-      'OTP_PURPOSE_MISMATCH — otpToken was issued for a different flow.',
+    description: 'OTP_PURPOSE_MISMATCH — otpToken was issued for a different flow.',
     type: ErrorResponse,
   })
   @ApiResponse({
@@ -136,12 +122,7 @@ export class AuthController {
     type: ErrorResponse,
   })
   register(@Body() dto: RegisterDto) {
-    return this.authService.register(
-      dto.otpToken,
-      dto.name,
-      dto.password,
-      dto.confirmPassword,
-    );
+    return this.authService.register(dto.otpToken, dto.name, dto.password, dto.confirmPassword);
   }
 
   @Post('login')
@@ -149,8 +130,7 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Login',
-    description:
-      'Authenticates with phone and password. Rate-limited to 10 requests per minute.',
+    description: 'Authenticates with phone and password. Rate-limited to 10 requests per minute.',
   })
   @ApiResponse({
     status: 200,
@@ -195,11 +175,7 @@ export class AuthController {
     type: ErrorResponse,
   })
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(
-      dto.otpToken,
-      dto.newPassword,
-      dto.confirmPassword,
-    );
+    return this.authService.resetPassword(dto.otpToken, dto.newPassword, dto.confirmPassword);
   }
 
   @Post('refresh')
@@ -217,8 +193,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description:
-      'REFRESH_TOKEN_INVALID — token not found, expired, or already used.',
+    description: 'REFRESH_TOKEN_INVALID — token not found, expired, or already used.',
     type: ErrorResponse,
   })
   refresh(@Body() dto: RefreshDto) {
@@ -231,8 +206,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Logout',
-    description:
-      'Invalidates the provided refresh token. Requires a valid access token.',
+    description: 'Invalidates the provided refresh token. Requires a valid access token.',
   })
   @ApiResponse({
     status: 204,
@@ -252,8 +226,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get current user',
-    description:
-      "Returns the authenticated user's profile. Requires a valid access token.",
+    description: "Returns the authenticated user's profile. Requires a valid access token.",
   })
   @ApiResponse({
     status: 200,

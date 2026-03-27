@@ -19,10 +19,7 @@ describe('globalValidationPipe', () => {
   it('throws BadRequestException with constraint field when a field fails validation', async () => {
     let caught: BadRequestException | undefined;
     try {
-      await globalValidationPipe.transform(
-        { password: 'abc', name: 'test' },
-        metadata,
-      );
+      await globalValidationPipe.transform({ password: 'abc', name: 'test' }, metadata);
     } catch (e) {
       caught = e as BadRequestException;
     }
@@ -41,10 +38,7 @@ describe('globalValidationPipe', () => {
   it('includes all failing fields when multiple fields fail', async () => {
     let caught: BadRequestException | undefined;
     try {
-      await globalValidationPipe.transform(
-        { password: 'ab', name: '' },
-        metadata,
-      );
+      await globalValidationPipe.transform({ password: 'ab', name: '' }, metadata);
     } catch (e) {
       caught = e as BadRequestException;
     }
@@ -62,10 +56,7 @@ describe('globalValidationPipe', () => {
 
   it('does not throw when all fields are valid', async () => {
     await expect(
-      globalValidationPipe.transform(
-        { password: 'abcdef', name: 'Alice' },
-        metadata,
-      ),
+      globalValidationPipe.transform({ password: 'abcdef', name: 'Alice' }, metadata),
     ).resolves.not.toThrow();
   });
 });

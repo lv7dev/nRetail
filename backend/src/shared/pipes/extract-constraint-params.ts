@@ -24,12 +24,7 @@ export function extractConstraintParams(
   const DtoClass = error.target?.constructor as (new () => unknown) | undefined;
   if (!DtoClass) return undefined;
 
-  const metas = getMetadataStorage().getTargetValidationMetadatas(
-    DtoClass,
-    '',
-    false,
-    false,
-  );
+  const metas = getMetadataStorage().getTargetValidationMetadatas(DtoClass, '', false, false);
 
   const meta = metas.find(
     (m) =>

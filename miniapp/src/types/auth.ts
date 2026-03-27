@@ -1,19 +1,19 @@
 export interface User {
-  id: string
-  phone: string
-  name: string
-  role: string
+  id: string;
+  phone: string;
+  name: string;
+  role: string;
 }
 
 export interface TokenPair {
-  accessToken: string
-  refreshToken: string
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface AuthResponse extends TokenPair {
-  user: User
+  user: User;
 }
 
 export interface OtpVerifyResponse {
-  otpToken: string
+  otpToken: string;
 }

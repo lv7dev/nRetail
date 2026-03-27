@@ -15,9 +15,7 @@ export class RefreshTokenRepository {
     const rawToken = crypto.randomBytes(32).toString('hex');
     const tokenPrefix = rawToken.slice(0, TOKEN_PREFIX_LENGTH);
     const tokenHash = await bcrypt.hash(rawToken, REFRESH_BCRYPT_ROUNDS);
-    const expiresAt = new Date(
-      Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
-    );
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
     await this.prisma.refreshToken.create({
       data: { userId, tokenHash, tokenPrefix, expiresAt },
     });

@@ -144,17 +144,13 @@ class NoParamDto {
 }
 
 it('isNotEmpty → undefined', async () => {
-  const errors = await validate(
-    Object.assign(new NoParamDto(), { field: '', email: 'bad' }),
-  );
+  const errors = await validate(Object.assign(new NoParamDto(), { field: '', email: 'bad' }));
   const notEmptyErr = errors.find((e) => e.property === 'field')!;
   expect(extractConstraintParams(notEmptyErr, 'isNotEmpty')).toBeUndefined();
 });
 
 it('isEmail → undefined', async () => {
-  const errors = await validate(
-    Object.assign(new NoParamDto(), { field: 'ok', email: 'bad' }),
-  );
+  const errors = await validate(Object.assign(new NoParamDto(), { field: 'ok', email: 'bad' }));
   const emailErr = errors.find((e) => e.property === 'email')!;
   expect(extractConstraintParams(emailErr, 'isEmail')).toBeUndefined();
 });
