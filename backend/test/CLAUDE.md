@@ -113,6 +113,7 @@ When a `PhoneConfig` row exists for a phone number, the backend accepts `TEST_OT
 
 ```ts
 import { INestApplication } from '@nestjs/common'
+import { type Server } from 'http'   // needed to cast app.getHttpServer()
 import request from 'supertest'
 import { createTestApp, closeTestApp } from '../helpers/app'
 import { parseData, parseError } from '../helpers/response'
@@ -132,7 +133,8 @@ describe('POST /products', () => {
   })
 
   it('creates a product', async () => {
-    const res = await request(app.getHttpServer())
+    // Cast getHttpServer() as Server — INestApplication types it as `any`
+    const res = await request(app.getHttpServer() as Server)
       .post('/products')
       .set('Authorization', `Bearer ${validToken}`)
       .send({ name: 'Test', price: 10000 })
@@ -144,7 +146,7 @@ describe('POST /products', () => {
   })
 
   it('rejects invalid input', async () => {
-    const res = await request(app.getHttpServer())
+    const res = await request(app.getHttpServer() as Server)
       .post('/products')
       .send({})
       .expect(400)
@@ -162,3 +164,41 @@ describe('POST /products', () => {
 - Name files `*.integration.spec.ts` — the Jest config only picks up this pattern
 - Use `TEST_OTP` constant (`999999`) for OTP bypass — don't hardcode the string
 - Upsert `PhoneConfig` in `beforeAll` with `update: { defaultOtp: TEST_OTP }` to handle stale rows
+
+## Typing Pitfalls
+
+### `app.getHttpServer()` returns `any`
+
+`INestApplication.getHttpServer()` is typed as `any` by NestJS (it supports both Express and Fastify adapters). Passing it directly to `request()` triggers `@typescript-eslint/no-unsafe-argument`.
+
+**Always cast it:**
+
+```ts
+import { type Server } from 'http'
+
+request(app.getHttpServer() as Server)
+```
+
+### `pg` query results are `any[]`
+
+`client.query()` returns `QueryResult<any>` by default, making `rows[0]` untyped. Access any property on it and ESLint reports `no-unsafe-member-access`.
+
+**Always pass a row type generic:**
+
+```ts
+// ❌ rows[0].current_database → unsafe member access
+const res = await client.query('SELECT current_database()')
+
+// ✅ rows[0].current_database → typed as string
+const res = await client.query<{ current_database: string }>('SELECT current_database()')
+```
+
+For multi-column queries, define a local interface:
+
+```ts
+interface TableRow { table_name: string }
+const res = await client.query<TableRow>(
+  `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`
+)
+expect(res.rows[0].table_name).toBe('User')
+```
