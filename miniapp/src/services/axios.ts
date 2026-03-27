@@ -100,18 +100,20 @@ function normalizeError(error: unknown): ApiError {
 }
 
 // ─── Typed helpers (mirrors old api.ts surface) ──────────────────────────────
+// The backend ResponseInterceptor wraps all responses as { data: T }.
+// These helpers unwrap that envelope so callers work with T directly.
 export function get<T>(path: string): Promise<T> {
-  return apiClient.get<T>(path).then((r) => r.data);
+  return apiClient.get<{ data: T }>(path).then((r) => r.data.data);
 }
 
 export function post<T>(path: string, body?: unknown): Promise<T> {
-  return apiClient.post<T>(path, body).then((r) => r.data);
+  return apiClient.post<{ data: T }>(path, body).then((r) => r.data.data);
 }
 
 export function put<T>(path: string, body?: unknown): Promise<T> {
-  return apiClient.put<T>(path, body).then((r) => r.data);
+  return apiClient.put<{ data: T }>(path, body).then((r) => r.data.data);
 }
 
 export function del<T>(path: string): Promise<T> {
-  return apiClient.delete<T>(path).then((r) => r.data);
+  return apiClient.delete<{ data: T }>(path).then((r) => r.data.data);
 }
