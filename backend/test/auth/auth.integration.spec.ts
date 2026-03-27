@@ -1,0 +1,280 @@
+/**
+ * Auth Integration Tests (Group 5)
+ *
+ * Tests all auth endpoints against a real Postgres DB (Docker container on 5433).
+ * Uses PhoneConfig bypass: any phone with a PhoneConfig row accepts OTP '999999'.
+ *
+ * Run: cd backend && npm run test:integration
+ */
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { PrismaService } from '../../src/shared/database/prisma.service';
+import { closeTestApp, createTestApp } from '../helpers/app';
+
+describe('Auth Integration Tests', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+
+  const TEST_PHONE = '0901234567';
+  const TEST_PASSWORD = 'password123';
+  const TEST_NAME = 'Test User';
+  const TEST_OTP = '999999';
+
+  // Shared state passed between sequential tests
+  let otpToken: string;
+  let accessToken: string;
+  let refreshToken: string;
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    prisma = app.get(PrismaService);
+
+    // Seed PhoneConfig so OTP '999999' is accepted for TEST_PHONE
+    await prisma.phoneConfig.upsert({
+      where: { phone: TEST_PHONE },
+      create: { phone: TEST_PHONE, defaultOtp: TEST_OTP },
+      update: {},
+    });
+  });
+
+  afterAll(async () => {
+    await closeTestApp(app);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.1 — POST /auth/otp/register with valid phone → 200, OTP record created
+  // ---------------------------------------------------------------------------
+  it('5.1 POST /auth/otp/register with valid phone → 200 and OTP record in DB', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/otp/register')
+      .send({ phone: TEST_PHONE })
+      .expect(200);
+
+    // void endpoints return empty body (ResponseInterceptor does not wrap void)
+    expect(res.body).toBeDefined();
+
+    // Verify OTP record was written to DB
+    const otpRecord = await prisma.otpVerification.findFirst({
+      where: { phone: TEST_PHONE },
+    });
+    expect(otpRecord).not.toBeNull();
+    expect(otpRecord!.phone).toBe(TEST_PHONE);
+    expect(otpRecord!.purpose).toBe('register');
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.2 — POST /auth/otp/verify with valid OTP → 200 with otpToken JWT
+  // ---------------------------------------------------------------------------
+  it('5.2 POST /auth/otp/verify with valid OTP → 200 with otpToken', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ phone: TEST_PHONE, otp: TEST_OTP })
+      .expect(200);
+
+    expect(res.body.data).toHaveProperty('otpToken');
+    expect(typeof res.body.data.otpToken).toBe('string');
+    expect(res.body.data.otpToken.length).toBeGreaterThan(0);
+
+    otpToken = res.body.data.otpToken;
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.3 — POST /auth/register with valid otpToken → 201, user in DB, token pair
+  // ---------------------------------------------------------------------------
+  it('5.3 POST /auth/register with valid otpToken → 201, user created, returns token pair', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        otpToken,
+        name: TEST_NAME,
+        password: TEST_PASSWORD,
+        confirmPassword: TEST_PASSWORD,
+      })
+      .expect(201);
+
+    expect(res.body.data).toHaveProperty('accessToken');
+    expect(res.body.data).toHaveProperty('refreshToken');
+    expect(res.body.data).toHaveProperty('user');
+    expect(res.body.data.user.phone).toBe(TEST_PHONE);
+    expect(res.body.data.user.name).toBe(TEST_NAME);
+    expect(res.body.data.user).toHaveProperty('id');
+    expect(res.body.data.user).toHaveProperty('role');
+
+    // Verify user was actually created in DB
+    const dbUser = await prisma.user.findUnique({ where: { phone: TEST_PHONE } });
+    expect(dbUser).not.toBeNull();
+    expect(dbUser!.name).toBe(TEST_NAME);
+
+    accessToken = res.body.data.accessToken;
+    refreshToken = res.body.data.refreshToken;
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.4 — POST /auth/login with valid credentials → 200 with token pair
+  // ---------------------------------------------------------------------------
+  it('5.4 POST /auth/login with valid credentials → 200 with token pair', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
+      .expect(200);
+
+    expect(res.body.data).toHaveProperty('accessToken');
+    expect(res.body.data).toHaveProperty('refreshToken');
+    expect(res.body.data).toHaveProperty('user');
+    expect(res.body.data.user.phone).toBe(TEST_PHONE);
+
+    // Update shared tokens to use the login-issued ones for subsequent tests
+    accessToken = res.body.data.accessToken;
+    refreshToken = res.body.data.refreshToken;
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.5 — POST /auth/login with wrong password → 401 with INVALID_CREDENTIALS
+  // ---------------------------------------------------------------------------
+  it('5.5 POST /auth/login with wrong password → 401 INVALID_CREDENTIALS', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: TEST_PHONE, password: 'wrongpassword' })
+      .expect(401);
+
+    expect(res.body.code).toBe('INVALID_CREDENTIALS');
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.6 — POST /auth/refresh with valid refresh token → 200, old token invalidated
+  // ---------------------------------------------------------------------------
+  it('5.6 POST /auth/refresh with valid refresh token → 200 with new token pair, old token invalidated', async () => {
+    const oldRefreshToken = refreshToken;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: oldRefreshToken })
+      .expect(200);
+
+    expect(res.body.data).toHaveProperty('accessToken');
+    expect(res.body.data).toHaveProperty('refreshToken');
+    expect(typeof res.body.data.accessToken).toBe('string');
+    expect(typeof res.body.data.refreshToken).toBe('string');
+
+    // New tokens must be different from old ones
+    expect(res.body.data.refreshToken).not.toBe(oldRefreshToken);
+
+    // Verify old refresh token is no longer in DB (invalidated via rotation)
+    const oldPrefix = oldRefreshToken.substring(0, 8);
+    const oldTokenInDb = await prisma.refreshToken.findFirst({
+      where: { tokenPrefix: oldPrefix },
+    });
+    expect(oldTokenInDb).toBeNull();
+
+    // Store new tokens for subsequent tests
+    accessToken = res.body.data.accessToken;
+    refreshToken = res.body.data.refreshToken;
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.7 — POST /auth/refresh with invalid token → 401 REFRESH_TOKEN_INVALID
+  // ---------------------------------------------------------------------------
+  it('5.7 POST /auth/refresh with invalid token → 401 REFRESH_TOKEN_INVALID', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: 'invalid-token-that-does-not-exist-in-db' })
+      .expect(401);
+
+    expect(res.body.code).toBe('REFRESH_TOKEN_INVALID');
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.8 — POST /auth/logout — refresh token removed from DB → 204
+  // ---------------------------------------------------------------------------
+  it('5.8 POST /auth/logout → 204, refresh token removed from DB', async () => {
+    const tokenToInvalidate = refreshToken;
+
+    await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ refreshToken: tokenToInvalidate })
+      .expect(204);
+
+    // Verify refresh token was removed from DB
+    const prefix = tokenToInvalidate.substring(0, 8);
+    const tokenInDb = await prisma.refreshToken.findFirst({
+      where: { tokenPrefix: prefix },
+    });
+    expect(tokenInDb).toBeNull();
+
+    // Login again to restore tokens for remaining tests
+    const loginRes = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: TEST_PHONE, password: TEST_PASSWORD });
+    accessToken = loginRes.body.data.accessToken;
+    refreshToken = loginRes.body.data.refreshToken;
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.9 — GET /auth/me with valid Bearer → 200 with user fields
+  // ---------------------------------------------------------------------------
+  it('5.9 GET /auth/me with valid Bearer → 200 with user fields', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+
+    expect(res.body.data).toHaveProperty('id');
+    expect(res.body.data).toHaveProperty('phone');
+    expect(res.body.data).toHaveProperty('name');
+    expect(res.body.data).toHaveProperty('role');
+    expect(res.body.data.phone).toBe(TEST_PHONE);
+    expect(res.body.data.name).toBe(TEST_NAME);
+  });
+
+  // ---------------------------------------------------------------------------
+  // 5.10 — POST /auth/reset-password with valid otpToken → 200, new password works
+  // ---------------------------------------------------------------------------
+  it('5.10 POST /auth/reset-password → 200, new password works on login', async () => {
+    const NEW_PASSWORD = 'newpassword456';
+
+    // Step 1: Request OTP via forgot-password flow (phone must already exist)
+    await request(app.getHttpServer())
+      .post('/auth/otp/forgot-password')
+      .send({ phone: TEST_PHONE })
+      .expect(200);
+
+    // Step 2: Verify OTP → get otpToken for reset
+    const verifyRes = await request(app.getHttpServer())
+      .post('/auth/otp/verify')
+      .send({ phone: TEST_PHONE, otp: TEST_OTP })
+      .expect(200);
+
+    const resetOtpToken: string = verifyRes.body.data.otpToken;
+    expect(resetOtpToken).toBeTruthy();
+
+    // Step 3: Reset password with the reset otpToken
+    const resetRes = await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        otpToken: resetOtpToken,
+        newPassword: NEW_PASSWORD,
+        confirmPassword: NEW_PASSWORD,
+      })
+      .expect(200);
+
+    expect(resetRes.body.data).toHaveProperty('accessToken');
+    expect(resetRes.body.data).toHaveProperty('refreshToken');
+    // reset-password returns TokenPair only (no user field — differs from register/login)
+
+    // Step 4: Verify new password works on login
+    const loginRes = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: TEST_PHONE, password: NEW_PASSWORD })
+      .expect(200);
+
+    expect(loginRes.body.data).toHaveProperty('accessToken');
+    expect(loginRes.body.data.user.phone).toBe(TEST_PHONE);
+
+    // Step 5: Verify old password no longer works
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
+      .expect(401);
+  });
+});
