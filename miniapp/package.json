@@ -18,7 +18,7 @@
     "login": "zmp login",
     "start": "zmp start",
     "deploy": "zmp deploy",
-    "test": "vitest --exclude='**/*.integration.test.{ts,tsx}'",
+    "test": "vitest --exclude '**/*.integration.test.{ts,tsx}'",
     "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "test:e2e": "playwright test"
   },
