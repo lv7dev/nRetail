@@ -381,7 +381,7 @@ throw new Error('Phone already registered');
 See `src/modules/auth/CLAUDE.md` for the full authentication flow (OTP, registration, token lifecycle, dev overrides, SMS integration point).
 
 Quick reference for consuming modules:
-- Protect routes: `@UseGuards(JwtAuthGuard)`
+- Protect routes: `@UseGuards(JwtAuthGuard)` — **always pair with `@ApiBearerAuth()`** so Swagger UI sends the token
 - Get current user: `@CurrentUser() user: User`
 - RBAC: `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')`
 - Roles: `admin`, `staff`, `customer`
