@@ -18,7 +18,8 @@
     "login": "zmp login",
     "start": "zmp start",
     "deploy": "zmp deploy",
-    "test": "vitest",
+    "test": "vitest --exclude '**/*.integration.test.{ts,tsx}'",
+    "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -45,6 +46,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/pg": "^8.20.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -52,6 +54,8 @@
     "axios-mock-adapter": "^2.1.0",
     "cross-env": "^7.0.3",
     "jsdom": "^29.0.1",
+    "msw": "^2.12.14",
+    "pg": "^8.20.0",
     "playwright": "^1.58.2",
     "postcss": "^8.4.38",
     "postcss-cli": "^8.3.1",

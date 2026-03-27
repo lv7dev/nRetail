@@ -58,12 +58,14 @@ apiClient.interceptors.response.use(
       try {
         if (!refreshPromise) {
           refreshPromise = refreshClient
-            .post<{ accessToken: string; refreshToken: string }>(
+            // The backend ResponseInterceptor wraps all responses as { data: T },
+            // so the actual token pair is at response.data.data (not response.data).
+            .post<{ data: { accessToken: string; refreshToken: string } }>(
               "/auth/refresh",
               { refreshToken },
             )
             .then(({ data }) => {
-              storage.setTokens(data.accessToken, data.refreshToken);
+              storage.setTokens(data.data.accessToken, data.data.refreshToken);
             })
             .finally(() => {
               refreshPromise = null;

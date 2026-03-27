@@ -279,12 +279,13 @@ export function useZaloUser() {
 ## Commands
 
 ```bash
-npm run start       # Dev server via zmp start (localhost:3000)
-npm run login       # Authenticate with Zalo (zmp login)
-npm run deploy      # Build & deploy to Zalo (zmp deploy)
-npm run test        # Run unit/component tests with Vitest
-npx playwright test # Run E2E tests
-npx playwright test --ui  # Run E2E tests with interactive UI
+npm run start            # Dev server via zmp start (localhost:3000)
+npm run login            # Authenticate with Zalo (zmp login)
+npm run deploy           # Build & deploy to Zalo (zmp deploy)
+npm run test             # Unit/component tests (Vitest, excludes *.integration.test.*)
+npm run test:integration # Integration tests (Vitest + MSW, includes *.integration.test.*)
+npx playwright test      # E2E tests (requires backend + Redis running)
+npx playwright test --ui # E2E tests with interactive UI
 ```
 
 ## Key Dependencies
@@ -339,6 +340,23 @@ npx playwright test --ui  # Run E2E tests with interactive UI
 4. Wrap in a hook in `src/hooks/` using `useMutation` or `useQuery`
 
 ## Testing
+
+### TDD Rule — Always Test First
+
+Pure TDD is enforced across all three tiers:
+1. **Write the test** and commit it (RED — test fails because feature doesn't exist yet)
+2. **Write the implementation** and commit it (GREEN — test passes)
+3. **Refactor** if needed (tests stay green)
+
+Never write implementation code before a failing test exists for it.
+
+### Three-Tier Test Structure
+
+| Tier | Files | Runner | What it tests |
+|------|-------|--------|---------------|
+| **Unit / Component** | `*.test.tsx` co-located | `npm run test` | Component rendering, hook logic, utils — no network |
+| **Integration** | `*.integration.test.{ts,tsx}` co-located | `npm run test:integration` | Real axios + TanStack Query + MSW HTTP interception |
+| **E2E** | `e2e/**/*.spec.ts` | `npx playwright test` | Full user flows against real backend |
 
 ### Unit / Component Tests
 
@@ -425,11 +443,24 @@ render(<LoginPage />)
 expect(screen.getByRole('button', { name: 'login.submit' })).toBeDisabled()
 ```
 
+### Integration Tests (MSW)
+
+- **Framework**: Vitest + MSW (`msw/node` server, wildcard-origin handlers)
+- **Config**: `vitest.integration.config.ts` (separate from unit config)
+- **Run**: `npm run test:integration`
+- **File naming**: `*.integration.test.{ts,tsx}` — co-located next to source files
+- **Setup**: `src/setupTests.integration.ts` starts the MSW server; `src/mocks/handlers/auth.ts` defines all auth endpoint handlers; `src/mocks/server.ts` wires them together
+- **Key rule**: MSW Node mode requires absolute URLs. Vitest config sets `VITE_API_BASE_URL: 'http://localhost'` so axios has a base URL to work with.
+- **MSW handler shape**: All endpoints return `{ data: T }` (matching backend ResponseInterceptor), **including `/auth/refresh`** which is called by `refreshClient` and reads `response.data.data.accessToken`.
+
 ### E2E Tests (Playwright)
 
 - **Run**: `npx playwright test`
 - **Run with UI**: `npx playwright test --ui`
 - **Test location**: `e2e/`
+- **Prerequisite**: Redis must be running (`docker compose up -d` in `backend/`) — the backend webServer won't start without it
+- **Global setup**: `e2e/global-setup.ts` connects to the test DB directly to seed `PhoneConfig` rows (enabling OTP bypass with code `999999`)
+- **Fixtures**: `e2e/fixtures/auth.ts` — `seedUser`, `loginAs`, `setExpiredAccessToken`, `fillOtpBoxes`, `API_BASE`
 
 **Auth flow patterns:**
 
