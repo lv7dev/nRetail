@@ -38,6 +38,12 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │   └── authService.ts          # Auth API calls (typed functions over axios helpers)
 │   ├── types/                      # Shared TypeScript interfaces & types
 │   │   └── auth.ts                 # User, TokenPair, AuthResponse, OtpVerifyResponse
+│   ├── mocks/                      # Test infrastructure — MSW server + handlers (never imported in prod)
+│   │   ├── server.ts               # MSW Node server (used by integration tests)
+│   │   ├── handlers/
+│   │   │   └── auth.ts             # MSW handlers for all auth endpoints
+│   │   └── components/
+│   │       └── PasswordInput.mock.tsx  # Minimal PasswordInput mock (avoids SVG import in jsdom)
 │   ├── utils/                      # Pure helper functions
 │   │   ├── storage.ts              # nativeStorage wrapper for token keys
 │   │   ├── apiError.ts             # ApiError class + resolveApiError() for i18n-aware messages
@@ -56,12 +62,24 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │   └── tailwind.css            # Tailwind directives
 │   └── static/
 │       └── bg.svg                  # Background asset
+├── e2e/                            # Playwright E2E tests (real backend)
+│   ├── fixtures/
+│   │   └── auth.ts                 # seedUser, loginAs, setExpiredAccessToken, fillOtpBoxes, API_BASE
+│   ├── global-setup.ts             # Seeds PhoneConfig for OTP bypass (connects to test DB directly)
+│   └── auth/
+│       ├── register.spec.ts
+│       ├── login.spec.ts
+│       ├── forgot-password.spec.ts
+│       ├── route-guard.spec.ts
+│       └── token-refresh.spec.ts
 ├── index.html                      # HTML entry point (<div id="app">)
 ├── package.json
 ├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*, types: vite/client + vitest/globals
 ├── vite.config.mts                 # Root: ./src, plugins: react
+├── vitest.integration.config.ts    # Separate Vitest config for *.integration.test.* files
 ├── tailwind.config.js              # Tailwind configuration
 ├── postcss.config.js               # Tailwind + Autoprefixer
+├── playwright.config.ts            # Playwright config (dual webServer: Vite:3000 + NestJS:3001)
 ├── app-config.json                 # Zalo Mini App settings (title, theme, safe areas)
 ├── zmp-cli.json                    # ZMP CLI project metadata
 └── .env                            # APP_ID, ZMP_TOKEN, VITE_API_BASE_URL (do not commit secrets)

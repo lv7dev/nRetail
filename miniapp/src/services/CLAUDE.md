@@ -36,6 +36,8 @@ This means auth-flow endpoints (`/auth/login`, `/auth/otp/verify`, `/auth/reset-
 - On refresh success: stores new tokens, retries original request
 - On refresh failure or no refresh token: `storage.clearTokens()` + `window.location.replace('/login')`
 
+> **Important:** `refreshClient` has no interceptors, so it reads the raw Axios response body directly. The backend `ResponseInterceptor` wraps all responses as `{ data: T }`, meaning the token pair is at `response.data.data` — the code reads `data.data.accessToken` / `data.data.refreshToken`. MSW handlers for `/auth/refresh` must return `{ data: { accessToken, refreshToken } }` (not the raw pair) to match this.
+
 ### Error normalisation
 
 All errors are converted to `ApiError { status, message, code }` before rejection. The `code` field maps to `locales/{vi,en}/errors.json` for i18n display.
@@ -73,7 +75,9 @@ Then wrap in hooks in `src/hooks/useProducts.ts`.
 
 ## Testing
 
-Mock the service module in tests — do **not** mock `apiClient` or `axios` directly for page/hook tests:
+### Unit tests (pages / hooks)
+
+Mock the service module — do **not** mock `apiClient` or `axios` directly:
 
 ```tsx
 vi.mock('@/services/authService', () => ({
@@ -90,12 +94,10 @@ vi.mock('@/services/authService', () => ({
 }))
 ```
 
-For testing the interceptor behaviour itself (e.g., `axios.test.ts`), use `axios-mock-adapter` directly on `apiClient`:
+### Integration tests (interceptor behaviour)
 
-```ts
-import MockAdapter from 'axios-mock-adapter'
-import { apiClient } from './axios'
+For testing the interceptor itself, use MSW via `axios.integration.test.ts` — do NOT use `axios-mock-adapter`. MSW intercepts at the network layer so the real interceptor code runs end-to-end.
 
-const mockApi = new MockAdapter(apiClient)
-mockApi.onPost('/auth/login').reply(401, { code: 'INVALID_CREDENTIALS', message: '...' })
-```
+See `src/mocks/CLAUDE.md` for MSW setup details and `axios.integration.test.ts` for examples.
+
+> **Note:** `axios-mock-adapter` patches the axios adapter and bypasses the network entirely — this means `refreshClient` (which has no interceptors) would need separate adapter setup, and request headers set by the request interceptor may not be visible. MSW does not have these limitations.
