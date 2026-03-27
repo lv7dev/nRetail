@@ -35,6 +35,20 @@ All components are re-exported from `src/components/ui/index.ts`.
 - Icon color is inherited via `currentColor` — control with `text-*` Tailwind classes
 - Icon sizes are set via the `size` prop (number, pixels)
 
+## Button Loading State
+
+`Button` accepts a `loading?: boolean` prop. When `true`:
+- Replaces button content with an SVG spinner
+- Applies `pointer-events-none` to prevent double-clicks
+
+```tsx
+<Button loading={isPending} type="submit">
+  {t('login.submit')}
+</Button>
+```
+
+Always wire `isPending` from a TanStack Query mutation to the submit button. Never manage submit loading state with `useState`.
+
 ## Testing Rules
 
 - Tests are co-located as `<ComponentName>.test.tsx` in the same folder

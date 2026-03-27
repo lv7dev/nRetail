@@ -5,7 +5,7 @@ The login page SHALL call `POST /auth/login` with `{ phone, password }`, store t
 
 #### Scenario: Successful login
 - **WHEN** user submits valid phone and password
-- **THEN** the app SHALL call `POST /auth/login`, receive `{ accessToken, refreshToken, user }`, store tokens in `nativeStorage`, set user in `useAuthStore`, and navigate to `/`
+- **THEN** the app SHALL call `POST /auth/login`, receive `{ accessToken, refreshToken, user }`, store tokens via `storage.setTokens()` (platform-aware), set user in `useAuthStore`, and navigate to `/`
 
 #### Scenario: Invalid credentials
 - **WHEN** `POST /auth/login` returns 401 with `code: INVALID_CREDENTIALS`

@@ -53,8 +53,11 @@ export const loginSchema = (t: (k: string) => string) =>
 ## Auth Guard Rules
 
 - **Auth pages** (`/login`, `/register`, etc.): If `useAuthStore().user` is set, redirect to `/`
-- **App pages** (`/`, `/products`, etc.): Guarded by `ProtectedRoute` — redirects to `/login` if `user` is null
-- Pages that receive context via router state (OTP, NewPassword) must redirect to `/login` if state is missing
+- **App pages** (`/`, `/products`, etc.): Guarded by `ProtectedRoute`:
+  - `!isReady` → render `null` (splash is shown by `AuthProvider` above)
+  - `isReady && !user` → redirect to `/login`
+  - `isReady && user` → render the outlet
+- Pages that receive context via router state (`/otp`, `/new-password`, `/register/complete`) must redirect to `/login` if router state is missing — these pages cannot be reached directly
 
 ## Component Usage
 
