@@ -8,8 +8,15 @@
  */
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import {
+  AuthResponse,
+  OtpVerifyResponse,
+  TokenPairResponse,
+} from '../../src/modules/auth/dto/auth.response';
+import { UserResponse } from '../../src/modules/auth/dto/user.response';
 import { PrismaService } from '../../src/shared/database/prisma.service';
 import { closeTestApp, createTestApp } from '../helpers/app';
+import { parseData, parseError } from '../helpers/response';
 
 describe('Auth Integration Tests', () => {
   let app: INestApplication;
@@ -71,11 +78,12 @@ describe('Auth Integration Tests', () => {
       .send({ phone: TEST_PHONE, otp: TEST_OTP })
       .expect(200);
 
-    expect(res.body.data).toHaveProperty('otpToken');
-    expect(typeof res.body.data.otpToken).toBe('string');
-    expect(res.body.data.otpToken.length).toBeGreaterThan(0);
+    const data = parseData<OtpVerifyResponse>(res);
+    expect(data).toHaveProperty('otpToken');
+    expect(typeof data.otpToken).toBe('string');
+    expect(data.otpToken.length).toBeGreaterThan(0);
 
-    otpToken = res.body.data.otpToken;
+    otpToken = data.otpToken;
   });
 
   // ---------------------------------------------------------------------------
@@ -93,21 +101,22 @@ describe('Auth Integration Tests', () => {
       })
       .expect(201);
 
-    expect(res.body.data).toHaveProperty('accessToken');
-    expect(res.body.data).toHaveProperty('refreshToken');
-    expect(res.body.data).toHaveProperty('user');
-    expect(res.body.data.user.phone).toBe(TEST_PHONE);
-    expect(res.body.data.user.name).toBe(TEST_NAME);
-    expect(res.body.data.user).toHaveProperty('id');
-    expect(res.body.data.user).toHaveProperty('role');
+    const data = parseData<AuthResponse>(res);
+    expect(data).toHaveProperty('accessToken');
+    expect(data).toHaveProperty('refreshToken');
+    expect(data).toHaveProperty('user');
+    expect(data.user.phone).toBe(TEST_PHONE);
+    expect(data.user.name).toBe(TEST_NAME);
+    expect(data.user).toHaveProperty('id');
+    expect(data.user).toHaveProperty('role');
 
     // Verify user was actually created in DB
     const dbUser = await prisma.user.findUnique({ where: { phone: TEST_PHONE } });
     expect(dbUser).not.toBeNull();
     expect(dbUser!.name).toBe(TEST_NAME);
 
-    accessToken = res.body.data.accessToken;
-    refreshToken = res.body.data.refreshToken;
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken;
   });
 
   // ---------------------------------------------------------------------------
@@ -121,14 +130,15 @@ describe('Auth Integration Tests', () => {
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD })
       .expect(200);
 
-    expect(res.body.data).toHaveProperty('accessToken');
-    expect(res.body.data).toHaveProperty('refreshToken');
-    expect(res.body.data).toHaveProperty('user');
-    expect(res.body.data.user.phone).toBe(TEST_PHONE);
+    const data = parseData<AuthResponse>(res);
+    expect(data).toHaveProperty('accessToken');
+    expect(data).toHaveProperty('refreshToken');
+    expect(data).toHaveProperty('user');
+    expect(data.user.phone).toBe(TEST_PHONE);
 
     // Update shared tokens to use the login-issued ones for subsequent tests
-    accessToken = res.body.data.accessToken;
-    refreshToken = res.body.data.refreshToken;
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken;
   });
 
   // ---------------------------------------------------------------------------
@@ -140,7 +150,7 @@ describe('Auth Integration Tests', () => {
       .send({ phone: TEST_PHONE, password: 'wrongpassword' })
       .expect(401);
 
-    expect(res.body.code).toBe('INVALID_CREDENTIALS');
+    expect(parseError(res).code).toBe('INVALID_CREDENTIALS');
   });
 
   // ---------------------------------------------------------------------------
@@ -154,24 +164,25 @@ describe('Auth Integration Tests', () => {
       .send({ refreshToken: oldRefreshToken })
       .expect(200);
 
-    expect(res.body.data).toHaveProperty('accessToken');
-    expect(res.body.data).toHaveProperty('refreshToken');
-    expect(typeof res.body.data.accessToken).toBe('string');
-    expect(typeof res.body.data.refreshToken).toBe('string');
+    const data = parseData<TokenPairResponse>(res);
+    expect(data).toHaveProperty('accessToken');
+    expect(data).toHaveProperty('refreshToken');
+    expect(typeof data.accessToken).toBe('string');
+    expect(typeof data.refreshToken).toBe('string');
 
     // New tokens must be different from old ones
-    expect(res.body.data.refreshToken).not.toBe(oldRefreshToken);
+    expect(data.refreshToken).not.toBe(oldRefreshToken);
 
     // After rotation, verify old token is truly invalidated
     const replayRes = await request(app.getHttpServer())
       .post('/auth/refresh')
       .send({ refreshToken: oldRefreshToken });
     expect(replayRes.status).toBe(401);
-    expect(replayRes.body.code).toBe('REFRESH_TOKEN_INVALID');
+    expect(parseError(replayRes).code).toBe('REFRESH_TOKEN_INVALID');
 
     // Store new tokens for subsequent tests
-    accessToken = res.body.data.accessToken;
-    refreshToken = res.body.data.refreshToken;
+    accessToken = data.accessToken;
+    refreshToken = data.refreshToken;
   });
 
   // ---------------------------------------------------------------------------
@@ -183,7 +194,7 @@ describe('Auth Integration Tests', () => {
       .send({ refreshToken: 'invalid-token-that-does-not-exist-in-db' })
       .expect(401);
 
-    expect(res.body.code).toBe('REFRESH_TOKEN_INVALID');
+    expect(parseError(res).code).toBe('REFRESH_TOKEN_INVALID');
   });
 
   // ---------------------------------------------------------------------------
@@ -210,9 +221,11 @@ describe('Auth Integration Tests', () => {
       .post('/auth/login')
       .send({ phone: TEST_PHONE, password: TEST_PASSWORD });
     expect(loginRes.status).toBe(200);
-    expect(loginRes.body.data.accessToken).toBeTruthy();
-    accessToken = loginRes.body.data.accessToken;
-    refreshToken = loginRes.body.data.refreshToken;
+
+    const loginData = parseData<AuthResponse>(loginRes);
+    expect(loginData.accessToken).toBeTruthy();
+    accessToken = loginData.accessToken;
+    refreshToken = loginData.refreshToken;
   });
 
   // ---------------------------------------------------------------------------
@@ -226,12 +239,13 @@ describe('Auth Integration Tests', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(res.body.data).toHaveProperty('id');
-    expect(res.body.data).toHaveProperty('phone');
-    expect(res.body.data).toHaveProperty('name');
-    expect(res.body.data).toHaveProperty('role');
-    expect(res.body.data.phone).toBe(TEST_PHONE);
-    expect(res.body.data.name).toBe(TEST_NAME);
+    const data = parseData<UserResponse>(res);
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('phone');
+    expect(data).toHaveProperty('name');
+    expect(data).toHaveProperty('role');
+    expect(data.phone).toBe(TEST_PHONE);
+    expect(data.name).toBe(TEST_NAME);
   });
 
   // ---------------------------------------------------------------------------
@@ -252,7 +266,7 @@ describe('Auth Integration Tests', () => {
       .send({ phone: TEST_PHONE, otp: TEST_OTP })
       .expect(200);
 
-    const resetOtpToken: string = verifyRes.body.data.otpToken;
+    const resetOtpToken: string = parseData<OtpVerifyResponse>(verifyRes).otpToken;
     expect(resetOtpToken).toBeTruthy();
 
     // Step 3: Reset password with the reset otpToken
@@ -265,8 +279,9 @@ describe('Auth Integration Tests', () => {
       })
       .expect(200);
 
-    expect(resetRes.body.data).toHaveProperty('accessToken');
-    expect(resetRes.body.data).toHaveProperty('refreshToken');
+    const resetData = parseData<TokenPairResponse>(resetRes);
+    expect(resetData).toHaveProperty('accessToken');
+    expect(resetData).toHaveProperty('refreshToken');
     // reset-password returns TokenPair only (no user field — differs from register/login)
 
     // Step 4: Verify new password works on login
@@ -275,8 +290,9 @@ describe('Auth Integration Tests', () => {
       .send({ phone: TEST_PHONE, password: NEW_PASSWORD })
       .expect(200);
 
-    expect(loginRes.body.data).toHaveProperty('accessToken');
-    expect(loginRes.body.data.user.phone).toBe(TEST_PHONE);
+    const loginData = parseData<AuthResponse>(loginRes);
+    expect(loginData).toHaveProperty('accessToken');
+    expect(loginData.user.phone).toBe(TEST_PHONE);
 
     // Step 5: Verify old password no longer works
     await request(app.getHttpServer())
