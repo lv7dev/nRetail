@@ -2,6 +2,10 @@
 # Git worktrees
 .worktrees/
 
+# Coverage reports
+coverage/
+miniapp/src/coverage/
+
 # Claude Code — ignore personal memory and local settings, keep project config
 .claude/settings.local.json
 .claude/projects/
