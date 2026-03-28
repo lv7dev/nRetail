@@ -1,61 +1,51 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { Response } from 'express';
+import { HealthCheckResult, HealthCheckService } from '@nestjs/terminus';
 import { HealthController } from '../health.controller';
-import { HealthService } from '../health.service';
+import { DatabaseHealthIndicator } from '../health.service';
 
 const mockHealthService = {
   check: jest.fn(),
 };
 
-function mockResponse(): jest.Mocked<Pick<Response, 'status' | 'json'>> & {
-  status: jest.Mock;
-  json: jest.Mock;
-} {
-  const res = {
-    status: jest.fn(),
-    json: jest.fn(),
-  };
-  res.status.mockReturnValue(res);
-  res.json.mockReturnValue(res);
-  return res as never;
-}
+const mockDbIndicator = {
+  isHealthy: jest.fn(),
+};
 
 describe('HealthController', () => {
   let controller: HealthController;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [HealthController],
-      providers: [{ provide: HealthService, useValue: mockHealthService }],
-    }).compile();
-
-    controller = module.get<HealthController>(HealthController);
+  beforeEach(() => {
     jest.clearAllMocks();
+    controller = new HealthController(
+      mockHealthService as unknown as HealthCheckService,
+      mockDbIndicator as unknown as DatabaseHealthIndicator,
+    );
   });
 
-  describe('GET /health', () => {
-    it('returns 200 with { status: "ok", db: "ok" } when DB is healthy', async () => {
-      mockHealthService.check.mockResolvedValue({ db: 'ok' });
-      const res = mockResponse();
+  describe('check()', () => {
+    it('returns the result from HealthCheckService.check()', async () => {
+      const result: HealthCheckResult = {
+        status: 'ok',
+        info: { database: { status: 'up' } },
+        error: {},
+        details: { database: { status: 'up' } },
+      };
+      mockHealthService.check.mockResolvedValue(result);
 
-      await controller.check(res as unknown as Response);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({ status: 'ok', db: 'ok' });
+      await expect(controller.check()).resolves.toBe(result);
     });
 
-    it('returns 503 with { status: "error", db: "error", error } when DB is down', async () => {
-      mockHealthService.check.mockResolvedValue({ db: 'error', error: 'connection refused' });
-      const res = mockResponse();
+    it('calls db.isHealthy("database") via the indicator function', async () => {
+      mockHealthService.check.mockImplementation(
+        async (indicators: Array<() => Promise<unknown>>) => {
+          await indicators[0]();
+          return { status: 'ok', info: {}, error: {}, details: {} };
+        },
+      );
+      mockDbIndicator.isHealthy.mockResolvedValue({ database: { status: 'up' } });
 
-      await controller.check(res as unknown as Response);
+      await controller.check();
 
-      expect(res.status).toHaveBeenCalledWith(503);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'error',
-        db: 'error',
-        error: 'connection refused',
-      });
+      expect(mockDbIndicator.isHealthy).toHaveBeenCalledWith('database');
     });
   });
 });

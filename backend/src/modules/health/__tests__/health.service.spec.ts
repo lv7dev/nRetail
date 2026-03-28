@@ -1,34 +1,44 @@
-import { HealthService } from '../health.service';
+import { HealthCheckError } from '@nestjs/terminus';
+import { DatabaseHealthIndicator } from '../health.service';
 
 const mockPrisma = {
   $queryRaw: jest.fn(),
 };
 
-describe('HealthService', () => {
-  let service: HealthService;
+describe('DatabaseHealthIndicator', () => {
+  let indicator: DatabaseHealthIndicator;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new HealthService(mockPrisma as never);
+    indicator = new DatabaseHealthIndicator(mockPrisma as never);
   });
 
-  describe('check()', () => {
-    it('returns { db: "ok" } when the query succeeds', async () => {
+  describe('isHealthy()', () => {
+    it('returns up status when the query succeeds', async () => {
       mockPrisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
-      const result = await service.check();
-      expect(result).toEqual({ db: 'ok' });
+      const result = await indicator.isHealthy('database');
+      expect(result).toEqual({ database: { status: 'up' } });
     });
 
-    it('returns { db: "error", error: message } when the query throws an Error', async () => {
+    it('throws HealthCheckError when the query throws an Error', async () => {
       mockPrisma.$queryRaw.mockRejectedValue(new Error('connection refused'));
-      const result = await service.check();
-      expect(result).toEqual({ db: 'error', error: 'connection refused' });
+      await expect(indicator.isHealthy('database')).rejects.toBeInstanceOf(HealthCheckError);
     });
 
-    it('returns { db: "error", error: string } when the query throws a non-Error', async () => {
+    it('includes the error message in HealthCheckError causes', async () => {
+      mockPrisma.$queryRaw.mockRejectedValue(new Error('connection refused'));
+      const error = await indicator.isHealthy('database').catch((e: HealthCheckError) => e);
+      expect((error as HealthCheckError).causes).toMatchObject({
+        database: { status: 'down', message: 'connection refused' },
+      });
+    });
+
+    it('coerces non-Error thrown values to string', async () => {
       mockPrisma.$queryRaw.mockRejectedValue('ECONNREFUSED');
-      const result = await service.check();
-      expect(result).toEqual({ db: 'error', error: 'ECONNREFUSED' });
+      const error = await indicator.isHealthy('database').catch((e: HealthCheckError) => e);
+      expect((error as HealthCheckError).causes).toMatchObject({
+        database: { status: 'down', message: 'ECONNREFUSED' },
+      });
     });
   });
 });
