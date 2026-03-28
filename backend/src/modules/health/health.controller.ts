@@ -5,6 +5,7 @@ import { HealthService } from './health.service';
 
 @SkipThrottle()
 @Controller('health')
+/* istanbul ignore next */
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 

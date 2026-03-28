@@ -7,6 +7,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import { AuthService } from '../auth.service';
 import { UsersService } from '../../users/users.service';
@@ -624,6 +625,25 @@ describe('AuthService', () => {
       expect(mockRefreshTokenRepository.deleteExpiredByUserId).toHaveBeenCalledWith('user-1');
       expect(mockRefreshTokenRepository.deleteOldestByUserId).not.toHaveBeenCalled();
       expect(mockRefreshTokenRepository.create).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('compareOtp (private)', () => {
+    it('returns true when otp matches hash (real bcrypt)', async () => {
+      const otp = '123456';
+      const hash = await bcrypt.hash(otp, 8);
+      const result = await (
+        service as unknown as { compareOtp(a: string, b: string): Promise<boolean> }
+      ).compareOtp(otp, hash);
+      expect(result).toBe(true);
+    });
+
+    it('returns false when otp does not match hash (real bcrypt)', async () => {
+      const hash = await bcrypt.hash('correct', 8);
+      const result = await (
+        service as unknown as { compareOtp(a: string, b: string): Promise<boolean> }
+      ).compareOtp('wrong', hash);
+      expect(result).toBe(false);
     });
   });
 });

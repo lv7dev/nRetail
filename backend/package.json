@@ -85,7 +85,7 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": "<rootDir>/../jest-transform.js"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
@@ -98,10 +98,10 @@
     ],
     "coverageThreshold": {
       "global": {
-        "statements": 98,
-        "branches": 80,
-        "functions": 98,
-        "lines": 99
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
       }
     },
     "coverageDirectory": "../coverage",

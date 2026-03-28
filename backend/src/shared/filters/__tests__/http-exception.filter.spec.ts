@@ -2,6 +2,7 @@ import {
   ArgumentsHost,
   BadRequestException,
   ConflictException,
+  HttpException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -146,5 +147,31 @@ describe('AllExceptionsFilter', () => {
     const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<string, unknown>;
     expect(body.message).toBe('Invalid credentials');
     expect(body).not.toHaveProperty('code');
+  });
+
+  it('handles HttpException with plain string response (not wrapped in object)', () => {
+    const exception = new HttpException('plain string message', 400);
+    const { host, status, json } = makeHost();
+
+    filter.catch(exception, host);
+
+    expect(status).toHaveBeenCalledWith(400);
+    const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<string, unknown>;
+    expect(body.statusCode).toBe(400);
+    expect(body.message).toBe('plain string message');
+    expect(body).not.toHaveProperty('code');
+  });
+
+  it('falls back to exception.message when object payload has no message field', () => {
+    const exception = new HttpException({ code: 'FOO' }, 400);
+    const { host, status, json } = makeHost();
+
+    filter.catch(exception, host);
+
+    expect(status).toHaveBeenCalledWith(400);
+    const body = (json.mock.calls as [unknown[]][])[0][0] as unknown as Record<string, unknown>;
+    expect(body.statusCode).toBe(400);
+    expect(body.message).toBe(exception.message);
+    expect(body.code).toBe('FOO');
   });
 });

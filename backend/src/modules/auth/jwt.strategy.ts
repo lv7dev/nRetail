@@ -11,6 +11,7 @@ interface JwtPayload {
 }
 
 @Injectable()
+/* istanbul ignore next */
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,

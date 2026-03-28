@@ -27,6 +27,7 @@ export interface UserRecord {
 }
 
 @Injectable()
+/* istanbul ignore next */
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,

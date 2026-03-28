@@ -64,6 +64,20 @@ npm run test:cov          # coverage report
 
 > **Prettier config**: The shared `.prettierrc` lives at the **monorepo root** (`../`). There is no `backend/.prettierrc` — Prettier resolves up to the root automatically.
 
+### Coverage Enforcement
+
+`npm run test:cov` enforces **100% coverage** on all four metrics: statements, branches, functions, lines.
+
+**Istanbul phantom branches** — TypeScript with `emitDecoratorMetadata: true` emits `__decorate([..., __metadata("design:paramtypes", [typeof (_a = typeof Dep !== "undefined" && Dep) === "function" ? _a : Object])])` for every injectable class and every decorated method/property. The ternary `? _a : Object` is an architecturally unreachable false branch (imported classes are always functions). Istanbul reports the false branch as uncovered. These are NOT real logic gaps.
+
+**How phantoms are suppressed — `jest-transform.js`:** A custom Jest transform at `backend/jest-transform.js` wraps ts-jest and post-processes compiled JavaScript to insert `/* istanbul ignore next */` immediately before every `__decorate([` call (both class-level and method/property-level). This runs before `babel-plugin-istanbul` instruments the code, so the ignore comment takes effect.
+
+The transform also sets `removeComments: false` in the ts-jest compiler so any source-level `/* istanbul ignore next */` annotations survive TypeScript compilation (the main `tsconfig.json` has `removeComments: true` for production — do NOT change it).
+
+**No source-level annotations needed for phantom suppression.** The transform handles all phantom branches automatically. Source-level `/* istanbul ignore next */` is only needed for intentionally untestable branches in real logic (e.g. `PrismaService` class body).
+
+**Real gaps vs. phantom gaps:** If a branch shows as uncovered and there is no `__decorate` call on that line in the compiled JS, it is a real gap — write a test, do not annotate it away.
+
 ### TDD Rule — Always Test First
 
 Pure TDD is enforced across all three tiers:

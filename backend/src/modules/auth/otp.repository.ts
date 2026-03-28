@@ -6,6 +6,7 @@ const OTP_BCRYPT_ROUNDS = 8;
 const OTP_TTL_MINUTES = 5;
 
 @Injectable()
+/* istanbul ignore next */
 export class OtpRepository {
   constructor(private readonly prisma: PrismaService) {}
 

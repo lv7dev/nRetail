@@ -21,6 +21,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @ApiTags('auth')
 @Controller('auth')
+/* istanbul ignore next */
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

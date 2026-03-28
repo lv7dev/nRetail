@@ -10,6 +10,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidationError,
   validate,
 } from 'class-validator';
 import { extractConstraintParams } from '../extract-constraint-params';
@@ -160,4 +161,27 @@ it('isEmail → undefined', async () => {
 it('unknown constraint key → undefined', async () => {
   const err = await getError(MinLengthDto, { field: 'ab' });
   expect(extractConstraintParams(err, 'someFutureConstraint')).toBeUndefined();
+});
+
+// ── no target (target is undefined) → undefined ───────────────────────────
+
+it('returns undefined when ValidationError has no target', () => {
+  const err = Object.assign(new ValidationError(), {
+    property: 'field',
+    constraints: { minLength: 'too short' },
+    // target intentionally not set → undefined
+  });
+  expect(extractConstraintParams(err, 'minLength')).toBeUndefined();
+});
+
+// ── no matching metadata entry → undefined ────────────────────────────────
+
+it('returns undefined when target class has no matching validation metadata', () => {
+  class UnregisteredClass {}
+  const err = Object.assign(new ValidationError(), {
+    property: 'field',
+    target: Object.assign(new UnregisteredClass(), { field: 'ab' }),
+    constraints: { minLength: 'too short' },
+  });
+  expect(extractConstraintParams(err, 'minLength')).toBeUndefined();
 });

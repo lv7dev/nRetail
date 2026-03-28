@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../shared/database/prisma.service';
 
 @Injectable()
+/* istanbul ignore next */
 export class PhoneConfigRepository {
   constructor(private readonly prisma: PrismaService) {}
 

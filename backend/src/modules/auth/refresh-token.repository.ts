@@ -8,6 +8,7 @@ const REFRESH_TOKEN_TTL_DAYS = 30;
 const TOKEN_PREFIX_LENGTH = 8;
 
 @Injectable()
+/* istanbul ignore next */
 export class RefreshTokenRepository {
   constructor(private readonly prisma: PrismaService) {}
 

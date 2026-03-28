@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, ValidationError } from 'class-validator';
+import * as classValidator from 'class-validator';
 import { globalValidationPipe } from '../validation.pipe';
 import { ArgumentMetadata } from '@nestjs/common';
 
@@ -58,5 +59,30 @@ describe('globalValidationPipe', () => {
     await expect(
       globalValidationPipe.transform({ password: 'abcdef', name: 'Alice' }, metadata),
     ).resolves.not.toThrow();
+  });
+
+  it('uses "unknown" constraint key and empty message when ValidationError has no constraints', async () => {
+    const errWithoutConstraints = Object.assign(new ValidationError(), {
+      property: 'someField',
+    });
+    const validateSpy = jest
+      .spyOn(classValidator, 'validate')
+      .mockResolvedValueOnce([errWithoutConstraints]);
+
+    let caught: BadRequestException | undefined;
+    try {
+      await globalValidationPipe.transform({}, metadata);
+    } catch (e) {
+      caught = e as BadRequestException;
+    }
+
+    validateSpy.mockRestore();
+
+    expect(caught).toBeInstanceOf(BadRequestException);
+    const body = caught!.getResponse() as Record<string, unknown>;
+    const errors = body.errors as Array<Record<string, unknown>>;
+    expect(errors).toHaveLength(1);
+    expect(errors[0].constraint).toBe('unknown');
+    expect(errors[0].message).toBe('');
   });
 });
