@@ -128,8 +128,9 @@ src/
   main.ts
   app.module.ts
   modules/
-    auth/
-    users/
+    auth/                # OTP + password auth, JWT session management
+    users/               # user profile and identity
+    health/              # GET /health — liveness + DB check via @nestjs/terminus
     catalog/
       products/
       categories/
@@ -426,6 +427,61 @@ throw new Error('Phone already registered');
 - Detects `ThrottlerException` and responds with `code: 'RATE_LIMIT_EXCEEDED'`
 
 **Rule: every error response MUST include a `code` field.** This applies to service exceptions, guards, filters, and middleware. `AllExceptionsFilter` is the enforcement point — add handling there for any system-level exception (e.g. `ThrottlerException`) that doesn't carry a `code` from the throwing layer.
+
+### Health Check
+
+`GET /health` — liveness endpoint. No JWT required. Returns 200 or 503 based on DB reachability.
+
+Implemented via `@nestjs/terminus`. The pattern for all health indicators:
+
+```ts
+// health.service.ts — indicator, not a service
+@Injectable()
+export class DatabaseHealthIndicator extends HealthIndicator {
+  async isHealthy(key: string): Promise<HealthIndicatorResult> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return this.getStatus(key, true);
+    } catch (err) {
+      throw new HealthCheckError('...', this.getStatus(key, false, { message: ... }));
+    }
+  }
+}
+
+// health.controller.ts — no @Res(), terminus handles 200/503
+@Get()
+@HealthCheck()
+check(): Promise<HealthCheckResult> {
+  return this.health.check([() => this.db.isHealthy('database')]);
+}
+```
+
+**Rule: never use `@Res()` in the health controller.** The `@Res()` decorator imports `Response` from express in a decorated method signature, which triggers TS1272 under `isolatedModules` + `emitDecoratorMetadata`. See TypeScript pitfalls below.
+
+See `src/modules/health/CLAUDE.md` for details.
+
+### TypeScript Pitfalls
+
+**TS1272 — `import type` required in decorated signatures**
+
+When `isolatedModules: true` and `emitDecoratorMetadata: true` are both set (our config), TypeScript emits `__metadata("design:paramtypes", [ClassName])` for decorated method parameters. With `isolatedModules`, TypeScript can't know if an import is a runtime value or type-only — so it requires clarification.
+
+**Rule:** Any type used as a parameter type in a `@Decorated()` method must be imported with `import type`:
+
+```ts
+// BAD — triggers TS1272 when used in a decorated method parameter
+import { Response } from 'express';
+async check(@Res() res: Response) { ... }
+
+// GOOD — import type tells TypeScript "emit Object in metadata, not the class"
+import type { Response } from 'express';
+async check(@Res() res: Response) { ... }
+
+// BEST — avoid @Res() entirely; use @nestjs/terminus for health checks
+// or return values from controllers normally (ResponseInterceptor wraps them)
+```
+
+This applies to: Express types (`Request`, `Response`), any type from a package that may not have a runtime value. Types from `@nestjs/*` and `class-validator` are safe because they export real classes.
 
 ### Auth
 
