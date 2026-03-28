@@ -180,6 +180,18 @@ describe('RefreshTokenRepository', () => {
     });
   });
 
+  // ─── deleteAllByUserId() ─────────────────────────────────────────────────────
+
+  describe('deleteAllByUserId()', () => {
+    it('calls deleteMany with userId filter', async () => {
+      mockPrisma.refreshToken.deleteMany.mockResolvedValue({ count: 3 });
+      await repo.deleteAllByUserId('user-1');
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+      });
+    });
+  });
+
   // ─── deleteOldestByUserId() ───────────────────────────────────────────────────
 
   describe('deleteOldestByUserId()', () => {

@@ -551,6 +551,18 @@ describe('AuthService', () => {
         'REFRESH_TOKEN_INVALID',
       );
     });
+
+    it('throws UnauthorizedException when token is valid but user no longer exists', async () => {
+      mockRefreshTokenRepository.findAndDelete.mockResolvedValue({
+        id: 'rt-1',
+        userId: 'deleted-user',
+      });
+      mockUsersService.findById.mockResolvedValue(null);
+
+      await expect(service.refresh('valid-token-deleted-user')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
   });
 
   describe('logout', () => {

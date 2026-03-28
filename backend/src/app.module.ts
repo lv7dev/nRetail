@@ -7,6 +7,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { configuration } from './config/configuration';
 import { DatabaseModule } from './shared/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { UsersModule } from './modules/users/users.module';
     DatabaseModule,
     EventEmitterModule.forRoot(),
     AuthModule,
+    HealthModule,
     UsersModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

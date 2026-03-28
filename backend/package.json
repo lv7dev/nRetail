@@ -90,6 +90,20 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "coveragePathIgnorePatterns": [
+      "main\\.ts",
+      "\\.module\\.ts",
+      "config/config\\.schema\\.ts",
+      "config/configuration\\.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 98,
+        "branches": 80,
+        "functions": 98,
+        "lines": 99
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

@@ -16,6 +16,7 @@ const mockUsersRepository = {
   findByPhone: jest.fn(),
   create: jest.fn(),
   findById: jest.fn(),
+  updatePassword: jest.fn(),
 };
 
 describe('UsersService', () => {
@@ -63,6 +64,18 @@ describe('UsersService', () => {
         phone: '+84901234567',
         name: 'Test User',
       });
+    });
+  });
+
+  describe('updatePassword', () => {
+    it('updates password via repository and returns updated user', async () => {
+      const updated = { ...mockUser, password: 'new-hash' };
+      mockUsersRepository.updatePassword.mockResolvedValue(updated);
+
+      const result = await service.updatePassword('user-1', 'new-hash');
+
+      expect(result).toEqual(updated);
+      expect(mockUsersRepository.updatePassword).toHaveBeenCalledWith('user-1', 'new-hash');
     });
   });
 
