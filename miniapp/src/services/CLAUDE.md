@@ -4,9 +4,9 @@ API calls live in `src/services/`. Never call `fetch` or Axios directly from com
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `axios.ts` | Configured Axios instance, interceptors, typed helpers |
+| File             | Purpose                                                  |
+| ---------------- | -------------------------------------------------------- |
+| `axios.ts`       | Configured Axios instance, interceptors, typed helpers   |
 | `authService.ts` | Auth API calls (login, OTP, register, reset, logout, me) |
 
 ## axios.ts — HTTP Client
@@ -21,10 +21,10 @@ Attaches `Authorization: Bearer <token>` from storage to every outgoing request.
 
 The interceptor distinguishes two 401 sources:
 
-| Request had `Authorization` header? | Meaning | Behaviour |
-|--------------------------------------|---------|-----------|
-| Yes (authenticated request) | Session expired | Attempt silent token refresh; on failure clear tokens + redirect to `/login` |
-| No (unauthenticated request) | Business error (wrong OTP, bad credentials) | Reject with `ApiError` immediately — **no redirect, no token clear** |
+| Request had `Authorization` header? | Meaning                                     | Behaviour                                                                    |
+| ----------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------- |
+| Yes (authenticated request)         | Session expired                             | Attempt silent token refresh; on failure clear tokens + redirect to `/login` |
+| No (unauthenticated request)        | Business error (wrong OTP, bad credentials) | Reject with `ApiError` immediately — **no redirect, no token clear**         |
 
 This means auth-flow endpoints (`/auth/login`, `/auth/otp/verify`, `/auth/reset-password`) can return 401 safely and the page's `onError` handler will receive the error for display.
 
@@ -62,13 +62,13 @@ authService.getMe()                           → GET  /auth/me
 
 ```ts
 // services/productService.ts
-import { get, post } from './axios'
-import type { Product } from '@/types/product'
+import { get, post } from './axios';
+import type { Product } from '@/types/product';
 
 export const productService = {
   getList: () => get<Product[]>('/products'),
   create: (dto: CreateProductDto) => post<Product>('/products', dto),
-}
+};
 ```
 
 Then wrap in hooks in `src/hooks/useProducts.ts`.
@@ -91,7 +91,7 @@ vi.mock('@/services/authService', () => ({
     verifyOtp: vi.fn().mockResolvedValue({ otpToken: 'test-token' }),
     // include only methods called by the component under test
   },
-}))
+}));
 ```
 
 ### Integration tests (interceptor behaviour)

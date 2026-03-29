@@ -38,6 +38,7 @@ All components are re-exported from `src/components/ui/index.ts`.
 ## Button Loading State
 
 `Button` accepts a `loading?: boolean` prop. When `true`:
+
 - Replaces button content with an SVG spinner
 - Applies `pointer-events-none` to prevent double-clicks
 

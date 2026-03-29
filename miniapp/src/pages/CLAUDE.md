@@ -3,12 +3,14 @@
 ## Folder Structure
 
 Simple pages (single file):
+
 ```
 src/pages/
 └── home.tsx
 ```
 
 Complex pages (folder):
+
 ```
 src/pages/auth/
 └── login/
@@ -47,7 +49,7 @@ export const loginSchema = (t: (k: string) => string) =>
   z.object({
     phone: z.string().regex(/^0[0-9]{9}$/, t('validation.phone')),
     password: z.string().min(6, t('validation.passwordMin')),
-  })
+  });
 ```
 
 ## Auth Guard Rules
@@ -82,15 +84,15 @@ export const loginSchema = (t: (k: string) => string) =>
 Any page that uses a TanStack Query hook must be wrapped with `QueryClientProvider`. Use a fresh `QueryClient` per test (no-retry to avoid hanging on failures):
 
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
+  });
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
+  );
 }
 ```
 
@@ -105,14 +107,46 @@ vi.mock('@/services/authService', () => ({
     verifyOtp: vi.fn().mockResolvedValue({ otpToken: 'test-token' }),
     // include only the methods the component calls
   },
-}))
+}));
 ```
 
 After a mutation resolves, TanStack Query sets `isSuccess: true` and triggers a re-render — use `waitFor` when asserting post-mutation state:
 
 ```tsx
-await userEvent.click(submitButton)
-await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/otp', expect.anything()))
+await userEvent.click(submitButton);
+await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/otp', expect.anything()));
+```
+
+### Mocking PasswordInput (form tests)
+
+`PasswordInput` uses a dynamic SVG import that fails in jsdom. Mock it inline in each test file. **Always use `forwardRef`** so react-hook-form's `register()` ref attaches correctly — without it, `handleSubmit` reads empty field values.
+
+```tsx
+import { forwardRef } from 'react';
+
+vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
+  PasswordInput: forwardRef<
+    HTMLInputElement,
+    { label?: string; error?: string; [k: string]: unknown }
+  >(({ label, error, ...props }, ref) => (
+    <div>
+      {label && <label>{label}</label>}
+      <input type="password" aria-label={label ?? 'password'} ref={ref} {...props} />
+      {error && <span>{error}</span>}
+    </div>
+  )),
+}));
+```
+
+> **v8 ignore note:** If `forwardRef` is imported at the top level but used inside a `vi.mock` factory, use `require('react').forwardRef` inside the factory instead — the factory is hoisted before imports execute.
+
+### Querying unlabeled inputs
+
+`Input` and `PasswordInput` do not associate `<label>` with `<input>` via `htmlFor`/`id`, so `getByRole('textbox', { name: /label/i })` fails. Use `document.querySelector` instead:
+
+```tsx
+const nameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
+await userEvent.type(nameInput, 'Alice');
 ```
 
 ### Router state pages
@@ -121,8 +155,8 @@ Pages that require router state (`/otp`, `/register/complete`, `/new-password`) 
 
 ```tsx
 // ✅ correct — provides required state
-renderNewPwd({ phone: '0901234567', otpToken: 'test-token' })
+renderNewPwd({ phone: '0901234567', otpToken: 'test-token' });
 
 // ❌ wrong — component redirects, no fields rendered
-renderNewPwd({ phone: '0901234567' })
+renderNewPwd({ phone: '0901234567' });
 ```

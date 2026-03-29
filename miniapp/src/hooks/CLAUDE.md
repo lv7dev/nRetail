@@ -8,35 +8,35 @@ All auth mutations and queries are in `src/hooks/useAuth.ts`.
 
 ### Mutations
 
-| Hook | Calls | Side effects |
-|------|-------|--------------|
-| `useLogin()` | `POST /auth/login` | On success: `storage.setTokens()` + `setAuth(user)` |
-| `useRequestOtp(flow)` | `POST /auth/otp/register` or `POST /auth/otp/forgot-password` | None |
-| `useVerifyOtp()` | `POST /auth/otp/verify` | None — caller navigates with returned `otpToken` |
-| `useRegister()` | `POST /auth/register` | On success: `storage.setTokens()` + `setAuth(user)` |
-| `useResetPassword()` | `POST /auth/reset-password` | None — caller navigates to `/login` |
-| `useLogout()` | `POST /auth/logout` | On settled (success or error): `clearAuth()` (clears tokens + user) |
+| Hook                  | Calls                                                         | Side effects                                                        |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `useLogin()`          | `POST /auth/login`                                            | On success: `storage.setTokens()` + `setAuth(user)`                 |
+| `useRequestOtp(flow)` | `POST /auth/otp/register` or `POST /auth/otp/forgot-password` | None                                                                |
+| `useVerifyOtp()`      | `POST /auth/otp/verify`                                       | None — caller navigates with returned `otpToken`                    |
+| `useRegister()`       | `POST /auth/register`                                         | On success: `storage.setTokens()` + `setAuth(user)`                 |
+| `useResetPassword()`  | `POST /auth/reset-password`                                   | None — caller navigates to `/login`                                 |
+| `useLogout()`         | `POST /auth/logout`                                           | On settled (success or error): `clearAuth()` (clears tokens + user) |
 
 ### Queries
 
-| Hook | Calls | Notes |
-|------|-------|-------|
+| Hook      | Calls          | Notes                                                                           |
+| --------- | -------------- | ------------------------------------------------------------------------------- |
 | `useMe()` | `GET /auth/me` | `enabled: false` — only used by `AuthProvider` for rehydration via `.refetch()` |
 
 ### Usage Pattern
 
 ```tsx
-import { useLogin } from '@/hooks/useAuth'
+import { useLogin } from '@/hooks/useAuth';
 
 export default function LoginPage() {
-  const { mutate: login, isPending } = useLogin()
+  const { mutate: login, isPending } = useLogin();
 
   const onSubmit = (data: FormData) => {
     login(data, {
       onSuccess: () => navigate('/'),
       onError: (err) => setError(resolveApiError(err, t)),
-    })
-  }
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -45,7 +45,7 @@ export default function LoginPage() {
         {t('login.submit')}
       </Button>
     </form>
-  )
+  );
 }
 ```
 
@@ -54,26 +54,27 @@ export default function LoginPage() {
 For new domains (products, orders, etc.), create `src/hooks/useProducts.ts`:
 
 ```ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { productService } from '@/services/productService'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { productService } from '@/services/productService';
 
 export function useProducts() {
   return useQuery({
     queryKey: ['products'],
     queryFn: productService.getList,
-  })
+  });
 }
 
 export function useCreateProduct() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: productService.create,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
-  })
+  });
 }
 ```
 
 **Rules:**
+
 - One hook file per domain
 - `queryKey` arrays must be consistent across the domain — define them as constants if used in multiple hooks
 - Side effects (cache invalidation, navigation, token storage) belong in `onSuccess` / `onSettled` — never in the service layer
@@ -96,3 +97,31 @@ vi.mock('@/hooks/useAuth', () => ({
 ```
 
 See `src/pages/CLAUDE.md` for the full `QueryClientProvider` wrapper pattern.
+
+## Testing Hooks Directly (vi.hoisted)
+
+When testing hook files themselves (`useAuth.test.ts`), mock functions referenced inside `vi.mock` factories must be created with `vi.hoisted()`. Variables declared with `const` outside the factory are in the Temporal Dead Zone when the factory runs (Vitest hoists `vi.mock` calls before imports).
+
+```ts
+// ✅ correct — vi.hoisted() creates functions before hoisting
+const { mockAuthService, mockStorage } = vi.hoisted(() => ({
+  mockAuthService: {
+    login: vi.fn(),
+    logout: vi.fn(),
+    // ...
+  },
+  mockStorage: {
+    getAccessToken: vi.fn(),
+    getRefreshToken: vi.fn().mockReturnValue('refresh-tok'),
+    setTokens: vi.fn(),
+    clearTokens: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/authService', () => ({ authService: mockAuthService }));
+vi.mock('@/utils/storage', () => ({ storage: mockStorage }));
+
+// ❌ wrong — const mockFn = vi.fn() is in TDZ when factory runs
+const mockFn = vi.fn();
+vi.mock('@/services/authService', () => ({ authService: { login: mockFn } })); // ReferenceError
+```

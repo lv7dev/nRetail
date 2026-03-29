@@ -37,7 +37,8 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │   ├── axios.ts                # Axios instance, interceptors, typed helpers (get/post/put/del)
 │   │   └── authService.ts          # Auth API calls (typed functions over axios helpers)
 │   ├── types/                      # Shared TypeScript interfaces & types
-│   │   └── auth.ts                 # User, TokenPair, AuthResponse, OtpVerifyResponse
+│   │   ├── auth.ts                 # User, TokenPair, AuthResponse, OtpVerifyResponse
+│   │   └── cart.ts                 # CartItem
 │   ├── mocks/                      # Test infrastructure — MSW server + handlers (never imported in prod)
 │   │   ├── server.ts               # MSW Node server (used by integration tests)
 │   │   ├── handlers/
@@ -98,6 +99,7 @@ index.html → src/app.tsx → QueryClientProvider → BrowserRouter → AuthPro
 ## Architecture Principles
 
 ### Components
+
 - `components/ui/` — generic, reusable, no business logic (Button, Card, Modal)
 - `components/shared/` — app-specific shared components (Header, BottomNav, ProtectedRoute)
 - `pages/` — route-level components; may be a single file or a folder for complex routes
@@ -105,6 +107,7 @@ index.html → src/app.tsx → QueryClientProvider → BrowserRouter → AuthPro
 ### API Client (Axios)
 
 All HTTP calls go through `services/axios.ts`. It exports:
+
 - `apiClient` — Axios instance with base URL + `Content-Type: application/json`
 - `get<T>(path)`, `post<T>(path, body?)`, `put<T>(path, body?)`, `del<T>(path)` — typed helpers that automatically unwrap the `{ data: T }` envelope from the backend `ResponseInterceptor`
 
@@ -112,12 +115,12 @@ All HTTP calls go through `services/axios.ts`. It exports:
 
 ```ts
 // services/productService.ts
-import { get, post } from './axios'
+import { get, post } from './axios';
 
 export const productService = {
   getList: () => get<Product[]>('/products'),
   create: (dto: CreateProductDto) => post<Product>('/products', dto),
-}
+};
 ```
 
 #### Request Interceptor
@@ -127,6 +130,7 @@ Automatically attaches the Bearer token from `storage.getAccessToken()` to every
 #### Response Interceptor (Silent Refresh)
 
 On `401` responses:
+
 1. **Checks `Authorization` header presence** — if the original request had no Bearer token (e.g., login, OTP verify), the 401 is a business error, not a session expiry. Rejects immediately with `ApiError` so the caller can display it.
 2. If request was authenticated, reads refresh token from `storage.getRefreshToken()`
 3. If no refresh token → clears tokens, redirects to `/login`
@@ -151,24 +155,25 @@ export class ApiError extends Error {
   ) {}
 }
 
-export function resolveApiError(err: unknown, t: TFunction): string
+export function resolveApiError(err: unknown, t: TFunction): string;
 // Returns a translated user-facing message based on err.code → errors.json key,
 // falling back to err.message, then a generic 'errors.unknown' key.
 ```
 
 **Pattern in mutation `onError` handlers:**
-```tsx
-import { resolveApiError } from '@/utils/apiError'
-import { useTranslation } from 'react-i18next'
 
-const { t } = useTranslation(['auth', 'errors'])
-const { mutate, isPending } = useLogin()
+```tsx
+import { resolveApiError } from '@/utils/apiError';
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation(['auth', 'errors']);
+const { mutate, isPending } = useLogin();
 
 const onSubmit = (data) => {
   mutate(data, {
     onError: (err) => setError(resolveApiError(err, t)),
-  })
-}
+  });
+};
 ```
 
 **i18n error codes** (in `locales/{vi,en}/errors.json`):
@@ -181,15 +186,16 @@ Tokens are stored via `utils/storage.ts`. It uses `nativeStorage` from `zmp-sdk`
 **Platform detection:** `window.APP_ID` is set by the Zalo container before the mini app boots — it is `undefined` in a plain browser tab or test runner. The check runs once at module load, not per call.
 
 ```ts
-import { storage } from '@/utils/storage'
+import { storage } from '@/utils/storage';
 
-storage.getAccessToken()              // string | null
-storage.getRefreshToken()             // string | null
-storage.setTokens(access, refresh)    // persist both tokens
-storage.clearTokens()                 // remove both tokens
+storage.getAccessToken(); // string | null
+storage.getRefreshToken(); // string | null
+storage.setTokens(access, refresh); // persist both tokens
+storage.clearTokens(); // remove both tokens
 ```
 
 **Rules:**
+
 - Never read/write tokens directly — always use `storage.*`
 - `storage.clearTokens()` is called automatically by the response interceptor and `clearAuth()` on logout
 - Do NOT set `window.APP_ID` in tests unless deliberately mocking the Zalo environment — it routes all storage calls to `nativeStorage`, which throws outside Zalo
@@ -200,13 +206,14 @@ storage.clearTokens()                 // remove both tokens
 One store file per domain. Use for **client/UI state only** — not server data.
 
 **Auth store shape:**
+
 ```ts
 // store/useAuthStore.ts
 interface AuthState {
-  user: User | null
-  isReady: boolean         // true once rehydration attempt is complete
-  setAuth: (user: User) => void    // sets user + isReady = true
-  clearAuth: () => void            // clears tokens + sets user = null
+  user: User | null;
+  isReady: boolean; // true once rehydration attempt is complete
+  setAuth: (user: User) => void; // sets user + isReady = true
+  clearAuth: () => void; // clears tokens + sets user = null
 }
 ```
 
@@ -214,13 +221,13 @@ interface AuthState {
 
 ```ts
 // Other stores follow the same pattern
-import { create } from 'zustand'
+import { create } from 'zustand';
 
 export const useCartStore = create<CartStore>((set) => ({
   items: [],
   add: (item) => set((s) => ({ items: [...s.items, item] })),
-  remove: (id) => set((s) => ({ items: s.items.filter(i => i.id !== id) })),
-}))
+  remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+}));
 ```
 
 ### App Rehydration
@@ -233,6 +240,7 @@ export const useCartStore = create<CartStore>((set) => ({
 4. Until `isReady`, renders `<SplashPage />` instead of children
 
 `ProtectedRoute` respects `isReady`:
+
 - `!isReady` → render `null` (splash is shown by `AuthProvider`)
 - `isReady && !user` → redirect to `/login`
 - `isReady && user` → render the outlet
@@ -243,11 +251,11 @@ Use `@tanstack/react-query` for all data fetching. Mutations return `isPending` 
 
 ```ts
 // hooks/useProducts.ts
-import { useQuery } from '@tanstack/react-query'
-import { productService } from '@/services/productService'
+import { useQuery } from '@tanstack/react-query';
+import { productService } from '@/services/productService';
 
 export function useProducts() {
-  return useQuery({ queryKey: ['products'], queryFn: productService.getList })
+  return useQuery({ queryKey: ['products'], queryFn: productService.getList });
 }
 ```
 
@@ -258,14 +266,15 @@ Auth mutations live in `hooks/useAuth.ts` — see `src/hooks/CLAUDE.md` for the 
 Define a zod schema, then pass it via `zodResolver`. Keep schemas co-located with the form or in `src/types/`.
 
 ```ts
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-const schema = (t: TFunction) => z.object({
-  phone: z.string().regex(/^0\d{9}$/, t('validation.phone')),
-  password: z.string().min(6, t('validation.passwordMin')),
-})
+const schema = (t: TFunction) =>
+  z.object({
+    phone: z.string().regex(/^0\d{9}$/, t('validation.phone')),
+    password: z.string().min(6, t('validation.passwordMin')),
+  });
 // NEVER wrap fields in z.preprocess — it changes the inferred input type to `unknown`,
 // breaking the zodResolver type contract with react-hook-form.
 ```
@@ -283,52 +292,55 @@ The `Button` component accepts a `loading?: boolean` prop. When `true`, it shows
 **Always pass `isPending` from the mutation to the submit button.** Never manage loading state manually with `useState`.
 
 ### Zalo SDK
+
 Always wrap `zmp-sdk` calls in a custom hook using lazy `import()` — never import at module level.
+
 ```ts
 // hooks/useZaloUser.ts
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 
 export function useZaloUser() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
   useEffect(() => {
-    import('zmp-sdk').then(({ getUserInfo }) => getUserInfo().then(setUser))
-  }, [])
-  return user
+    import('zmp-sdk').then(({ getUserInfo }) => getUserInfo().then(setUser));
+  }, []);
+  return user;
 }
 ```
 
 ## Commands
 
 ```bash
-npm run start            # Dev server via zmp start (localhost:3000)
-npm run login            # Authenticate with Zalo (zmp login)
-npm run deploy           # Build & deploy to Zalo (zmp deploy)
-npm run test             # Unit/component tests (Vitest, excludes *.integration.test.*)
-npm run test:integration # Integration tests (Vitest + MSW, includes *.integration.test.*)
-npm run format           # Prettier format: src/**/*.{ts,tsx} + e2e/**/*.ts
-npx playwright test      # E2E tests (requires backend + Redis running)
-npx playwright test --ui # E2E tests with interactive UI
+npm run start              # Dev server via zmp start (localhost:3000)
+npm run login              # Authenticate with Zalo (zmp login)
+npm run deploy             # Build & deploy to Zalo (zmp deploy)
+npm run test               # Unit/component tests (Vitest, excludes *.integration.test.*)
+npm run test:coverage      # Unit tests + coverage report (100% threshold enforced)
+npm run test:integration   # Integration tests (Vitest + MSW, includes *.integration.test.*)
+npm run format             # Prettier format: src/**/*.{ts,tsx} + e2e/**/*.ts
+npx playwright test        # E2E tests (requires backend + Redis running)
+npx playwright test --ui   # E2E tests with interactive UI
 ```
 
 ## Key Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| react / react-dom | UI framework |
-| react-router-dom | Client-side routing |
-| zustand | Client state management |
-| @tanstack/react-query | Server state, async data fetching & caching |
-| axios | HTTP client (with interceptors for auth + error normalization) |
-| react-hook-form + @hookform/resolvers | Form state management |
-| zod | Schema validation (forms) |
-| react-i18next + i18next | Internationalization (VI + EN, namespaces: common, auth, errors) |
-| zmp-sdk | Zalo Mini App SDK — required platform dep, lazy import only |
-| zmp-ui | Zalo UI components — required platform dep, import when needed |
-| zmp-vite-plugin | Zalo Vite plugin — required for Mini App to build and run, do NOT remove |
-| vite + @vitejs/plugin-react | Build tooling |
-| tailwindcss | Styling |
-| vitest + @testing-library/react + @testing-library/jest-dom | Unit & component testing |
-| playwright + @playwright/test | End-to-end testing |
+| Package                                                     | Purpose                                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| react / react-dom                                           | UI framework                                                             |
+| react-router-dom                                            | Client-side routing                                                      |
+| zustand                                                     | Client state management                                                  |
+| @tanstack/react-query                                       | Server state, async data fetching & caching                              |
+| axios                                                       | HTTP client (with interceptors for auth + error normalization)           |
+| react-hook-form + @hookform/resolvers                       | Form state management                                                    |
+| zod                                                         | Schema validation (forms)                                                |
+| react-i18next + i18next                                     | Internationalization (VI + EN, namespaces: common, auth, errors)         |
+| zmp-sdk                                                     | Zalo Mini App SDK — required platform dep, lazy import only              |
+| zmp-ui                                                      | Zalo UI components — required platform dep, import when needed           |
+| zmp-vite-plugin                                             | Zalo Vite plugin — required for Mini App to build and run, do NOT remove |
+| vite + @vitejs/plugin-react                                 | Build tooling                                                            |
+| tailwindcss                                                 | Styling                                                                  |
+| vitest + @testing-library/react + @testing-library/jest-dom | Unit & component testing                                                 |
+| playwright + @playwright/test                               | End-to-end testing                                                       |
 
 ## Conventions
 
@@ -366,6 +378,7 @@ npx playwright test --ui # E2E tests with interactive UI
 ### TDD Rule — Always Test First
 
 Pure TDD is enforced across all three tiers:
+
 1. **Write the test** and commit it (RED — test fails because feature doesn't exist yet)
 2. **Write the implementation** and commit it (GREEN — test passes)
 3. **Refactor** if needed (tests stay green)
@@ -374,11 +387,31 @@ Never write implementation code before a failing test exists for it.
 
 ### Three-Tier Test Structure
 
-| Tier | Files | Runner | What it tests |
-|------|-------|--------|---------------|
-| **Unit / Component** | `*.test.tsx` co-located | `npm run test` | Component rendering, hook logic, utils — no network |
-| **Integration** | `*.integration.test.{ts,tsx}` co-located | `npm run test:integration` | Real axios + TanStack Query + MSW HTTP interception |
-| **E2E** | `e2e/**/*.spec.ts` | `npx playwright test` | Full user flows against real backend |
+| Tier                 | Files                                    | Runner                     | What it tests                                               |
+| -------------------- | ---------------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| **Unit / Component** | `*.test.{ts,tsx}` co-located             | `npm run test`             | Component rendering, hook logic, utils, stores — no network |
+| **Integration**      | `*.integration.test.{ts,tsx}` co-located | `npm run test:integration` | Real axios + TanStack Query + MSW HTTP interception         |
+| **E2E**              | `e2e/**/*.spec.ts`                       | `npx playwright test`      | Full user flows against real backend                        |
+
+### Coverage (100% enforced)
+
+`npm run test:coverage` runs unit tests with `@vitest/coverage-v8` and enforces **100% coverage** on all four metrics: statements, branches, functions, lines.
+
+**Excluded from coverage** (configured in `vite.config.mts`):
+
+- `src/app.tsx`, `src/i18n.ts` — bootstrap/config, not logic
+- `src/setupTests*.ts`, `src/mocks/**` — test infrastructure
+- `src/types/**`, `src/**/index.ts` — type definitions and barrel exports
+- `src/services/authService.ts` — thin API wrapper, fully covered by integration tests
+- `src/services/axios.ts` — interceptor paths covered by `axios.integration.test.ts`
+
+**v8 ignore markers** — use `/* v8 ignore next */` (single line) or `/* v8 ignore start */` / `/* v8 ignore stop */` (block) for:
+
+- Defensive null checks that can never be false in jsdom (e.g. `if (ref.current)`)
+- Platform detection branches (e.g. `isZalo` in `storage.ts`)
+- Dynamic imports (e.g. SVG lazy loading in `Icon.tsx`)
+
+**Rule:** Never ignore real logic — only architecturally unreachable branches.
 
 ### Unit / Component Tests
 
@@ -394,21 +427,27 @@ Never write implementation code before a failing test exists for it.
 Any component that calls a TanStack Query hook (`useMutation`, `useQuery`) must be rendered inside a `QueryClientProvider`. Create a fresh client per test to avoid state bleed:
 
 ```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
+  });
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
+  );
 }
 
 const renderPage = () => {
-  const Wrapper = createWrapper()
-  return render(<Wrapper><MemoryRouter><MyPage /></MemoryRouter></Wrapper>)
-}
+  const Wrapper = createWrapper();
+  return render(
+    <Wrapper>
+      <MemoryRouter>
+        <MyPage />
+      </MemoryRouter>
+    </Wrapper>,
+  );
+};
 ```
 
 **Mocking the service layer for mutation tests:**
@@ -419,16 +458,18 @@ Mock `@/services/authService` (or any service) rather than mocking the hook modu
 vi.mock('@/services/authService', () => ({
   authService: {
     login: vi.fn().mockResolvedValue({
-      accessToken: 'token', refreshToken: 'refresh',
+      accessToken: 'token',
+      refreshToken: 'refresh',
       user: { id: '1', phone: '0901234567', name: 'Test', role: 'customer' },
     }),
     requestRegisterOtp: vi.fn().mockResolvedValue(undefined),
     // add only methods called by the component under test
   },
-}))
+}));
 ```
 
 **Mocking TanStack Query mutations (alternative — use when testing hook behaviour directly):**
+
 ```tsx
 // Mock the entire hook module
 vi.mock('@/hooks/useAuth', () => ({
@@ -436,33 +477,36 @@ vi.mock('@/hooks/useAuth', () => ({
     mutate: vi.fn(),
     isPending: false,
   }),
-}))
+}));
 ```
 
 **Mocking navigation:**
+
 ```tsx
-const mockNavigate = vi.fn()
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return { ...actual, useNavigate: () => mockNavigate }
-})
+  const actual = await vi.importActual('react-router-dom');
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 ```
 
 **Mocking i18n** (makes assertions language-neutral):
+
 ```tsx
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
-}))
+}));
 ```
 
 **Testing pages with `isPending`:**
+
 ```tsx
 vi.mock('@/hooks/useAuth', () => ({
   useLogin: () => ({ mutate: vi.fn(), isPending: true }),
-}))
+}));
 
-render(<LoginPage />)
-expect(screen.getByRole('button', { name: 'login.submit' })).toBeDisabled()
+render(<LoginPage />);
+expect(screen.getByRole('button', { name: 'login.submit' })).toBeDisabled();
 ```
 
 ### Integration Tests (MSW)
@@ -489,20 +533,21 @@ expect(screen.getByRole('button', { name: 'login.submit' })).toBeDisabled()
 ```ts
 // Seed test tokens before visiting protected pages
 await page.evaluate(() => {
-  localStorage.setItem('accessToken', 'test-token')
-  localStorage.setItem('refreshToken', 'test-refresh')
-})
-await page.goto('/')
+  localStorage.setItem('accessToken', 'test-token');
+  localStorage.setItem('refreshToken', 'test-refresh');
+});
+await page.goto('/');
 
 // Test a full register flow
-await page.goto('/register')
-await page.fill('input[name="phone"]', '0901234567')
-await page.click('button[type="submit"]')
+await page.goto('/register');
+await page.fill('input[name="phone"]', '0901234567');
+await page.click('button[type="submit"]');
 // → should navigate to /otp
-await expect(page).toHaveURL('/otp')
+await expect(page).toHaveURL('/otp');
 ```
 
 **API mocking in E2E:**
+
 ```ts
 await page.route('**/auth/login', (route) =>
   route.fulfill({
@@ -515,20 +560,21 @@ await page.route('**/auth/login', (route) =>
       },
     }),
   }),
-)
+);
 ```
 
 ## Zalo Safe Area
 
 The app runs inside a Zalo iframe with `statusBar: "transparent"` and `actionBarHidden: true` (`app-config.json`). The OS status bar and Zalo's own chrome strip overlap the top of the viewport. Use these CSS custom properties (defined by `zmp-ui` and `src/css/app.css`) to offset UI elements correctly:
 
-| Variable | Value | Covers |
-|---|---|---|
-| `--zaui-safe-area-inset-top` | `env(safe-area-inset-top, 0px)` | OS status bar height |
-| `--zaui-safe-area-inset-bottom` | `env(safe-area-inset-bottom, 0px)` | Home indicator / Android nav |
-| `--zalo-chrome-top` | `calc(--zaui-safe-area-inset-top + 2.6rem)` | OS status bar **+** Zalo chrome strip |
+| Variable                        | Value                                       | Covers                                |
+| ------------------------------- | ------------------------------------------- | ------------------------------------- |
+| `--zaui-safe-area-inset-top`    | `env(safe-area-inset-top, 0px)`             | OS status bar height                  |
+| `--zaui-safe-area-inset-bottom` | `env(safe-area-inset-bottom, 0px)`          | Home indicator / Android nav          |
+| `--zalo-chrome-top`             | `calc(--zaui-safe-area-inset-top + 2.6rem)` | OS status bar **+** Zalo chrome strip |
 
 **Rules:**
+
 - Use `--zalo-chrome-top` for anything that must clear both the OS status bar and the Zalo chrome strip (e.g. `AuthLayout` floating controls)
 - Use `--zaui-safe-area-inset-top` / `.pt-safe` for content that only needs to clear the OS status bar (e.g. `AppLayout` page content)
 - Use `--zaui-safe-area-inset-bottom` / `.pb-safe` for content that must clear the bottom home indicator (e.g. `BottomNav`)
@@ -540,13 +586,14 @@ The app runs inside a Zalo iframe with `statusBar: "transparent"` and `actionBar
 
 These three packages are **required infrastructure** for Zalo Mini App — never remove them:
 
-| Package | Why Required |
-|---|---|
-| `zmp-sdk` | Provides Zalo APIs (auth, payment, sharing, etc.) |
-| `zmp-ui` | Zalo-native UI components (matches platform look & feel) |
+| Package           | Why Required                                                |
+| ----------------- | ----------------------------------------------------------- |
+| `zmp-sdk`         | Provides Zalo APIs (auth, payment, sharing, etc.)           |
+| `zmp-ui`          | Zalo-native UI components (matches platform look & feel)    |
 | `zmp-vite-plugin` | Vite plugin that enables `zmp start` / `zmp deploy` to work |
 
 **Usage rules:**
+
 - `zmp-vite-plugin` — configured in `vite.config.mts`, never imported in app code
 - `zmp-sdk` — always use lazy `import()` in a custom hook, never at module top level
 - `zmp-ui` — import components directly when needed for Zalo-native UI
