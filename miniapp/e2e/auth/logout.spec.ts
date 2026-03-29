@@ -25,8 +25,9 @@ test.describe('Logout flow', () => {
     await loginAs(page, PHONE, PASSWORD);
     await expect(page).toHaveURL('/', { timeout: 10_000 });
 
-    // Click the logout button (assumed to be accessible by role/text)
-    await page.click('button[data-testid="logout-btn"], button:has-text("logout"), [aria-label="Logout"]');
+    // Navigate to the profile page where the logout button lives
+    await page.goto('/profile');
+    await page.click('button[data-testid="logout-btn"]');
 
     await expect(page).toHaveURL('/login', { timeout: 10_000 });
   });

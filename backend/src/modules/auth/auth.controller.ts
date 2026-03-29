@@ -27,7 +27,12 @@ export class AuthController {
 
   @Post('otp/register')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 6, ttl: 300_000 } })
+  @Throttle({
+    default: {
+      limit: Number(process.env.OTP_THROTTLE_LIMIT ?? 6),
+      ttl: Number(process.env.OTP_THROTTLE_TTL ?? 300_000),
+    },
+  })
   @ApiOperation({
     summary: 'Request OTP — register flow',
     description:
@@ -50,7 +55,12 @@ export class AuthController {
 
   @Post('otp/forgot-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 6, ttl: 300_000 } })
+  @Throttle({
+    default: {
+      limit: Number(process.env.OTP_THROTTLE_LIMIT ?? 6),
+      ttl: Number(process.env.OTP_THROTTLE_TTL ?? 300_000),
+    },
+  })
   @ApiOperation({
     summary: 'Request OTP — forgot-password flow',
     description:

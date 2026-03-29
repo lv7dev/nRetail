@@ -47,6 +47,24 @@ test.describe('RegisterComplete flow', () => {
   });
 
   test('9.1c — password mismatch shows validation error, stays on page', async ({ page }) => {
+    // Mock OTP endpoints so this test is isolated from DB state — the phone
+    // may already be registered after 9.1a ran. We only need to reach
+    // /register/complete to test client-side validation.
+    await page.route('**/auth/otp/register', (route) =>
+      route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: {} }),
+      }),
+    );
+    await page.route('**/auth/otp/verify', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: { otpToken: 'test-otp-token-for-validation' } }),
+      }),
+    );
+
     await page.goto('/register');
     await page.fill('input[name="phone"]', PHONE);
     await page.click('button[type="submit"]');
@@ -64,7 +82,7 @@ test.describe('RegisterComplete flow', () => {
 
     // Should stay on the same page and show validation error
     await expect(page).toHaveURL('/register/complete', { timeout: 5_000 });
-    // Validation error message visible (zod refine message key)
-    await expect(page.locator('text=validation.passwordMismatch')).toBeVisible({ timeout: 5_000 });
+    // Validation error message visible (translated from validation.passwordMismatch)
+    await expect(page.locator('text=Passwords do not match')).toBeVisible({ timeout: 5_000 });
   });
 });

@@ -11,7 +11,7 @@ export async function fillOtpBoxes(page: Page, otp: string): Promise<void> {
   }
 }
 
-export const API_BASE = 'http://localhost:3001';
+export const API_BASE = process.env.API_BASE ?? 'http://localhost:3001';
 
 /**
  * Complete the full registration flow via the backend API.
