@@ -5,15 +5,24 @@ Playwright tests running against real frontend + real backend. All tests in `e2e
 ## Prerequisites
 
 ```bash
-# In backend/ — starts PostgreSQL (port 5434) + Redis
+# In backend/ — starts PostgreSQL (port 5433 for tests) + Redis
 docker compose up -d
 
 # Backend serves on port 3001 (Playwright webServer config sets PORT=3001)
-# Frontend serves on port 3000 (Vite)
+# Frontend serves on port 3000 (Vite, using vite.e2e.config.mts)
 # Both are auto-started by Playwright via playwright.config.ts webServer
 ```
 
 Redis must be running before `npx playwright test` — the backend webServer command will fail to start without it.
+
+> **Run from `miniapp/`:** Always run `npx playwright test` from the `miniapp/` directory, not the repo root.
+
+## Playwright Config Notes
+
+- **`workers: 1`** — tests run sequentially to prevent parallel OTP rate limit hits (6 req/5 min per IP)
+- **`vite.e2e.config.mts`** — separate Vite config used for E2E; sets `root: "."` so Vite finds `index.html` at the project root (the main `vite.config.mts` uses `root: "./src"` for the ZMP workflow and can't serve SPA routes correctly under `npx vite`)
+- **OTP throttle env vars** — backend is started with `OTP_THROTTLE_LIMIT=1000 OTP_THROTTLE_TTL=1000` so OTP endpoints are effectively unlimited during E2E runs
+- **`reuseExistingServer: !process.env.CI`** — in dev mode, Playwright reuses servers already running on ports 3000/3001; kill them first if they were started with a different config (`kill $(lsof -ti:3000,3001)`)
 
 ## Folder Structure
 
@@ -87,12 +96,11 @@ The base URL for direct API calls in `beforeAll` hooks: `process.env.API_BASE ??
 
 Runs once before all tests. Connects to the test database directly via `pg` to:
 
-1. Clean up `RefreshToken` and `User` rows for test phone numbers
-2. Upsert a `PhoneConfig` row for each test phone with `defaultOtp: '999999'`
+1. Clean up `RefreshToken`, `User`, and `OtpVerification` rows for all known test phones
 
-This enables the OTP bypass used by `seedUser` and the register/forgot-password flows.
+This ensures each run starts from a fresh state. **No PhoneConfig seeding is needed** — the backend uses `'999999'` as a global OTP fallback for any phone without a `PhoneConfig` row.
 
-> **Why direct DB access?** There is no admin API endpoint for seeding test data. The test DB URL is `postgresql://postgres:postgres@localhost:5433/test_nretail`.
+> **Why direct DB access?** There is no admin API endpoint for cleanup. The test DB URL is `postgresql://postgres:postgres@localhost:5433/test_nretail`.
 
 ## Phone Number Conventions
 
@@ -100,11 +108,11 @@ Each spec file uses a dedicated phone number to prevent cross-test contamination
 
 | Spec                        | Phone                                                   |
 | --------------------------- | ------------------------------------------------------- |
-| `register.spec.ts`          | `0900000001`                                            |
-| `login.spec.ts`             | `0900000002`                                            |
-| `forgot-password.spec.ts`   | `0900000003`                                            |
+| `register.spec.ts`          | `0901111111`                                            |
+| `login.spec.ts`             | `0902222222`                                            |
+| `forgot-password.spec.ts`   | `0903333333`                                            |
 | `route-guard.spec.ts`       | (no seeding needed)                                     |
-| `token-refresh.spec.ts`     | `0900000002` (shared with login, seeded in `beforeAll`) |
+| `token-refresh.spec.ts`     | `0902222222` (shared with login, seeded in `beforeAll`) |
 | `register-complete.spec.ts` | `0904444444`                                            |
 | `logout.spec.ts`            | `0905555555`                                            |
 | `otp-errors.spec.ts`        | `0906666666`                                            |

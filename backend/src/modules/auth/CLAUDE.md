@@ -265,11 +265,20 @@ The global `ThrottlerGuard` (registered as `APP_GUARD` in `AppModule`) covers al
 | Endpoint | Limit | Window |
 |---|---|---|
 | `POST /auth/login` | 10 req | 60s |
-| `POST /auth/otp/register` | 6 req | 300s (aligned with OTP TTL) |
-| `POST /auth/otp/forgot-password` | 6 req | 300s (aligned with OTP TTL) |
+| `POST /auth/otp/register` | `OTP_THROTTLE_LIMIT` req (default 6) | `OTP_THROTTLE_TTL` ms (default 300 000) |
+| `POST /auth/otp/forgot-password` | `OTP_THROTTLE_LIMIT` req (default 6) | `OTP_THROTTLE_TTL` ms (default 300 000) |
 | All other auth endpoints | 100 req (global default) | 60s |
 
 Overrides are set via `@Throttle({ default: { limit, ttl } })` on the controller method. `@UseGuards(ThrottlerGuard)` is **not** needed — the global guard handles it.
+
+**OTP throttle env vars** — the OTP endpoint limits are read from `process.env` at module load time:
+
+| Var | Default | Purpose |
+|---|---|---|
+| `OTP_THROTTLE_LIMIT` | `6` | Max OTP requests per window per IP |
+| `OTP_THROTTLE_TTL` | `300000` | Window in **milliseconds** (5 min) |
+
+Set `OTP_THROTTLE_LIMIT=1000 OTP_THROTTLE_TTL=1000` in E2E/integration environments to effectively disable the limit without touching production defaults.
 
 ---
 

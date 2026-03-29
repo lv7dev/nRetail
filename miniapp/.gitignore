@@ -36,3 +36,7 @@ Thumbs.db
 
 # Production build
 www/
+
+# Playwright
+test-results/
+playwright-report/

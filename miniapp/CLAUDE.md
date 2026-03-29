@@ -22,6 +22,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   ├── pages/                      # Route-level components (one file or folder per route)
 │   │   ├── splash/                 # Splash screen shown during auth rehydration
 │   │   ├── home/
+│   │   ├── profile.tsx             # Profile page — logout button (data-testid="logout-btn")
 │   │   └── auth/
 │   │       ├── login/
 │   │       ├── register/           # Step 1: phone number
@@ -67,21 +68,25 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   ├── tsconfig.json               # E2E-specific TS config: extends root, adds node + @playwright/test types
 │   ├── fixtures/
 │   │   └── auth.ts                 # seedUser, loginAs, setExpiredAccessToken, fillOtpBoxes, API_BASE
-│   ├── global-setup.ts             # Seeds PhoneConfig for OTP bypass (connects to test DB directly)
+│   ├── global-setup.ts             # Cleans up test users/OTPs before each run (connects to test DB directly)
 │   └── auth/
 │       ├── register.spec.ts
+│       ├── register-complete.spec.ts
 │       ├── login.spec.ts
+│       ├── logout.spec.ts
 │       ├── forgot-password.spec.ts
+│       ├── otp-errors.spec.ts
 │       ├── route-guard.spec.ts
 │       └── token-refresh.spec.ts
 ├── index.html                      # HTML entry point (<div id="app">)
 ├── package.json
 ├── tsconfig.json                   # Strict mode, path alias @/* → ./src/*, types: vite/client + vitest/globals, include: src only
-├── vite.config.mts                 # Root: ./src, plugins: react
+├── vite.config.mts                 # Root: ./src, plugins: react (ZMP workflow — do NOT use for npx vite directly)
+├── vite.e2e.config.mts             # Root: ., plugins: react (E2E only — used by Playwright webServer)
 ├── vitest.integration.config.ts    # Separate Vitest config for *.integration.test.* files
 ├── tailwind.config.js              # Tailwind configuration
 ├── postcss.config.js               # Tailwind + Autoprefixer
-├── playwright.config.ts            # Playwright config (dual webServer: Vite:3000 + NestJS:3001)
+├── playwright.config.ts            # Playwright config (dual webServer: Vite:3000 + NestJS:3001, workers:1)
 ├── app-config.json                 # Zalo Mini App settings (title, theme, safe areas)
 ├── zmp-cli.json                    # ZMP CLI project metadata
 └── .env                            # APP_ID, ZMP_TOKEN, VITE_API_BASE_URL (do not commit secrets)
