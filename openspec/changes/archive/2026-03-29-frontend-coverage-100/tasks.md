@@ -64,4 +64,4 @@
 
 - [x] 10.1 Run `npm run test:coverage` from `miniapp/` and confirm all 4 metrics at 100% with no threshold failures
 - [x] 10.2 Run `npm run test:integration` and confirm all integration tests pass
-- [ ] 10.3 Run `npx playwright test` (with backend + Redis running) and confirm all E2E tests pass
+- [x] 10.3 Run `npx playwright test` (with backend + Redis running) and confirm all E2E tests pass
