@@ -51,4 +51,26 @@ describe('PasswordInput', () => {
     render(<PasswordInput ref={ref} />);
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
   });
+
+  it('button has aria-label "Show password" when hidden', () => {
+    render(<PasswordInput />);
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+  });
+
+  it('button has aria-label "Hide password" when visible', async () => {
+    render(<PasswordInput />);
+    await userEvent.click(screen.getByRole('button'));
+    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument();
+  });
+
+  it('renders label when label prop is provided', () => {
+    render(<PasswordInput label="Password" />);
+    expect(screen.getByText('Password')).toBeInTheDocument();
+  });
+
+  it('renders error message and applies destructive border when error prop is provided', () => {
+    render(<PasswordInput error="Required" />);
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(document.querySelector('input')).toHaveClass('border-destructive');
+  });
 });

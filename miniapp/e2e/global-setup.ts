@@ -17,6 +17,9 @@ const TEST_PHONES = [
   '0901111111', // register tests
   '0902222222', // login tests
   '0903333333', // forgot-password tests
+  '0904444444', // register-complete tests (9.1)
+  '0905555555', // logout tests (9.2)
+  '0906666666', // otp-errors tests (9.3)
 ];
 
 export default async function globalSetup() {

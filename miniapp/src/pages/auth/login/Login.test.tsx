@@ -6,6 +6,17 @@ import { forwardRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LoginPage from './index';
 
+// Mock useLogin so we can control mutate behavior
+const mockMutate = vi.fn();
+vi.mock('@/hooks/useAuth', () => ({
+  useLogin: () => ({
+    mutate: mockMutate,
+    isPending: false,
+    isError: false,
+    error: null,
+  }),
+}));
+
 // Mock navigation
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -53,7 +64,10 @@ const renderLogin = () => {
 };
 
 describe('LoginPage', () => {
-  beforeEach(() => mockNavigate.mockClear());
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    mockMutate.mockReset();
+  });
 
   it('renders phone and password fields', () => {
     renderLogin();
@@ -86,5 +100,16 @@ describe('LoginPage', () => {
   it('has a link to forgot-password', () => {
     renderLogin();
     expect(screen.getByText(/forgotPassword/i)).toBeTruthy();
+  });
+
+  it('navigates to / on successful login', async () => {
+    mockMutate.mockImplementation((_data: unknown, { onSuccess }: { onSuccess: () => void }) =>
+      onSuccess(),
+    );
+    renderLogin();
+    await userEvent.type(document.querySelector('input[type="tel"]')!, '0901234567');
+    await userEvent.type(document.querySelector('input[type="password"]')!, 'password123');
+    await userEvent.click(screen.getByRole('button', { name: /login\.submit/i }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true }));
   });
 });

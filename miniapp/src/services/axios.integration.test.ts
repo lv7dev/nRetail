@@ -89,8 +89,7 @@ describe('2.2 Silent refresh on authenticated 401', () => {
       }),
       http.post('*/auth/refresh', () =>
         HttpResponse.json({
-          accessToken: 'refreshed-access',
-          refreshToken: 'refreshed-refresh',
+          data: { accessToken: 'refreshed-access', refreshToken: 'refreshed-refresh' },
         }),
       ),
     );
@@ -116,8 +115,7 @@ describe('2.2 Silent refresh on authenticated 401', () => {
       }),
       http.post('*/auth/refresh', () =>
         HttpResponse.json({
-          accessToken: 'refreshed-access',
-          refreshToken: 'refreshed-refresh',
+          data: { accessToken: 'refreshed-access', refreshToken: 'refreshed-refresh' },
         }),
       ),
     );
@@ -247,8 +245,7 @@ describe('2.5 Concurrent 401s — single refresh call', () => {
         // Small delay to allow both concurrent 401 callbacks to pile up before resolving
         await new Promise((r) => setTimeout(r, 50));
         return HttpResponse.json({
-          accessToken: 'new-access-token',
-          refreshToken: 'new-refresh-token',
+          data: { accessToken: 'new-access-token', refreshToken: 'new-refresh-token' },
         });
       }),
     );

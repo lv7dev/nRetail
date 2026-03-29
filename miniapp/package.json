@@ -19,6 +19,7 @@
     "start": "zmp start",
     "deploy": "zmp deploy",
     "test": "vitest --exclude '**/*.integration.test.{ts,tsx}'",
+    "test:coverage": "vitest run --coverage --exclude '**/*.integration.test.*'",
     "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "test:e2e": "playwright test",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\""

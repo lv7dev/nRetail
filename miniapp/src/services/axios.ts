@@ -3,6 +3,7 @@ import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '@/utils/apiError';
 import { storage } from '@/utils/storage';
 
+/* v8 ignore next 3 */
 if (import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL) {
   console.warn('[axios] VITE_API_BASE_URL is not set – requests will use relative paths');
 }

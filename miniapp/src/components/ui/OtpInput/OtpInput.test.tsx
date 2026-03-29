@@ -66,4 +66,38 @@ describe('OtpInput', () => {
     const { container } = render(<OtpInput onComplete={vi.fn()} className="mt-4" />);
     expect(container.firstChild).toHaveClass('mt-4');
   });
+
+  it('backspace on empty box focuses previous and clears it', () => {
+    render(<OtpInput onComplete={vi.fn()} />);
+    const inputs = screen.getAllByRole('textbox');
+    // Fill box 0 with '1', box 1 stays empty
+    fireEvent.change(inputs[0], { target: { value: '1' } });
+    // Focus box 1 then press Backspace (box 1 is empty, index=1 > 0)
+    fireEvent.keyDown(inputs[1], { key: 'Backspace' });
+    // Box 0 should be cleared
+    expect(inputs[0]).toHaveValue('');
+  });
+
+  it('paste with fewer digits than length clears remaining boxes', () => {
+    const onComplete = vi.fn();
+    render(<OtpInput onComplete={onComplete} />);
+    const inputs = screen.getAllByRole('textbox');
+    // Paste only 3 digits into a 6-box input → lines 49-50 run for boxes 3,4,5
+    fireEvent.paste(inputs[0], {
+      clipboardData: { getData: () => '123' },
+    });
+    expect(inputs[3]).toHaveValue('');
+    expect(inputs[4]).toHaveValue('');
+    expect(inputs[5]).toHaveValue('');
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('non-backspace key on empty box does nothing', () => {
+    render(<OtpInput onComplete={vi.fn()} />);
+    const inputs = screen.getAllByRole('textbox');
+    // Press ArrowLeft — covers the false branch of the Backspace condition
+    fireEvent.keyDown(inputs[1], { key: 'ArrowLeft' });
+    // No error thrown, all inputs unchanged
+    expect(inputs[0]).toHaveValue('');
+  });
 });

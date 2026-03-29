@@ -61,4 +61,19 @@ describe('LanguageSwitcher', () => {
     await userEvent.click(screen.getByText('English'));
     expect(screen.queryByText('Tiếng Việt')).not.toBeInTheDocument();
   });
+
+  it('click outside closes the dropdown', async () => {
+    render(
+      <div>
+        <LanguageSwitcher />
+        <button data-testid="outside">outside</button>
+      </div>,
+    );
+    // Open the dropdown
+    await userEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    expect(screen.getByText('Tiếng Việt')).toBeInTheDocument();
+    // Click outside the component
+    fireEvent.mouseDown(screen.getByTestId('outside'));
+    expect(screen.queryByText('Tiếng Việt')).not.toBeInTheDocument();
+  });
 });

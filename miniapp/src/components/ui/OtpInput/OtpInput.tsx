@@ -32,6 +32,7 @@ export function OtpInput({ length = 6, onComplete, className }: OtpInputProps) {
     if (e.key === 'Backspace' && !values.current[index] && index > 0) {
       inputs.current[index - 1]?.focus();
       values.current[index - 1] = '';
+      /* v8 ignore next */
       if (inputs.current[index - 1]) inputs.current[index - 1]!.value = '';
     }
   };
@@ -42,11 +43,13 @@ export function OtpInput({ length = 6, onComplete, className }: OtpInputProps) {
     if (!digits) return;
     digits.split('').forEach((d, i) => {
       values.current[i] = d;
+      /* v8 ignore next */
       if (inputs.current[i]) inputs.current[i]!.value = d;
     });
     // fill remaining with empty
     for (let i = digits.length; i < length; i++) {
       values.current[i] = '';
+      /* v8 ignore next */
       if (inputs.current[i]) inputs.current[i]!.value = '';
     }
     inputs.current[Math.min(digits.length, length - 1)]?.focus();

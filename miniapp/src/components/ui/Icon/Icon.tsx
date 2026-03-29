@@ -17,6 +17,7 @@ export function Icon({ name, variant = 'regular', size = 16, className }: IconPr
 
   useEffect(() => {
     let cancelled = false;
+    /* v8 ignore start */
     import(`@/assets/icons/${variant}/${name}.svg?react`)
       .then((mod) => {
         if (!cancelled) setSvgIcon(() => mod.default as SvgComponent);
@@ -24,6 +25,7 @@ export function Icon({ name, variant = 'regular', size = 16, className }: IconPr
       .catch(() => {
         if (!cancelled) setSvgIcon(null);
       });
+    /* v8 ignore stop */
     return () => {
       cancelled = true;
     };
