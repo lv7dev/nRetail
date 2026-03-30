@@ -5,10 +5,16 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 
 // Mock i18next
 const mockChangeLanguage = vi.fn();
+let mockLanguage = 'vi';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (k: string) => k,
-    i18n: { language: 'vi', changeLanguage: mockChangeLanguage },
+    i18n: {
+      get language() {
+        return mockLanguage;
+      },
+      changeLanguage: mockChangeLanguage,
+    },
   }),
 }));
 
@@ -20,6 +26,7 @@ vi.mock('@/components/ui/Icon/Icon', () => ({
 describe('LanguageSwitcher', () => {
   beforeEach(() => {
     mockChangeLanguage.mockClear();
+    mockLanguage = 'vi';
   });
 
   it('renders a globe button', () => {
@@ -75,5 +82,14 @@ describe('LanguageSwitcher', () => {
     // Click outside the component
     fireEvent.mouseDown(screen.getByTestId('outside'));
     expect(screen.queryByText('Tiếng Việt')).not.toBeInTheDocument();
+  });
+
+  it('highlights active language when i18n.language is a region-tagged locale (vi-VN → vi)', async () => {
+    mockLanguage = 'vi-VN';
+    render(<LanguageSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    const vietButton = screen.getByText('Tiếng Việt');
+    expect(vietButton).toHaveClass('text-primary');
+    expect(vietButton).toHaveClass('font-medium');
   });
 });

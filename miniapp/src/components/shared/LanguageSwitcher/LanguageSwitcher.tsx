@@ -45,7 +45,9 @@ export function LanguageSwitcher() {
               }}
               className={cn(
                 'w-full text-left px-3 py-2 text-sm hover:bg-surface-muted transition-colors',
-                i18n.language === lang.code ? 'text-primary font-medium' : 'text-content',
+                i18n.language.split('-')[0] === lang.code
+                  ? 'text-primary font-medium'
+                  : 'text-content',
               )}
             >
               {lang.label}
