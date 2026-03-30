@@ -15,7 +15,7 @@ vi.mock('react-i18next', () => ({
 
 // Avoid dynamic SVG imports from PasswordInput — forward ref so react-hook-form can read values
 vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
-  PasswordInput: reactForwardRef<HTMLInputElement, { label?: string; error?: string; [k: string]: unknown }>(
+  PasswordInput: reactForwardRef<HTMLInputElement, { label?: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>>(
     ({ label, error, ...props }, ref) => (
       <div>
         {label && <label>{label}</label>}

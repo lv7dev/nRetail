@@ -8,6 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { forwardRef as reactForwardRef } from 'react';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/mocks/server';
 import RegisterCompletePage from './complete';
@@ -21,22 +22,18 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/PasswordInput/PasswordInput', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { forwardRef } = require('react') as typeof import('react');
-  return {
-    PasswordInput: forwardRef<
-      HTMLInputElement,
-      { label?: string; error?: string; [k: string]: unknown }
-    >(({ label, error, ...props }, ref) => (
-      <div>
-        {label && <label>{label}</label>}
-        <input type="password" aria-label={label ?? 'password'} ref={ref} {...props} />
-        {error && <span>{error}</span>}
-      </div>
-    )),
-  };
-});
+vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
+  PasswordInput: reactForwardRef<
+    HTMLInputElement,
+    { label?: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>
+  >(({ label, error, ...props }, ref) => (
+    <div>
+      {label && <label>{label}</label>}
+      <input type="password" aria-label={label ?? 'password'} ref={ref} {...props} />
+      {error && <span>{error}</span>}
+    </div>
+  )),
+}));
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
