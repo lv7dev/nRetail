@@ -113,7 +113,7 @@ describe('RegisterCompletePage', () => {
     await userEvent.click(screen.getByRole('button', { name: /register\.submit/i }));
     // resolveApiError returns t('errors.PHONE_ALREADY_EXISTS') which with t=k=>k is 'errors.PHONE_ALREADY_EXISTS'
     await waitFor(() =>
-      expect(screen.getByText('errors.PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
+      expect(screen.getByText('PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
     );
   });
 });

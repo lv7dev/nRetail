@@ -15,9 +15,9 @@ export class ApiError extends Error {
 export function resolveApiError(err: unknown, t: TFunction): string {
   if (err instanceof ApiError) {
     if (err.code) {
-      return t(`errors.${err.code}`, { defaultValue: err.message });
+      return t(err.code as string, { defaultValue: err.message });
     }
     return err.message;
   }
-  return t('errors.unknown');
+  return t('unknown');
 }

@@ -81,7 +81,7 @@ describe('LoginPage integration', () => {
     await user.click(screen.getByRole('button', { name: /login\.submit/i }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-    expect(screen.getByRole('alert')).toHaveTextContent('errors.INVALID_CREDENTIALS');
+    expect(screen.getByRole('alert')).toHaveTextContent('INVALID_CREDENTIALS');
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

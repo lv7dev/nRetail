@@ -29,10 +29,10 @@ describe('resolveApiError', () => {
   it('returns translated key when ApiError has code', () => {
     const err = new ApiError(401, 'Unauthorized', 'INVALID_CREDENTIALS');
     const result = resolveApiError(err, t);
-    expect(t).toHaveBeenCalledWith('errors.INVALID_CREDENTIALS', {
+    expect(t).toHaveBeenCalledWith('INVALID_CREDENTIALS', {
       defaultValue: 'Unauthorized',
     });
-    expect(result).toBe('errors.INVALID_CREDENTIALS');
+    expect(result).toBe('INVALID_CREDENTIALS');
   });
 
   it('returns message directly when ApiError has no code', () => {
@@ -44,12 +44,12 @@ describe('resolveApiError', () => {
 
   it('returns errors.unknown for non-ApiError', () => {
     const result = resolveApiError(new Error('Something'), t);
-    expect(t).toHaveBeenCalledWith('errors.unknown');
-    expect(result).toBe('errors.unknown');
+    expect(t).toHaveBeenCalledWith('unknown');
+    expect(result).toBe('unknown');
   });
 
   it('returns errors.unknown for plain object', () => {
     resolveApiError({ message: 'oops' }, t);
-    expect(t).toHaveBeenCalledWith('errors.unknown');
+    expect(t).toHaveBeenCalledWith('unknown');
   });
 });

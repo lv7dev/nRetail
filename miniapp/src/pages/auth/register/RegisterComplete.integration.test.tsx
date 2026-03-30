@@ -105,7 +105,7 @@ describe('RegisterCompletePage integration', () => {
     await userEvent.click(screen.getByRole('button', { name: /register\.submit/i }));
 
     await waitFor(() =>
-      expect(screen.getByText('errors.PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
+      expect(screen.getByText('PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
     );
     expect(mockNavigate).not.toHaveBeenCalled();
   });
