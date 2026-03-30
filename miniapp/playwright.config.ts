@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -11,7 +12,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'VITE_API_BASE_URL=http://localhost:3001 npx vite --config vite.e2e.config.mts --port 3000',
+      command:
+        'VITE_API_BASE_URL=http://localhost:3001 npx vite --config vite.e2e.config.mts --port 3000',
       port: 3000,
       reuseExistingServer: !process.env.CI,
     },
