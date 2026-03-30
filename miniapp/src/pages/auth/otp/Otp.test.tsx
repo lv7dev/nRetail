@@ -104,4 +104,36 @@ describe('OtpPage', () => {
     await userEvent.click(screen.getByText(/otp\.resend/i));
     await waitFor(() => expect(screen.getByText('otp.resendSuccess')).toBeInTheDocument());
   });
+
+  it('h1 has dark mode class', () => {
+    renderOtp({ flow: 'register', phone: '0901234567' });
+    expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('muted paragraphs have dark mode class', () => {
+    renderOtp({ flow: 'register', phone: '0901234567' });
+    const mutedParas = document.querySelectorAll('p.text-content-muted');
+    expect(mutedParas.length).toBeGreaterThan(0);
+    mutedParas.forEach((p) => {
+      expect(p.className).toMatch(/dark:text-content-dark-muted/);
+    });
+  });
+
+  it('inline phone span has dark mode class', () => {
+    renderOtp({ flow: 'register', phone: '0901234567' });
+    const phoneSpan = screen.getByText('0901234567');
+    expect(phoneSpan.className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('pending indicator paragraph has dark mode class when isPending', async () => {
+    const { authService } = await import('@/services/authService');
+    (authService.verifyOtp as ReturnType<typeof vi.fn>).mockImplementationOnce(
+      () => new Promise(() => {}),
+    );
+    renderOtp({ flow: 'register', phone: '0901234567' });
+    await userEvent.click(screen.getByTestId('otp-complete'));
+    await waitFor(() => expect(document.querySelector('p.text-sm.text-content-muted')).toBeInTheDocument());
+    const pendingPara = document.querySelector('p.text-sm.text-content-muted')!;
+    expect(pendingPara.className).toMatch(/dark:text-content-dark-muted/);
+  });
 });

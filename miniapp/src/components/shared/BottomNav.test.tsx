@@ -85,4 +85,11 @@ describe('BottomNav', () => {
     const badges = screen.queryAllByText(/^\d+$/);
     expect(badges).toHaveLength(0);
   });
+
+  it('nav container has dark mode classes', () => {
+    const { container } = renderNav();
+    const nav = container.querySelector('nav')!;
+    expect(nav.className).toMatch(/dark:bg-surface-dark/);
+    expect(nav.className).toMatch(/dark:border-border-dark/);
+  });
 });

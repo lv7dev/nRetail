@@ -68,7 +68,7 @@ export function OtpInput({ length = 6, onComplete, className }: OtpInputProps) {
           inputMode="numeric"
           maxLength={1}
           className={cn(
-            'w-10 h-12 rounded-md border border-border bg-surface text-center text-lg font-semibold text-content',
+            'w-10 h-12 rounded-md border border-border bg-surface text-center text-lg font-semibold text-content dark:bg-surface-dark dark:border-border-dark dark:text-content-dark',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary',
           )}
           onChange={(e) => handleChange(i, e)}

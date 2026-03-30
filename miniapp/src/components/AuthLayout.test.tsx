@@ -28,4 +28,10 @@ describe('AuthLayout', () => {
     renderAuthLayout();
     expect(screen.getByRole('button', { name: 'Change language' })).toBeInTheDocument();
   });
+
+  it('root container has dark mode background class', () => {
+    const { container } = renderAuthLayout();
+    const root = container.firstChild as HTMLElement;
+    expect(root.className).toMatch(/dark:bg-surface-dark/);
+  });
 });

@@ -53,10 +53,13 @@ export default function OtpPage() {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6 text-center">
-        <h1 className="text-2xl font-bold text-content">{t('otp.title')}</h1>
-        <p className="text-sm text-content-muted">{t('otp.description')}</p>
-        <p className="text-sm text-content-muted">
-          {t('otp.codeSentTo')} <span className="font-medium text-content">{state.phone}</span>
+        <h1 className="text-2xl font-bold text-content dark:text-content-dark">{t('otp.title')}</h1>
+        <p className="text-sm text-content-muted dark:text-content-dark-muted">
+          {t('otp.description')}
+        </p>
+        <p className="text-sm text-content-muted dark:text-content-dark-muted">
+          {t('otp.codeSentTo')}{' '}
+          <span className="font-medium text-content dark:text-content-dark">{state.phone}</span>
         </p>
         {resendMutation.isSuccess && <Alert variant="success" message={t('otp.resendSuccess')} />}
         {resendMutation.isError && (
@@ -64,7 +67,9 @@ export default function OtpPage() {
         )}
         {error && <Alert variant="error" message={error} />}
         <OtpInput onComplete={handleComplete} className="justify-center" />
-        {verifyOtpMutation.isPending && <p className="text-sm text-content-muted">...</p>}
+        {verifyOtpMutation.isPending && (
+          <p className="text-sm text-content-muted dark:text-content-dark-muted">...</p>
+        )}
         <button
           type="button"
           onClick={handleResend}

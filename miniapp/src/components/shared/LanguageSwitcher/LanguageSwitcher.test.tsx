@@ -92,4 +92,28 @@ describe('LanguageSwitcher', () => {
     expect(vietButton).toHaveClass('text-primary');
     expect(vietButton).toHaveClass('font-medium');
   });
+
+  it('trigger button has dark mode classes', () => {
+    render(<LanguageSwitcher />);
+    const trigger = screen.getByRole('button', { name: 'Change language' });
+    expect(trigger.className).toMatch(/dark:text-content-dark-muted/);
+    expect(trigger.className).toMatch(/dark:hover:text-content-dark/);
+    expect(trigger.className).toMatch(/dark:hover:bg-surface-dark-muted/);
+  });
+
+  it('dropdown panel has dark mode classes', async () => {
+    render(<LanguageSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    const panel = screen.getByText('Tiếng Việt').closest('div')!;
+    expect(panel.className).toMatch(/dark:bg-surface-dark/);
+    expect(panel.className).toMatch(/dark:border-border-dark/);
+  });
+
+  it('option items have dark mode classes', async () => {
+    render(<LanguageSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    const enButton = screen.getByText('English');
+    expect(enButton.className).toMatch(/dark:text-content-dark/);
+    expect(enButton.className).toMatch(/dark:hover:bg-surface-dark-muted/);
+  });
 });

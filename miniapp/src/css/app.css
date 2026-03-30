@@ -21,6 +21,10 @@
   margin-bottom: 24px;
 }
 
+[html.dark] .section-container {
+  background: #18181b;
+}
+
 .zaui-list-item {
   cursor: pointer;
 }

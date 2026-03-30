@@ -77,4 +77,15 @@ describe('ForgotPasswordPage', () => {
     renderFP();
     expect(screen.getByText(/forgotPassword\.backToLogin/i)).toBeTruthy();
   });
+
+  it('h1 has dark mode class', () => {
+    renderFP();
+    expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('description paragraph has dark mode class', () => {
+    renderFP();
+    const muted = document.querySelector('p.text-content-muted')!;
+    expect(muted.className).toMatch(/dark:text-content-dark-muted/);
+  });
 });

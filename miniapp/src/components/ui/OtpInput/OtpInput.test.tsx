@@ -100,4 +100,14 @@ describe('OtpInput', () => {
     // No error thrown, all inputs unchanged
     expect(inputs[0]).toHaveValue('');
   });
+
+  it('digit input cells have dark mode classes', () => {
+    render(<OtpInput onComplete={vi.fn()} />);
+    const inputs = screen.getAllByRole('textbox');
+    inputs.forEach((input) => {
+      expect(input.className).toMatch(/dark:bg-surface-dark/);
+      expect(input.className).toMatch(/dark:border-border-dark/);
+      expect(input.className).toMatch(/dark:text-content-dark/);
+    });
+  });
 });

@@ -89,4 +89,9 @@ describe('NewPasswordPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /newPassword\.submit/i }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/login', expect.anything()));
   });
+
+  it('h1 has dark mode class', () => {
+    renderNewPwd({ phone: '0901234567', otpToken: 'test-token' });
+    expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/dark:text-content-dark/);
+  });
 });

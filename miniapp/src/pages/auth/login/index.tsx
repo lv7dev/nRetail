@@ -40,7 +40,9 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold text-content text-center">{t('login.title')}</h1>
+        <h1 className="text-2xl font-bold text-content text-center dark:text-content-dark">
+          {t('login.title')}
+        </h1>
         <Alert
           message={loginMutation.isError ? resolveApiError(loginMutation.error, tErrors) : ''}
           variant="error"
@@ -66,7 +68,7 @@ export default function LoginPage() {
           <Link to="/forgot-password" className="block text-sm text-primary hover:underline">
             {t('login.forgotPassword')}
           </Link>
-          <p className="text-sm text-content-muted">
+          <p className="text-sm text-content-muted dark:text-content-dark-muted">
             {t('login.noAccount')}{' '}
             <Link to="/register" className="text-primary hover:underline">
               {t('login.registerLink')}

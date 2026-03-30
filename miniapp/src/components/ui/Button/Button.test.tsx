@@ -72,4 +72,19 @@ describe('Button', () => {
     render(<Button className="mt-4">Styled</Button>);
     expect(screen.getByRole('button').className).toMatch(/mt-4/);
   });
+
+  it('secondary variant has dark mode classes', () => {
+    render(<Button variant="secondary">Secondary</Button>);
+    const btn = screen.getByRole('button');
+    expect(btn.className).toMatch(/dark:bg-surface-dark-muted/);
+    expect(btn.className).toMatch(/dark:text-content-dark/);
+    expect(btn.className).toMatch(/dark:border-border-dark/);
+  });
+
+  it('ghost variant has dark mode classes', () => {
+    render(<Button variant="ghost">Ghost</Button>);
+    const btn = screen.getByRole('button');
+    expect(btn.className).toMatch(/dark:text-content-dark/);
+    expect(btn.className).toMatch(/dark:hover:bg-surface-dark-muted/);
+  });
 });

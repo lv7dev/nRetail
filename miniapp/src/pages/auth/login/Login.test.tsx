@@ -112,4 +112,16 @@ describe('LoginPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /login\.submit/i }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true }));
   });
+
+  it('h1 has dark mode class', () => {
+    renderLogin();
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('muted paragraph has dark mode class', () => {
+    renderLogin();
+    const muted = document.querySelector('p.text-content-muted')!;
+    expect(muted.className).toMatch(/dark:text-content-dark-muted/);
+  });
 });

@@ -17,7 +17,7 @@ export default function ProfilePage() {
     <div style={{ padding: '2rem', textAlign: 'center' }}>
       <h1>Profile</h1>
       <div className="flex items-center justify-between py-2">
-        <span className="text-sm text-content">{t('theme')}</span>
+        <span className="text-sm text-content dark:text-content-dark">{t('theme')}</span>
         <ThemeSwitcher />
       </div>
       <button data-testid="logout-btn" onClick={handleLogout}>

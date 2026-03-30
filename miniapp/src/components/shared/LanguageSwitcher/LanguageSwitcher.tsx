@@ -27,14 +27,14 @@ export function LanguageSwitcher() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 p-2 rounded-md text-content-muted hover:text-content hover:bg-surface-muted transition-colors"
+        className="flex items-center gap-1 p-2 rounded-md text-content-muted hover:text-content hover:bg-surface-muted transition-colors dark:text-content-dark-muted dark:hover:text-content-dark dark:hover:bg-surface-dark-muted"
         aria-label="Change language"
         type="button"
       >
         <Icon name="globe" variant="regular" size={18} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-36 rounded-md border border-border bg-surface shadow-md z-50">
+        <div className="absolute right-0 top-full mt-1 w-36 rounded-md border border-border bg-surface shadow-md z-50 dark:bg-surface-dark dark:border-border-dark">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
@@ -44,10 +44,10 @@ export function LanguageSwitcher() {
                 setOpen(false);
               }}
               className={cn(
-                'w-full text-left px-3 py-2 text-sm hover:bg-surface-muted transition-colors',
+                'w-full text-left px-3 py-2 text-sm hover:bg-surface-muted transition-colors dark:hover:bg-surface-dark-muted',
                 i18n.language.split('-')[0] === lang.code
                   ? 'text-primary font-medium'
-                  : 'text-content',
+                  : 'text-content dark:text-content-dark',
               )}
             >
               {lang.label}

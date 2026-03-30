@@ -73,4 +73,25 @@ describe('PasswordInput', () => {
     expect(screen.getByText('Required')).toBeInTheDocument();
     expect(document.querySelector('input')).toHaveClass('border-destructive');
   });
+
+  it('input element has dark mode classes', () => {
+    render(<PasswordInput />);
+    const input = document.querySelector('input')!;
+    expect(input.className).toMatch(/dark:bg-surface-dark/);
+    expect(input.className).toMatch(/dark:text-content-dark/);
+    expect(input.className).toMatch(/dark:border-border-dark/);
+    expect(input.className).toMatch(/dark:placeholder:text-content-dark-subtle/);
+  });
+
+  it('label has dark mode class', () => {
+    render(<PasswordInput label="Password" />);
+    const label = screen.getByText('Password');
+    expect(label.className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('eye-toggle button has dark mode class', () => {
+    render(<PasswordInput />);
+    const toggle = screen.getByRole('button');
+    expect(toggle.className).toMatch(/dark:text-content-dark-muted/);
+  });
 });

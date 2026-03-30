@@ -17,7 +17,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed left-0 right-0 flex bg-surface border-t border-border z-50"
+      className="fixed left-0 right-0 flex bg-surface border-t border-border z-50 dark:bg-surface-dark dark:border-border-dark"
       style={{ bottom: 'var(--zaui-safe-area-inset-bottom, 0px)' }}
     >
       {tabs.map((tab) => {

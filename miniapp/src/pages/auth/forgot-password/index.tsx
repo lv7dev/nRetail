@@ -37,8 +37,12 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold text-content text-center">{t('forgotPassword.title')}</h1>
-        <p className="text-sm text-content-muted text-center">{t('forgotPassword.description')}</p>
+        <h1 className="text-2xl font-bold text-content text-center dark:text-content-dark">
+          {t('forgotPassword.title')}
+        </h1>
+        <p className="text-sm text-content-muted text-center dark:text-content-dark-muted">
+          {t('forgotPassword.description')}
+        </p>
         <Alert
           message={
             requestOtpMutation.isError ? resolveApiError(requestOtpMutation.error, tErrors) : ''

@@ -81,4 +81,29 @@ describe('ThemeSwitcher', () => {
     expect(screen.getByText('Sáng')).toHaveClass('text-content');
     expect(screen.getByText('Tối')).toHaveClass('text-content');
   });
+
+  it('trigger button has dark mode classes', () => {
+    render(<ThemeSwitcher />);
+    const trigger = screen.getByRole('button', { name: 'Change theme' });
+    expect(trigger.className).toMatch(/dark:text-content-dark-muted/);
+    expect(trigger.className).toMatch(/dark:hover:text-content-dark/);
+    expect(trigger.className).toMatch(/dark:hover:bg-surface-dark-muted/);
+  });
+
+  it('dropdown panel has dark mode classes', async () => {
+    render(<ThemeSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change theme' }));
+    const panel = screen.getByText('Sáng').closest('div')!;
+    expect(panel.className).toMatch(/dark:bg-surface-dark/);
+    expect(panel.className).toMatch(/dark:border-border-dark/);
+  });
+
+  it('inactive option items have dark mode classes', async () => {
+    useThemeStore.setState({ preference: 'system' });
+    render(<ThemeSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change theme' }));
+    const sangBtn = screen.getByText('Sáng');
+    expect(sangBtn.className).toMatch(/dark:text-content-dark/);
+    expect(sangBtn.className).toMatch(/dark:hover:bg-surface-dark-muted/);
+  });
 });

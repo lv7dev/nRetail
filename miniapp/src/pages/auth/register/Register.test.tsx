@@ -77,4 +77,15 @@ describe('RegisterPage', () => {
     renderRegister();
     expect(screen.getByText(/loginLink/i)).toBeTruthy();
   });
+
+  it('h1 has dark mode class', () => {
+    renderRegister();
+    expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/dark:text-content-dark/);
+  });
+
+  it('muted paragraph has dark mode class', () => {
+    renderRegister();
+    const muted = document.querySelector('p.text-content-muted')!;
+    expect(muted.className).toMatch(/dark:text-content-dark-muted/);
+  });
 });

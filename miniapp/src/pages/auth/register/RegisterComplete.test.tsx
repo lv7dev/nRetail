@@ -116,4 +116,9 @@ describe('RegisterCompletePage', () => {
       expect(screen.getByText('PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
     );
   });
+
+  it('h1 has dark mode class', () => {
+    renderWithState({ phone: '0901234567', otpToken: 'tok' });
+    expect(screen.getByRole('heading', { level: 1 }).className).toMatch(/dark:text-content-dark/);
+  });
 });

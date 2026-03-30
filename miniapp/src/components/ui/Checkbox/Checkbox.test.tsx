@@ -51,4 +51,14 @@ describe('Checkbox', () => {
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
     expect(ref.current?.type).toBe('checkbox');
   });
+
+  it('checkbox input has dark mode border class', () => {
+    render(<Checkbox />);
+    expect(screen.getByRole('checkbox').className).toMatch(/dark:border-border-dark/);
+  });
+
+  it('label has dark mode class', () => {
+    render(<Checkbox label="Accept" id="accept" />);
+    expect(screen.getByText('Accept').className).toMatch(/dark:text-content-dark/);
+  });
 });

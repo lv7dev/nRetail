@@ -52,4 +52,19 @@ describe('Input', () => {
     render(<Input className="w-full" />);
     expect(screen.getByRole('textbox').className).toMatch(/w-full/);
   });
+
+  it('input element has dark mode classes', () => {
+    render(<Input />);
+    const input = screen.getByRole('textbox');
+    expect(input.className).toMatch(/dark:bg-surface-dark/);
+    expect(input.className).toMatch(/dark:text-content-dark/);
+    expect(input.className).toMatch(/dark:border-border-dark/);
+    expect(input.className).toMatch(/dark:placeholder:text-content-dark-subtle/);
+  });
+
+  it('label has dark mode class', () => {
+    render(<Input label="Name" id="name" />);
+    const label = screen.getByText('Name');
+    expect(label.className).toMatch(/dark:text-content-dark/);
+  });
 });

@@ -53,4 +53,14 @@ describe('ProfilePage', () => {
     expect(screen.getByText('theme')).toBeInTheDocument();
     expect(screen.getByTestId('theme-switcher')).toBeInTheDocument();
   });
+
+  it('theme label span has dark mode class', () => {
+    render(
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>,
+    );
+    const themeLabel = screen.getByText('theme');
+    expect(themeLabel.className).toMatch(/dark:text-content-dark/);
+  });
 });
