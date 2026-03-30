@@ -15,6 +15,14 @@ vi.mock('@/store/useAuthStore', () => ({
     selector({ clearAuth: mockClearAuth }),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (k: string) => k }),
+}));
+
+vi.mock('@/components/shared/ThemeSwitcher', () => ({
+  ThemeSwitcher: () => <div data-testid="theme-switcher" />,
+}));
+
 describe('ProfilePage', () => {
   it('renders without error', () => {
     render(
@@ -34,5 +42,15 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByTestId('logout-btn'));
     expect(mockClearAuth).toHaveBeenCalledOnce();
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
+  });
+
+  it('renders theme settings row with label and ThemeSwitcher', () => {
+    render(
+      <MemoryRouter>
+        <ProfilePage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('theme')).toBeInTheDocument();
+    expect(screen.getByTestId('theme-switcher')).toBeInTheDocument();
   });
 });

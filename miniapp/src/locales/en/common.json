@@ -10,6 +10,7 @@
     "required": "This field is required",
     "passwordMismatch": "Passwords do not match"
   },
+  "theme": "Appearance",
   "nav": {
     "home": "Home",
     "products": "Products",

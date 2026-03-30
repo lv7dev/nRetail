@@ -10,6 +10,7 @@
     "required": "Trường này là bắt buộc",
     "passwordMismatch": "Mật khẩu xác nhận không khớp"
   },
+  "theme": "Giao diện",
   "nav": {
     "home": "Trang chủ",
     "products": "Sản phẩm",

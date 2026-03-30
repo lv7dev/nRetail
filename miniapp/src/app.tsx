@@ -22,6 +22,7 @@ import AuthLayout from '@/components/AuthLayout';
 // Guards
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
 import AuthProvider from '@/components/AuthProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 // Auth pages
 import LoginPage from '@/pages/auth/login';
@@ -50,6 +51,7 @@ const queryClient = new QueryClient();
 const root = createRoot(document.getElementById('app')!);
 root.render(
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -76,5 +78,6 @@ root.render(
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ThemeProvider>
   </QueryClientProvider>,
 );
