@@ -73,6 +73,14 @@ describe('Icon', () => {
     expect(screen.queryByTestId('svg-icon')).not.toBeInTheDocument();
   });
 
+  it('renders with fill="currentColor" so icon color inherits from CSS color property', async () => {
+    render(<Icon name="house" variant="solid" />);
+    await waitFor(() => {
+      const svg = screen.getByTestId('svg-icon');
+      expect(svg).toHaveAttribute('fill', 'currentColor');
+    });
+  });
+
   it('does not update state when unmounted before import resolves', async () => {
     const { unmount } = render(<Icon name="house" variant="solid" />);
     // Unmount synchronously — sets cancelled=true before .then() microtask runs

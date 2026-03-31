@@ -33,5 +33,12 @@ export function Icon({ name, variant = 'regular', size = 16, className }: IconPr
 
   if (!SvgIcon) return null;
 
-  return <SvgIcon width={size} height={size} className={cn('inline-block', className)} />;
+  return (
+    <SvgIcon
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={cn('inline-block', className)}
+    />
+  );
 }

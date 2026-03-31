@@ -27,8 +27,7 @@ export default function BottomNav() {
           <button
             key={tab.path}
             onClick={() => navigate(tab.path)}
-            className="flex flex-1 flex-col items-center justify-center py-2 gap-0.5 relative"
-            style={{ color: isActive ? '#4f46e5' : '#71717a', fontWeight: isActive ? 700 : 400 }}
+            className={`flex flex-1 flex-col items-center justify-center py-2 gap-0.5 relative ${isActive ? 'text-primary font-bold' : 'text-content-muted dark:text-content-dark-muted font-normal'}`}
           >
             <Icon name={tab.icon} variant={tab.variant} size={20} />
             <span className="text-xs">{tab.label}</span>

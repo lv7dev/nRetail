@@ -42,19 +42,19 @@ describe('BottomNav', () => {
   it('applies active style to Home tab at root path', () => {
     renderNav('/');
     const homeBtn = screen.getByRole('button', { name: /home/i });
-    expect(homeBtn).toHaveStyle({ fontWeight: 700 });
+    expect(homeBtn.className).toMatch(/font-bold/);
   });
 
   it('applies active style to Products tab at /products sub-path', () => {
     renderNav('/products/123');
     const productsBtn = screen.getByRole('button', { name: /products/i });
-    expect(productsBtn).toHaveStyle({ fontWeight: 700 });
+    expect(productsBtn.className).toMatch(/font-bold/);
   });
 
   it('Home is NOT active at /products', () => {
     renderNav('/products');
     const homeBtn = screen.getByRole('button', { name: /home/i });
-    expect(homeBtn).toHaveStyle({ fontWeight: 400 });
+    expect(homeBtn.className).toMatch(/font-normal/);
   });
 
   it('navigates to /products on Products tab click', async () => {
@@ -91,5 +91,26 @@ describe('BottomNav', () => {
     const nav = container.querySelector('nav')!;
     expect(nav.className).toMatch(/dark:bg-surface-dark/);
     expect(nav.className).toMatch(/dark:border-border-dark/);
+  });
+
+  it('active tab button has text-primary class', () => {
+    renderNav('/');
+    const homeBtn = screen.getByRole('button', { name: /home/i });
+    expect(homeBtn.className).toMatch(/text-primary/);
+  });
+
+  it('inactive tab button has text-content-muted and dark:text-content-dark-muted classes', () => {
+    renderNav('/');
+    const productsBtn = screen.getByRole('button', { name: /products/i });
+    expect(productsBtn.className).toMatch(/text-content-muted/);
+    expect(productsBtn.className).toMatch(/dark:text-content-dark-muted/);
+  });
+
+  it('tab buttons have no inline style color property', () => {
+    renderNav('/');
+    const homeBtn = screen.getByRole('button', { name: /home/i });
+    const productsBtn = screen.getByRole('button', { name: /products/i });
+    expect(homeBtn).not.toHaveAttribute('style');
+    expect(productsBtn).not.toHaveAttribute('style');
   });
 });
