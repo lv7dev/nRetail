@@ -1,13 +1,8 @@
 import { PrismaClient, OutletRole } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg(pool),
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
 async function main() {
@@ -61,5 +56,4 @@ main()
   })
   .finally(() => {
     void prisma.$disconnect();
-    void pool.end();
   });
