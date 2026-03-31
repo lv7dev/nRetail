@@ -4,10 +4,11 @@ Zustand stores for client-side state. One file per domain. Never use stores for 
 
 ## Files
 
-| File              | Purpose                                                                  |
-| ----------------- | ------------------------------------------------------------------------ |
-| `useAuthStore.ts` | Auth session: current user, readiness flag, setAuth, clearAuth           |
-| `useCartStore.ts` | Shopping cart: items list, add/remove/clear actions, item count selector |
+| File               | Purpose                                                                         |
+| ------------------ | ------------------------------------------------------------------------------- |
+| `useAuthStore.ts`  | Auth session: current user, readiness flag, setAuth, clearAuth                  |
+| `useCartStore.ts`  | Shopping cart: items list, add/remove/clear actions, item count selector        |
+| `useThemeStore.ts` | Theme preference (`'light' \| 'dark' \| 'system'`), persisted to localStorage  |
 
 ## useAuthStore
 
@@ -68,6 +69,34 @@ import { useCartStore, cartItemCount } from '@/store/useCartStore';
 const items = useCartStore((s) => s.items);
 const count = useCartStore(cartItemCount); // reactive total quantity
 const { add, remove, clear } = useCartStore();
+```
+
+## useThemeStore
+
+```ts
+type ThemePreference = 'light' | 'dark' | 'system';
+
+interface ThemeState {
+  preference: ThemePreference; // raw user preference, NOT the resolved theme
+  setTheme: (pref: ThemePreference) => void;
+}
+```
+
+**Key behaviour:**
+
+- Default preference is `'system'` on first load (no persisted value).
+- Persisted to `localStorage` under key `'theme-preference'` via Zustand `persist` middleware.
+- The store holds only the raw preference — resolving `'system'` to `'light'` or `'dark'` is `ThemeProvider`'s responsibility.
+
+```ts
+import { useThemeStore } from '@/store/useThemeStore';
+
+// In a component
+const preference = useThemeStore((s) => s.preference);
+const setTheme = useThemeStore((s) => s.setTheme);
+
+// In tests — reset state
+useThemeStore.setState({ preference: 'system' });
 ```
 
 ## Adding a New Store

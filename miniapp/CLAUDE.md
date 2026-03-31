@@ -13,12 +13,14 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   ├── app.tsx                     # Bootstrap: imports styles, wraps providers, mounts React app
 │   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors)
 │   ├── components/
-│   │   ├── AppLayout.tsx           # Protected app shell (bottom nav, page outlet)
-│   │   ├── AuthLayout.tsx          # Auth page shell (centered, floating back button)
+│   │   ├── AppLayout.tsx           # Protected app shell (header row with ThemeSwitcher+LanguageSwitcher, bottom nav, page outlet)
+│   │   ├── AuthLayout.tsx          # Auth page shell (centered, floating back button + ThemeSwitcher+LanguageSwitcher)
 │   │   ├── AuthProvider.tsx        # Rehydration: calls GET /auth/me on mount if token exists
+│   │   ├── ThemeProvider.tsx       # Effect provider: syncs html.dark class + body[zaui-theme] from useThemeStore
 │   │   ├── ui/                     # Reusable, generic UI components (Button, Card, etc.)
 │   │   │   └── index.ts            # Barrel export
 │   │   └── shared/                 # App-specific shared components (Header, BottomNav, ProtectedRoute)
+│   │       └── ThemeSwitcher/      # Dropdown component: Light / System / Dark options, highlights active preference
 │   ├── pages/                      # Route-level components (one file or folder per route)
 │   │   ├── splash/                 # Splash screen shown during auth rehydration
 │   │   ├── home/
@@ -31,7 +33,9 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │       ├── forgot-password/    # Step 1: phone number (forgot-password flow)
 │   │       └── new-password/       # Step 3: new password (needs otpToken in router state)
 │   ├── store/                      # Zustand stores — one file per domain
-│   │   └── useAuthStore.ts
+│   │   ├── useAuthStore.ts
+│   │   ├── useCartStore.ts
+│   │   └── useThemeStore.ts        # Theme preference (light/dark/system) with localStorage persistence
 │   ├── hooks/                      # Custom React hooks
 │   │   └── useAuth.ts              # TanStack Query mutations/queries for all auth operations
 │   ├── services/                   # API / external service calls
@@ -95,7 +99,8 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 ## App Flow
 
 ```
-index.html → src/app.tsx → QueryClientProvider → BrowserRouter → AuthProvider
+index.html → src/app.tsx → QueryClientProvider → ThemeProvider → BrowserRouter → AuthProvider
+  → ThemeProvider syncs html.dark class + body[zaui-theme] from useThemeStore (pure effect, no markup)
   → AuthProvider calls GET /auth/me on mount (if token in storage)
   → Shows SplashPage until isReady = true
   → Routes render after rehydration completes
@@ -233,6 +238,35 @@ export const useCartStore = create<CartStore>((set) => ({
   add: (item) => set((s) => ({ items: [...s.items, item] })),
   remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
 }));
+```
+
+### Theme System
+
+Dark/light/system theme is managed by three cooperating pieces:
+
+| Piece | File | Role |
+|---|---|---|
+| `useThemeStore` | `store/useThemeStore.ts` | Holds `preference` (`'light' \| 'dark' \| 'system'`), persisted to `localStorage` under key `theme-preference`. Default: `'system'`. |
+| `ThemeProvider` | `components/ThemeProvider.tsx` | Reads `preference`, resolves to `'light'` or `'dark'` (system follows `prefers-color-scheme`), then syncs two DOM attributes: `html.dark` class (Tailwind `dark:`) and `body[zaui-theme]` (zmp-ui dark styling). Listens for OS `change` events when preference is `'system'`. Renders children directly — no markup. |
+| `ThemeSwitcher` | `components/shared/ThemeSwitcher/` | Dropdown component (follows `LanguageSwitcher` pattern) with three options: Light / System / Dark. Calls `useThemeStore.setTheme`. Placed in `AuthLayout`, `AppLayout` header row, and the Profile page. |
+
+**Dark mode in components:**
+
+- Use `dark:` Tailwind variant alongside every semantic token class: `bg-surface dark:bg-surface-dark`
+- Token mapping: `surface` → `surface.dark`, `surface-muted` → `surface.dark-muted`, `border` → `border.dark`, `content` → `content.dark`, `content-muted` → `content.dark-muted`, `content-subtle` → `content.dark-subtle`
+- Tokens `primary`, `destructive`, `success` have no dark variants — they remain the same in both modes
+- Never use `[zaui-theme="dark"]` selectors in JSX — use `dark:` prefix only (covered in `components/CLAUDE.md`)
+- `.section-container` in `app.css` uses `[html.dark] .section-container { background: ... }` (CSS-defined class can't use `dark:` inline)
+
+```ts
+import { useThemeStore } from '@/store/useThemeStore';
+
+// Read current preference
+const preference = useThemeStore((s) => s.preference);
+
+// Change theme
+const setTheme = useThemeStore((s) => s.setTheme);
+setTheme('dark'); // 'light' | 'dark' | 'system'
 ```
 
 ### App Rehydration
