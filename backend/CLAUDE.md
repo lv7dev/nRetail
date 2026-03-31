@@ -23,12 +23,18 @@ npm install             # first time only
 npm run start:dev       # dev server with hot reload
 ```
 
+### 3. Seed the database (optional)
+
+```bash
+npx prisma db seed      # must run from backend/ — seeds outlets + assigns test user (0123456789)
+```
+
 - API: `http://localhost:PORT` (PORT from `.env`, default varies — avoid 3000/5000 on macOS)
 - Swagger: `http://localhost:PORT/api/docs`
 
 > **macOS port conflicts:** Port 5000 is reserved by AirPlay/Control Center. Port 3000 may be used by the miniapp dev server. Use `PORT=4000` or `PORT=8000` in `.env`.
 
-### 3. Environment variables
+### 4. Environment variables
 
 Copy `.env.example` to `.env` and fill in values:
 
@@ -255,7 +261,9 @@ npm i -D @types/pg
 npx prisma init
 ```
 
-> **Prisma v7 note:** `PrismaClient` must be constructed with either an `adapter` or `accelerateUrl` — an empty `new PrismaClient()` throws. `PrismaService` injects `ConfigService` and passes `new PrismaPg({ connectionString })` as the adapter. The `prisma.config.ts` file is only used by the Prisma CLI (migrations, generate).
+> **Prisma v7 note:** `PrismaClient` must be constructed with either an `adapter` or `accelerateUrl` — an empty `new PrismaClient()` throws. `PrismaService` injects `ConfigService` and passes `new PrismaPg({ connectionString })` as the adapter. The `prisma.config.ts` file is used by the Prisma CLI for migrations, generate, and seed — **always run Prisma CLI commands from the `backend/` directory** so it can find `prisma.config.ts`.
+>
+> **Seed:** `cd backend && npx prisma db seed` — seed config lives in `prisma.config.ts` under `migrations.seed`, not in `package.json`.
 
 ### Auth & Security
 
