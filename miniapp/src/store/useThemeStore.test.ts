@@ -28,3 +28,28 @@ describe('useThemeStore', () => {
     expect(useThemeStore.getState().preference).toBe('system');
   });
 });
+
+describe('useThemeStore — Zalo bootstrap pre-seeding', () => {
+  it('rehydrates dark when zaloBootstrap has pre-seeded theme-preference', async () => {
+    // Simulate what zaloBootstrap writes to localStorage before the store is first accessed
+    localStorage.setItem(
+      'theme-preference',
+      JSON.stringify({ state: { preference: 'dark' }, version: 0 }),
+    );
+
+    await useThemeStore.persist.rehydrate();
+
+    expect(useThemeStore.getState().preference).toBe('dark');
+  });
+
+  it('rehydrates light when zaloBootstrap has pre-seeded light theme', async () => {
+    localStorage.setItem(
+      'theme-preference',
+      JSON.stringify({ state: { preference: 'light' }, version: 0 }),
+    );
+
+    await useThemeStore.persist.rehydrate();
+
+    expect(useThemeStore.getState().preference).toBe('light');
+  });
+});

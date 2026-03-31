@@ -84,6 +84,18 @@ describe('LanguageSwitcher', () => {
     expect(screen.queryByText('Tiếng Việt')).not.toBeInTheDocument();
   });
 
+  it('highlights English when i18n.language is en (seeded by Zalo bootstrap on first Zalo visit)', async () => {
+    mockLanguage = 'en';
+    render(<LanguageSwitcher />);
+    await userEvent.click(screen.getByRole('button', { name: 'Change language' }));
+    const enButton = screen.getByText('English');
+    expect(enButton).toHaveClass('text-primary');
+    expect(enButton).toHaveClass('font-medium');
+    // Vietnamese should NOT be highlighted
+    const viButton = screen.getByText('Tiếng Việt');
+    expect(viButton).not.toHaveClass('text-primary');
+  });
+
   it('highlights active language when i18n.language is a region-tagged locale (vi-VN → vi)', async () => {
     mockLanguage = 'vi-VN';
     render(<LanguageSwitcher />);

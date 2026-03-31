@@ -1,3 +1,6 @@
+// Order matters: zaloBootstrap seeds localStorage before i18n reads it.
+// Do NOT move '@/i18n' above '@/zaloBootstrap'.
+import '@/zaloBootstrap';
 import '@/i18n';
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
@@ -52,32 +55,32 @@ const root = createRoot(document.getElementById('app')!);
 root.render(
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Auth routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/register/complete" element={<RegisterCompletePage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/otp" element={<OtpPage />} />
-            <Route path="/new-password" element={<NewPasswordPage />} />
-          </Route>
-          {/* Protected app routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Auth routes */}
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/register/complete" element={<RegisterCompletePage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/otp" element={<OtpPage />} />
+              <Route path="/new-password" element={<NewPasswordPage />} />
             </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+            {/* Protected app routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/products" element={<ProductsPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
     </ThemeProvider>
   </QueryClientProvider>,
 );
