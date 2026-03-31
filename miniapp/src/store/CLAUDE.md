@@ -4,11 +4,12 @@ Zustand stores for client-side state. One file per domain. Never use stores for 
 
 ## Files
 
-| File               | Purpose                                                                         |
-| ------------------ | ------------------------------------------------------------------------------- |
-| `useAuthStore.ts`  | Auth session: current user, readiness flag, setAuth, clearAuth                  |
-| `useCartStore.ts`  | Shopping cart: items list, add/remove/clear actions, item count selector        |
-| `useThemeStore.ts` | Theme preference (`'light' \| 'dark' \| 'system'`), persisted to localStorage  |
+| File                | Purpose                                                                         |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `useAuthStore.ts`   | Auth session: current user, readiness flag, setAuth, clearAuth                  |
+| `useCartStore.ts`   | Shopping cart: items list, add/remove/clear actions, item count selector        |
+| `useOutletStore.ts` | Selected outlet for the active session, persisted to localStorage               |
+| `useThemeStore.ts`  | Theme preference (`'light' \| 'dark' \| 'system'`), persisted to localStorage  |
 
 ## useAuthStore
 
@@ -17,14 +18,14 @@ interface AuthState {
   user: User | null; // null = not logged in
   isReady: boolean; // true once rehydration attempt is complete (success or failure)
   setAuth: (user: User) => void; // sets user + isReady = true
-  clearAuth: () => void; // clears tokens in storage + sets user = null
+  clearAuth: () => void; // clears tokens in storage + sets user = null + clears selected outlet
 }
 ```
 
 **Key behaviour:**
 
 - `isReady` starts `false` and is set to `true` by `AuthProvider` after it has attempted to rehydrate the session from storage. `ProtectedRoute` renders `null` until `isReady = true` to avoid a login redirect flash.
-- `clearAuth()` calls `storage.clearTokens()` as a side effect — it is the single place that clears tokens. Do not call `storage.clearTokens()` directly outside this store.
+- `clearAuth()` calls `storage.clearTokens()` AND `useOutletStore.getState().clearSelectedOutlet()` — it is the single place that ends a session. Do not call these directly outside this store.
 - `setAuth(user)` is called by `useLogin` and `useRegister` hooks on success.
 
 ```ts
@@ -97,6 +98,35 @@ const setTheme = useThemeStore((s) => s.setTheme);
 
 // In tests — reset state
 useThemeStore.setState({ preference: 'system' });
+```
+
+## useOutletStore
+
+```ts
+interface OutletState {
+  selectedOutlet: Outlet | null; // null = no outlet selected (user must pick before accessing app)
+  setSelectedOutlet: (outlet: Outlet) => void; // called when user picks an outlet
+  clearSelectedOutlet: () => void; // called by clearAuth() on logout
+}
+```
+
+**Key behaviour:**
+
+- Persisted to `localStorage` under key `'outlet-storage'` via Zustand `persist` middleware — survives page reloads and app restarts.
+- `clearAuth()` in `useAuthStore` calls `clearSelectedOutlet()` automatically — do not call it directly on logout.
+- `OutletGuard` redirects to `/outlets` when `selectedOutlet` is `null`. `OutletListPage` auto-selects if the user has exactly 1 outlet.
+
+```ts
+import { useOutletStore } from '@/store/useOutletStore';
+
+// Reading state in a component
+const selectedOutlet = useOutletStore((s) => s.selectedOutlet);
+
+// Calling actions
+const { setSelectedOutlet, clearSelectedOutlet } = useOutletStore();
+
+// Resetting state in tests
+useOutletStore.setState({ selectedOutlet: null });
 ```
 
 ## Adding a New Store

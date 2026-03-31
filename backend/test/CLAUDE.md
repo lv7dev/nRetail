@@ -22,8 +22,10 @@ test/
 ├── helpers/
 │   ├── app.ts                   # createTestApp() / closeTestApp()
 │   └── response.ts              # parseData<T>() / parseError() — typed response helpers
-└── auth/
-    └── auth.integration.spec.ts # Auth endpoint integration tests (10 tests)
+├── auth/
+│   └── auth.integration.spec.ts # Auth endpoint integration tests
+└── outlets/
+    └── outlets.integration.spec.ts # Outlets endpoint integration tests (0/1/N memberships, 401)
 ```
 
 ## Key Files

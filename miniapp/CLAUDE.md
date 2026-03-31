@@ -21,10 +21,12 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │   ├── ThemeProvider.tsx       # Effect provider: syncs html.dark class + body[zaui-theme] from useThemeStore
 │   │   ├── ui/                     # Reusable, generic UI components (Button, Card, etc.)
 │   │   │   └── index.ts            # Barrel export
-│   │   └── shared/                 # App-specific shared components (Header, BottomNav, ProtectedRoute)
+│   │   └── shared/                 # App-specific shared components (BottomNav, ProtectedRoute, OutletGuard)
+│   │       ├── OutletGuard.tsx     # Route guard: redirects to /outlets if no outlet selected
 │   │       └── ThemeSwitcher/      # Dropdown component: Light / System / Dark options, highlights active preference
 │   ├── pages/                      # Route-level components (one file or folder per route)
 │   │   ├── splash/                 # Splash screen shown during auth rehydration
+│   │   ├── outlets/                # Outlet picker (shown after login, before app features)
 │   │   ├── home/
 │   │   ├── profile.tsx             # Profile page — logout button (data-testid="logout-btn")
 │   │   └── auth/
@@ -35,21 +37,25 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │       ├── forgot-password/    # Step 1: phone number (forgot-password flow)
 │   │       └── new-password/       # Step 3: new password (needs otpToken in router state)
 │   ├── store/                      # Zustand stores — one file per domain
-│   │   ├── useAuthStore.ts
+│   │   ├── useAuthStore.ts         # Auth session: user, isReady, setAuth, clearAuth (also clears outlet)
 │   │   ├── useCartStore.ts
+│   │   ├── useOutletStore.ts       # Selected outlet, persisted to localStorage (key: outlet-storage)
 │   │   └── useThemeStore.ts        # Theme preference (light/dark/system) with localStorage persistence
 │   ├── hooks/                      # Custom React hooks
 │   │   └── useAuth.ts              # TanStack Query mutations/queries for all auth operations
 │   ├── services/                   # API / external service calls
 │   │   ├── axios.ts                # Axios instance, interceptors, typed helpers (get/post/put/del)
-│   │   └── authService.ts          # Auth API calls (typed functions over axios helpers)
+│   │   ├── authService.ts          # Auth API calls (typed functions over axios helpers)
+│   │   └── outletService.ts        # Outlet API calls: getMyOutlets() → GET /outlets/mine
 │   ├── types/                      # Shared TypeScript interfaces & types
 │   │   ├── auth.ts                 # User, TokenPair, AuthResponse, OtpVerifyResponse
-│   │   └── cart.ts                 # CartItem
+│   │   ├── cart.ts                 # CartItem
+│   │   └── outlet.ts               # Outlet (id, name, address, role: OWNER|MANAGER|STAFF)
 │   ├── mocks/                      # Test infrastructure — MSW server + handlers (never imported in prod)
 │   │   ├── server.ts               # MSW Node server (used by integration tests)
 │   │   ├── handlers/
-│   │   │   └── auth.ts             # MSW handlers for all auth endpoints
+│   │   │   ├── auth.ts             # MSW handlers for all auth endpoints
+│   │   │   └── outlets.ts          # MSW handlers for outlet endpoints
 │   │   └── components/
 │   │       └── PasswordInput.mock.tsx  # Minimal PasswordInput mock (avoids SVG import in jsdom)
 │   ├── utils/                      # Pure helper functions
@@ -108,7 +114,12 @@ index.html → src/app.tsx
       → ThemeProvider syncs html.dark class + body[zaui-theme] from useThemeStore (pure effect, no markup)
       → AuthProvider calls GET /auth/me on mount (if token in storage)
       → Shows SplashPage until isReady = true
-      → Routes render after rehydration completes
+      → Routes render after rehydration completes:
+          ProtectedRoute (checks user)
+            → /outlets         → OutletListPage (pick outlet before entering app)
+            → OutletGuard (checks selectedOutlet from useOutletStore)
+                → AppLayout (header shows outlet name, tappable → /outlets to re-select)
+                    → app pages (/, /products, /cart, /orders, /profile)
 ```
 
 ## Architecture Principles
@@ -228,11 +239,11 @@ interface AuthState {
   user: User | null;
   isReady: boolean; // true once rehydration attempt is complete
   setAuth: (user: User) => void; // sets user + isReady = true
-  clearAuth: () => void; // clears tokens + sets user = null
+  clearAuth: () => void; // clears tokens + sets user = null + clears selected outlet
 }
 ```
 
-`isReady` gates the app: `ProtectedRoute` renders `null` while `!isReady` to prevent a flash of the login page during rehydration.
+`isReady` gates the app: `ProtectedRoute` renders `null` while `!isReady` to prevent a flash of the login page during rehydration. `clearAuth()` also calls `useOutletStore.getState().clearSelectedOutlet()` — logging out always resets the outlet context.
 
 ```ts
 // Other stores follow the same pattern

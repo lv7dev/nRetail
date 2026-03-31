@@ -148,7 +148,7 @@ Always pair with `@ApiBearerAuth()` so Swagger UI includes the token in requests
 deleteProduct(@Param('id') id: string) { ... }
 ```
 
-Available roles: `admin`, `staff`, `customer`.
+Available platform roles: `admin`, `customer`. (`staff` was removed — outlet-level roles are `OWNER`, `MANAGER`, `STAFF` on `UserOutlet`).
 
 ---
 

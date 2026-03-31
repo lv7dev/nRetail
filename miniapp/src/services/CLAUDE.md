@@ -4,10 +4,11 @@ API calls live in `src/services/`. Never call `fetch` or Axios directly from com
 
 ## Files
 
-| File             | Purpose                                                  |
-| ---------------- | -------------------------------------------------------- |
-| `axios.ts`       | Configured Axios instance, interceptors, typed helpers   |
-| `authService.ts` | Auth API calls (login, OTP, register, reset, logout, me) |
+| File               | Purpose                                                  |
+| ------------------ | -------------------------------------------------------- |
+| `axios.ts`         | Configured Axios instance, interceptors, typed helpers   |
+| `authService.ts`   | Auth API calls (login, OTP, register, reset, logout, me) |
+| `outletService.ts` | Outlet API calls (`getMyOutlets` → `GET /outlets/mine`)  |
 
 ## axios.ts — HTTP Client
 

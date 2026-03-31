@@ -491,7 +491,7 @@ Quick reference for consuming modules:
 - Protect routes: `@UseGuards(JwtAuthGuard)` — **always pair with `@ApiBearerAuth()`** so Swagger UI sends the token
 - Get current user: `@CurrentUser() user: User`
 - RBAC: `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')`
-- Roles: `admin`, `staff`, `customer`
+- Platform roles: `admin`, `customer` (Note: `staff` was removed — outlet-level roles `OWNER`/`MANAGER`/`STAFF` live on `UserOutlet`)
 - JWT payload: `{ sub: userId, phone, role }` — access via `@CurrentUser()`, not raw payload
 
 ### Rate Limiting
@@ -528,7 +528,8 @@ JWT_EXPIRES_IN=7d
 
 1. **Auth** — register, login, refresh token, logout, OAuth (Google/Facebook)
 2. **Users** — profile, addresses, preferences
-3. **Catalog** — products, categories, tags, brands, variants (size/color/etc.), inventory
+3. **Outlets** ✅ — user-outlet membership, `GET /outlets/mine`, `OutletRole` (OWNER/MANAGER/STAFF)
+4. **Catalog** — products, categories, tags, brands, variants (size/color/etc.), inventory
 4. **Pricing** — price rules, discounts, coupons, flash sales
 5. **Cart & Orders** — add to cart, checkout, order states (pending → confirmed → shipped → delivered → returned)
 6. **Payments** — Stripe integration, webhook handlers, refunds

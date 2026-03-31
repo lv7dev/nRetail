@@ -8,6 +8,7 @@ MSW (Mock Service Worker) setup for integration tests. Files here are **test inf
 | ----------------------------------- | ----------------------------------------------------------------- |
 | `server.ts`                         | Creates and exports the MSW Node server                           |
 | `handlers/auth.ts`                  | MSW request handlers for all auth endpoints                       |
+| `handlers/outlets.ts`               | MSW request handlers for outlet endpoints (`GET /outlets/mine`)   |
 | `components/PasswordInput.mock.tsx` | Shared component mock (avoids SVG dynamic import issues in jsdom) |
 
 ## server.ts
@@ -15,8 +16,9 @@ MSW (Mock Service Worker) setup for integration tests. Files here are **test inf
 ```ts
 import { setupServer } from 'msw/node';
 import { authHandlers } from './handlers/auth';
+import { outletHandlers } from './handlers/outlets';
 
-export const server = setupServer(...authHandlers);
+export const server = setupServer(...authHandlers, ...outletHandlers);
 ```
 
 The server is started in `src/setupTests.integration.ts` before all integration tests and closed after.

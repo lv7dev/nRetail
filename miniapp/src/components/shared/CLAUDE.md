@@ -8,6 +8,7 @@ App-specific shared components used across multiple pages or layouts. Unlike `ui
 |---|---|
 | `BottomNav` | Fixed bottom navigation bar for authenticated pages — renders the 5 main routes using icons + i18n labels |
 | `LanguageSwitcher` | Dropdown to switch i18n language (VI / EN). Reads `i18n.language`, calls `i18n.changeLanguage` |
+| `OutletGuard` | Route guard: redirects to `/outlets` if no outlet selected in `useOutletStore`; renders outlet otherwise. Sits between `ProtectedRoute` and `AppLayout` |
 | `ProtectedRoute` | Route guard: renders `null` while `!isReady`, redirects to `/login` if no user, renders outlet otherwise |
 | `ThemeSwitcher` | Dropdown to switch theme preference (Light / System / Dark). Reads + writes `useThemeStore`. Pattern mirrors `LanguageSwitcher` |
 

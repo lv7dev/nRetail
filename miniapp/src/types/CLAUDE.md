@@ -4,10 +4,11 @@ Shared TypeScript interfaces and type aliases. No logic, no imports from other `
 
 ## Files
 
-| File      | Exports                                                  | Used by                                        |
-| --------- | -------------------------------------------------------- | ---------------------------------------------- |
-| `auth.ts` | `User`, `TokenPair`, `AuthResponse`, `OtpVerifyResponse` | `useAuthStore`, `useAuth` hooks, `authService` |
-| `cart.ts` | `CartItem`                                               | `useCartStore`, cart-related pages             |
+| File         | Exports                                                  | Used by                                           |
+| ------------ | -------------------------------------------------------- | ------------------------------------------------- |
+| `auth.ts`    | `User`, `TokenPair`, `AuthResponse`, `OtpVerifyResponse` | `useAuthStore`, `useAuth` hooks, `authService`    |
+| `cart.ts`    | `CartItem`                                               | `useCartStore`, cart-related pages                |
+| `outlet.ts`  | `Outlet`                                                 | `useOutletStore`, `outletService`, `OutletGuard`, `OutletListPage` |
 
 ---
 
@@ -18,7 +19,7 @@ interface User {
   id: string;
   phone: string;
   name: string;
-  role: string; // 'admin' | 'staff' | 'customer' — kept as string for forward compat
+  role: string; // 'admin' | 'customer' — kept as string for forward compat
 }
 
 interface TokenPair {
@@ -51,6 +52,21 @@ interface CartItem {
 ```
 
 **Price rule:** All money values are integers (smallest unit). Display with `dinero.js` or locale-aware formatting — never raw division.
+
+---
+
+## outlet.ts
+
+```ts
+interface Outlet {
+  id: string;
+  name: string;
+  address: string | null;
+  role: 'OWNER' | 'MANAGER' | 'STAFF'; // the authenticated user's role in this outlet
+}
+```
+
+`role` here is the caller's membership role in this outlet — not the platform-level `User.role`. It comes from the `UserOutlet` join table on the backend.
 
 ---
 
