@@ -4,6 +4,7 @@
 declare global {
   interface Window {
     APP_CONFIG?: unknown;
+    APP_ID?: string;
   }
 }
 

@@ -11,7 +11,7 @@ import { initZaloBootstrap } from './zaloBootstrap';
 const mockGetSystemInfo = vi.mocked(getSystemInfo);
 
 function setZaloEnv(info: { zaloLanguage: string; zaloTheme: string }) {
-  (window as Record<string, unknown>).APP_ID = 'test-app-id';
+  window.APP_ID = 'test-app-id';
   mockGetSystemInfo.mockReturnValue({
     version: '1.0',
     apiVersion: '2.0',
@@ -25,7 +25,7 @@ function setZaloEnv(info: { zaloLanguage: string; zaloTheme: string }) {
 
 beforeEach(() => {
   localStorage.clear();
-  delete (window as Record<string, unknown>).APP_ID;
+  delete window.APP_ID;
   mockGetSystemInfo.mockReset();
 });
 

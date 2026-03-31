@@ -6,7 +6,7 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 // window.APP_ID is set by the Zalo container before the mini app boots.
 // It is undefined in browser dev and test environments.
 /* v8 ignore start */
-const isZalo = typeof window !== 'undefined' && !!(window as any).APP_ID;
+const isZalo = typeof window !== 'undefined' && !!window.APP_ID;
 
 const store = {
   getItem: (key: string): string | null =>
