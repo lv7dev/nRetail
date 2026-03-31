@@ -34,6 +34,7 @@ export default () => {
           "src/types/**",
           "src/**/index.ts",
           "src/services/authService.ts",
+          "src/services/outletService.ts",
           "src/services/axios.ts",
         ],
         thresholds: {

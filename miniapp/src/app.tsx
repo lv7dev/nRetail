@@ -24,6 +24,7 @@ import AuthLayout from '@/components/AuthLayout';
 
 // Guards
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
+import OutletGuard from '@/components/shared/OutletGuard';
 import AuthProvider from '@/components/AuthProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
@@ -41,6 +42,7 @@ import ProductsPage from '@/pages/products';
 import CartPage from '@/pages/cart';
 import OrdersPage from '@/pages/orders';
 import ProfilePage from '@/pages/profile';
+import OutletListPage from '@/pages/outlets';
 
 // Expose app configuration
 import appConfig from '../app-config.json';
@@ -67,14 +69,20 @@ root.render(
               <Route path="/otp" element={<OtpPage />} />
               <Route path="/new-password" element={<NewPasswordPage />} />
             </Route>
-            {/* Protected app routes */}
+            {/* Outlet picker — authenticated but no outlet gate */}
             <Route element={<ProtectedRoute />}>
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/outlets" element={<OutletListPage />} />
+            </Route>
+            {/* App routes — requires auth + outlet */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<OutletGuard />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/products" element={<ProductsPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                </Route>
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
