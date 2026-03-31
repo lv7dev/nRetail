@@ -4,14 +4,16 @@
 
 Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vietnamese super app). Uses Vite as build tool, Zustand for client state, TanStack Query for server state, React Router for navigation, Axios for HTTP, and Tailwind CSS + standard CSS for styling.
 
-> **Note:** `zmp-sdk`, `zmp-ui`, and `zmp-vite-plugin` are **required Zalo platform dependencies** — they must stay installed for the Mini App to build and run. Do NOT remove them. Only import `zmp-sdk` and `zmp-ui` in application code when explicitly required (use lazy imports for `zmp-sdk`).
+> **Note:** `zmp-sdk`, `zmp-ui`, and `zmp-vite-plugin` are **required Zalo platform dependencies** — they must stay installed for the Mini App to build and run. Do NOT remove them. Only import `zmp-sdk` and `zmp-ui` in application code when explicitly required (use lazy imports for `zmp-sdk`). Exception: `zaloBootstrap.ts` uses a top-level import of `getSystemInfo` — see the Zalo SDK section.
 
 ## Project Structure
 
 ```
 ├── src/
 │   ├── app.tsx                     # Bootstrap: imports styles, wraps providers, mounts React app
+│   ├── zaloBootstrap.ts            # Seeds localStorage from Zalo system info before i18n/theme init — MUST be imported first in app.tsx
 │   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors)
+│   ├── global.d.ts                 # Global Window augmentations (APP_CONFIG, APP_ID)
 │   ├── components/
 │   │   ├── AppLayout.tsx           # Protected app shell (header row with ThemeSwitcher+LanguageSwitcher, bottom nav, page outlet)
 │   │   ├── AuthLayout.tsx          # Auth page shell (centered, floating back button + ThemeSwitcher+LanguageSwitcher)
@@ -99,11 +101,14 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 ## App Flow
 
 ```
-index.html → src/app.tsx → QueryClientProvider → ThemeProvider → BrowserRouter → AuthProvider
-  → ThemeProvider syncs html.dark class + body[zaui-theme] from useThemeStore (pure effect, no markup)
-  → AuthProvider calls GET /auth/me on mount (if token in storage)
-  → Shows SplashPage until isReady = true
-  → Routes render after rehydration completes
+index.html → src/app.tsx
+  → import zaloBootstrap  (seeds localStorage['i18nextLng'] + localStorage['theme-preference'] from Zalo system info if absent)
+  → import i18n           (LanguageDetector reads localStorage — must run AFTER zaloBootstrap)
+  → QueryClientProvider → ThemeProvider → BrowserRouter → AuthProvider
+      → ThemeProvider syncs html.dark class + body[zaui-theme] from useThemeStore (pure effect, no markup)
+      → AuthProvider calls GET /auth/me on mount (if token in storage)
+      → Shows SplashPage until isReady = true
+      → Routes render after rehydration completes
 ```
 
 ## Architecture Principles
@@ -269,6 +274,19 @@ const setTheme = useThemeStore((s) => s.setTheme);
 setTheme('dark'); // 'light' | 'dark' | 'system'
 ```
 
+### Zalo Bootstrap
+
+`src/zaloBootstrap.ts` seeds `localStorage` from Zalo's system info before any module that reads it initializes. It runs as a side-effect on module import.
+
+**What it seeds:**
+- `localStorage['i18nextLng']` — from `getSystemInfo().zaloLanguage`, normalized to base tag (`'vi-VN'` → `'vi'`), only if the key is absent and the language is supported (`'vi'` or `'en'`)
+- `localStorage['theme-preference']` — from `getSystemInfo().zaloTheme`, written as Zustand persist JSON (`{"state":{"preference":"dark"},"version":0}`), only if the key is absent. Unknown theme values map to `'system'`.
+
+**Rules:**
+- Only runs inside the Zalo container (`window.APP_ID` guard) — no-op in browser dev and tests
+- Seed-only: never overwrites an existing user preference
+- **Import order is critical** — `import '@/zaloBootstrap'` MUST come before `import '@/i18n'` in `app.tsx`. The i18next `LanguageDetector` reads `localStorage['i18nextLng']` during `i18n.init()`, so the seed must exist first.
+
 ### App Rehydration
 
 `AuthProvider` wraps the router and handles token rehydration:
@@ -333,6 +351,8 @@ The `Button` component accepts a `loading?: boolean` prop. When `true`, it shows
 ### Zalo SDK
 
 Always wrap `zmp-sdk` calls in a custom hook using lazy `import()` — never import at module level.
+
+**Exception:** `zaloBootstrap.ts` uses a top-level ES import of `getSystemInfo` from `zmp-sdk`. This is safe because the function is only *called* inside the `window.APP_ID` guard (never in browser dev or tests), and the module must execute synchronously at import time before i18n initializes. All other `zmp-sdk` usage must still use lazy imports.
 
 ```ts
 // hooks/useZaloUser.ts
@@ -634,5 +654,5 @@ These three packages are **required infrastructure** for Zalo Mini App — never
 **Usage rules:**
 
 - `zmp-vite-plugin` — configured in `vite.config.mts`, never imported in app code
-- `zmp-sdk` — always use lazy `import()` in a custom hook, never at module top level
+- `zmp-sdk` — always use lazy `import()` in a custom hook, never at module top level (exception: `zaloBootstrap.ts`)
 - `zmp-ui` — import components directly when needed for Zalo-native UI
