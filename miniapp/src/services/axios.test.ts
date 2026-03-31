@@ -127,6 +127,13 @@ describe('non-401 errors normalised to ApiError', () => {
     expect(err.status).toBe(0);
     expect(err.message).toBe('Network Error');
   });
+
+  it('rejects with NETWORK_ERROR code on network failure', async () => {
+    mockApi.onGet('/api/network').networkError();
+    const err = await apiClient.get('/api/network').catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.code).toBe('NETWORK_ERROR');
+  });
 });
 
 // ─── Typed helper functions ──────────────────────────────────────────────────

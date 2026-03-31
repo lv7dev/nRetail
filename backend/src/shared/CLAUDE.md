@@ -78,7 +78,8 @@ Catches all exceptions and formats them into a consistent error shape. Registere
 // 500 Unexpected error (stack trace logged, not exposed)
 {
   "statusCode": 500,
-  "message": "Internal server error"
+  "message": "Internal server error",
+  "code": "INTERNAL_SERVER_ERROR"
 }
 ```
 

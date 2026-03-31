@@ -43,7 +43,7 @@ mutate(data, {
 **Resolution order:**
 
 1. `ApiError` with `code` → `t(err.code, { defaultValue: err.message })` → looks up flat key in `locales/{vi,en}/errors.json`
-2. `ApiError` without `code` → `err.message` (raw server message)
+2. `ApiError` without `code` → `err.message` (raw server message — avoid by ensuring backend always emits a `code`)
 3. Anything else → `t('unknown')`
 
 **Important:** Always pass `useTranslation('errors')` — the function calls `t(err.code)` directly against the `errors` namespace. With the mock `t = k => k`, `resolveApiError` returns `'PHONE_ALREADY_EXISTS'` (not `'errors.PHONE_ALREADY_EXISTS'`).

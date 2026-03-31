@@ -34,6 +34,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal server error',
+        code: 'INTERNAL_SERVER_ERROR',
         timestamp: new Date().toISOString(),
         path: request.url,
       });

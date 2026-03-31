@@ -94,7 +94,7 @@ function normalizeError(error: unknown): ApiError {
     const status = error.response?.status ?? 0;
     const body = error.response?.data as { message?: string; code?: string } | undefined;
     const message = body?.message ?? error.message ?? 'Unknown error';
-    const code = body?.code;
+    const code = error.response ? body?.code : 'NETWORK_ERROR';
     return new ApiError(status, message, code);
   }
   return new ApiError(0, 'Network error');

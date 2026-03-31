@@ -121,6 +121,20 @@ describe('AllExceptionsFilter', () => {
     );
   });
 
+  it('includes code INTERNAL_SERVER_ERROR for unknown non-HttpException errors', () => {
+    const exception = new Error('DB connection refused');
+    const { host, status, json } = makeHost();
+
+    filter.catch(exception, host);
+
+    expect(status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'INTERNAL_SERVER_ERROR',
+      }),
+    );
+  });
+
   it('returns 429 with code RATE_LIMIT_EXCEEDED for ThrottlerException', () => {
     const exception = new ThrottlerException();
     const { host, status, json } = makeHost('/auth/otp/register');
