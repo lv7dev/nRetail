@@ -23,8 +23,8 @@ async function main() {
 
   console.log('Outlets created:', mainStore.name, branchStore.name);
 
-  // Find test user (phone 0901234567)
-  const testUser = await prisma.user.findUnique({ where: { phone: '0901234567' } });
+  // Find test user (phone 0123456789)
+  const testUser = await prisma.user.findUnique({ where: { phone: '0123456789' } });
 
   if (testUser) {
     // Assign test user to Main Store as OWNER
@@ -43,7 +43,7 @@ async function main() {
 
     console.log(`Assigned test user (${testUser.phone}) to both outlets.`);
   } else {
-    console.log('Test user (phone: 0901234567) not found — skipping user-outlet assignment.');
+    console.log('Test user (phone: 0123456789) not found — skipping user-outlet assignment.');
   }
 
   console.log('Seeding complete.');
