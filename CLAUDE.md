@@ -191,6 +191,7 @@ nRetail/
 
 ### Git
 
+- **Always `git pull` first** — before creating a branch or starting any work, pull the latest `main`
 - **Branch naming**: `feature/<name>`, `fix/<name>`, `chore/<name>`
 - **Commit style**: Conventional Commits — `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`
 - **Include Beads ID**: `feat: add product listing (nretail-abc)`
