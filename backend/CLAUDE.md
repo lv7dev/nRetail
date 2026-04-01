@@ -48,12 +48,27 @@ Required variables:
 |---|---|---|
 | `PORT` | `3000` | Change if port conflicts — avoid 3000, 5000 on macOS |
 | `NODE_ENV` | `development` | `development` \| `production` \| `test` |
-| `DATABASE_URL` | — | PostgreSQL URL — Docker: `postgresql://nretail:nretail@localhost:5434/nretail` |
+| `DATABASE_URL` | — | PostgreSQL URL — Docker: `postgresql://nretail:nretail@localhost:5434/nretail` — Production (Supabase): use session mode pooler (port 5432), NOT transaction mode (port 6543) |
 | `REDIS_URL` | — | Redis URL — Docker: `redis://localhost:6379` |
 | `JWT_SECRET` | — | Min 16 chars |
 | `JWT_EXPIRES_IN` | `7d` | e.g. `7d`, `24h` |
 | `THROTTLE_LIMIT` | `100` | Global rate limit — requests per window |
 | `THROTTLE_TTL` | `60` | Global rate limit window in seconds |
+
+### 5. Running migrations against Supabase (production/UAT)
+
+Prisma v7 has no `directUrl` — use the **session mode pooler** (port 5432) for `DATABASE_URL`. This works for both migrations and runtime.
+
+```bash
+# Run from backend/
+DOTENV_CONFIG_PATH=.env.production npx prisma migrate deploy
+```
+
+> **Do not use** the transaction mode pooler (port 6543, `?pgbouncer=true`) — it causes migrations to hang.
+> **Do not use** the direct connection (`db.[ref].supabase.co:5432`) — blocked by most home/ISP networks.
+> The session mode pooler (`[ref].pooler.supabase.com:5432`) is the correct URL for all environments.
+
+---
 
 ## Build & Test
 

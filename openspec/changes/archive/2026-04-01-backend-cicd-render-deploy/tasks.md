@@ -15,7 +15,7 @@
 
 ## 4. Manual setup (outside codebase — document steps)
 
-- [ ] 4.1 Create Render Web Service: root dir `backend`, build `npm ci && npm run build`, start `npx prisma migrate deploy && node dist/main`, health check `/health`, auto-deploy "After CI checks pass"
-- [ ] 4.2 Set all required env vars in Render dashboard (`NODE_ENV`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `REGISTRATION_TOKEN_EXPIRES_IN`, `THROTTLE_LIMIT`, `THROTTLE_TTL`)
-- [ ] 4.3 Enable GitHub branch protection on `main`: require PR, require status checks (add job name `test` after first workflow run), require up-to-date branches, disallow bypassing for admins
-- [ ] 4.4 Enable GitHub "Automatically delete head branches" in repo settings
+- [x] 4.1 Create Render Web Service: root dir `backend`, build `npm ci && npm run build`, start `npx prisma migrate deploy && node dist/main`, health check `/health`, auto-deploy "After CI checks pass"
+- [x] 4.2 Set all required env vars in Render dashboard (`NODE_ENV`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `REGISTRATION_TOKEN_EXPIRES_IN`, `THROTTLE_LIMIT`, `THROTTLE_TTL`)
+- [x] 4.3 Enable GitHub branch protection on `main`: require PR, require status checks (add job name `test` after first workflow run), require up-to-date branches, disallow bypassing for admins
+- [x] 4.4 Enable GitHub "Automatically delete head branches" in repo settings

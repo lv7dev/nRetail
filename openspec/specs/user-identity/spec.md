@@ -1,7 +1,7 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: User model stores phone, name, and role
-The system SHALL persist users with a unique phone number, a required name, and a role (default `CUSTOMER`). Valid roles are `ADMIN`, `STAFF`, `CUSTOMER`.
+The system SHALL persist users with a unique phone number, a required name, and a role (default `CUSTOMER`). Valid roles are `ADMIN` and `CUSTOMER`. The `STAFF` role has been removed — outlet-level roles are expressed via `UserOutlet.role`.
 
 #### Scenario: Two users cannot share a phone number
 - **WHEN** a registration attempt is made with a phone that already exists in the `User` table
@@ -10,6 +10,12 @@ The system SHALL persist users with a unique phone number, a required name, and 
 #### Scenario: User role defaults to CUSTOMER on registration
 - **WHEN** a new user is created via `POST /auth/register`
 - **THEN** the user's role is set to `CUSTOMER`
+
+#### Scenario: STAFF is not a valid role value
+- **WHEN** code attempts to assign `role = 'STAFF'` to a `User`
+- **THEN** TypeScript and the database both reject the value as invalid
+
+---
 
 ### Requirement: Authenticated user can retrieve their own profile
 The system SHALL expose `GET /auth/me` protected by `JwtAuthGuard`. It SHALL return the current user's `id`, `phone`, `name`, `role`, and `createdAt`. Sensitive fields (e.g. hashed tokens) SHALL NOT be included.

@@ -1,11 +1,11 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: App shows SplashPage until auth state is ready
 On every app start, the app SHALL not render the route tree until auth state has been resolved. A `SplashPage` (centered logo + spinner) SHALL be shown in the interim.
 
 #### Scenario: App starts with no stored token
 - **WHEN** `nativeStorage.getItem('accessToken')` returns null or empty on mount
-- **THEN** `isReady` SHALL be set to `true` immediately and the route tree SHALL render (React Router handles redirect to `/login`)
+- **THEN** `isReady` SHALL be set to `true` immediately and the route tree SHALL render (React Router redirects to `/login`)
 
 #### Scenario: App starts with a stored token
 - **WHEN** `nativeStorage.getItem('accessToken')` returns a non-empty token
@@ -30,11 +30,24 @@ On every app start, the app SHALL not render the route tree until auth state has
 
 #### Scenario: GET /auth/me returns 401 (expired token)
 - **WHEN** the stored token is expired and `GET /auth/me` returns 401
-- **THEN** `clearAuth()` SHALL be called and `isReady` set to `true` (user is redirected to `/login` by `ProtectedRoute`)
+- **THEN** `clearAuth()` SHALL be called and `isReady` set to `true`
 
 #### Scenario: GET /auth/me fails (network error)
 - **WHEN** the network is unavailable during rehydration
-- **THEN** `clearAuth()` SHALL be called and `isReady` set to `true` (fail safe — don't leave app stuck on splash)
+- **THEN** `clearAuth()` SHALL be called and `isReady` set to `true`
+
+---
+
+### Requirement: Outlet guard enforces outlet selection after auth rehydration
+After `AuthProvider` marks `isReady=true` and a user is present, `OutletGuard` SHALL check `useOutletStore.selectedOutlet`. If a persisted outlet exists (rehydrated from `localStorage`), the user proceeds to the app. If not, the user is redirected to `/outlets`.
+
+#### Scenario: App restart with stored outlet bypasses picker
+- **WHEN** the app restarts, token rehydration succeeds, and `localStorage` contains a persisted outlet
+- **THEN** the user is taken directly to the app without seeing `/outlets`
+
+#### Scenario: App restart without stored outlet shows picker
+- **WHEN** the app restarts, token rehydration succeeds, and `localStorage` has no persisted outlet
+- **THEN** `OutletGuard` redirects the user to `/outlets`
 
 ---
 
