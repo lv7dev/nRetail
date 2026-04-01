@@ -48,9 +48,10 @@ bd close <id>         # Complete work
    ```bash
    git pull --rebase
    bd dolt push
-   git push
+   git push origin <branch-name>   # push the feature branch, NOT main
    git status  # MUST show "up to date with origin"
    ```
+   Then open or update the PR on GitHub. `main` is updated only via merged PRs — never direct push.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
@@ -196,6 +197,9 @@ nRetail/
 - **Always rebase** before merge, no merge commits
 - **Never force push** to main
 - **Never commit** `.env`, credentials, or secrets
+- **NEVER push directly to `main`** — always work on a feature branch
+- **Always open a PR** to merge into `main` — CI must pass before merging
+- **Delete the branch** after the PR is merged
 
 ### Code Style
 
