@@ -41,9 +41,17 @@ The Axios instance SHALL include a response interceptor that attempts a silent t
 - **WHEN** `POST /auth/refresh` returns new tokens
 - **THEN** both `accessToken` and `refreshToken` SHALL be written to storage and the original request SHALL be retried transparently
 
-#### Scenario: Refresh fails
-- **WHEN** `POST /auth/refresh` returns an error or the user has no refresh token (on an authenticated request)
-- **THEN** `clearAuth()` SHALL be called and the user SHALL be redirected to `/login`
+#### Scenario: Refresh fails or no refresh token
+- **WHEN** `POST /auth/refresh` returns an error OR the user has no refresh token (on an authenticated request)
+- **THEN** tokens SHALL be cleared and the user SHALL be redirected to the login page using a Zalo-aware path: `/zapps/{APP_ID}/login` when `window.APP_ID` is set, or `/login` in browser/test environments
+
+#### Scenario: Redirect in Zalo WebView
+- **WHEN** `handleAuthFailure` is called AND `window.APP_ID` is set by the Zalo container
+- **THEN** `window.location.replace` SHALL navigate to `/zapps/${window.APP_ID}/login`
+
+#### Scenario: Redirect outside Zalo (browser dev / test)
+- **WHEN** `handleAuthFailure` is called AND `window.APP_ID` is undefined
+- **THEN** `window.location.replace` SHALL navigate to `/login`
 
 #### Scenario: Infinite loop prevention
 - **WHEN** a request has already been retried (flagged via `config._retry`)
