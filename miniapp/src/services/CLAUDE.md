@@ -35,7 +35,35 @@ This means auth-flow endpoints (`/auth/login`, `/auth/otp/verify`, `/auth/reset-
 - Singleton `refreshPromise` prevents concurrent refresh calls
 - `_retry` flag on request config prevents infinite loops
 - On refresh success: stores new tokens, retries original request
-- On refresh failure or no refresh token: `storage.clearTokens()` + `window.location.replace('/login')`
+- On refresh failure or no refresh token: `storage.clearTokens()` + Zalo-aware redirect (see below)
+
+### handleAuthFailure — Zalo-aware redirect
+
+`handleAuthFailure()` must **never** use a hardcoded absolute path. The Zalo WebView serves the app at `/zapps/{APP_ID}/`, so `window.location.replace('/login')` would navigate to the wrong URL and fail silently.
+
+**Correct pattern:**
+
+```ts
+function handleAuthFailure(): void {
+  storage.clearTokens();
+  const base = window.APP_ID ? `/zapps/${window.APP_ID}` : '';
+  window.location.replace(`${base}/login`);
+}
+```
+
+`window.APP_ID` is `undefined` in browser dev and tests — the fallback `''` produces `/login`, which is correct for those environments.
+
+### CORS and the "Provisional headers" warning
+
+When Chrome DevTools shows **"Provisional headers are shown"** on an API request, it means the browser blocked the request before sending it — typically a CORS preflight failure. In this case:
+
+- The actual HTTP request may not have been sent
+- Axios receives a **network error** (`error.response` is `undefined`)
+- `error.response?.status === 401` evaluates to **`false`**
+- The refresh token logic is **never triggered**
+- The user sees a 401 in DevTools but no `/auth/refresh` call follows
+
+This is why the backend must explicitly include `Authorization` in `Access-Control-Allow-Headers` and configure an origin allowlist. See the backend `src/config/CLAUDE.md` and `main.ts` for the CORS setup.
 
 > **Important:** `refreshClient` has no interceptors, so it reads the raw Axios response body directly. The backend `ResponseInterceptor` wraps all responses as `{ data: T }`, meaning the token pair is at `response.data.data` — the code reads `data.data.accessToken` / `data.data.refreshToken`. MSW handlers for `/auth/refresh` must return `{ data: { accessToken, refreshToken } }` (not the raw pair) to match this.
 

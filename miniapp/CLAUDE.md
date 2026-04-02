@@ -12,7 +12,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 ├── src/
 │   ├── app.tsx                     # Bootstrap: imports styles, wraps providers, mounts React app
 │   ├── zaloBootstrap.ts            # Seeds localStorage from Zalo system info before i18n/theme init — MUST be imported first in app.tsx
-│   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors)
+│   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors, outlets)
 │   ├── global.d.ts                 # Global Window augmentations (APP_CONFIG, APP_ID)
 │   ├── components/
 │   │   ├── AppLayout.tsx           # Protected app shell (header row with ThemeSwitcher+LanguageSwitcher, bottom nav, page outlet)
@@ -285,6 +285,44 @@ const setTheme = useThemeStore((s) => s.setTheme);
 setTheme('dark'); // 'light' | 'dark' | 'system'
 ```
 
+### Zalo WebView Routing
+
+`BrowserRouter` in `app.tsx` **must** set `basename` to the Zalo app path:
+
+```tsx
+const basename = window.APP_ID ? `/zapps/${window.APP_ID}` : '/';
+<BrowserRouter basename={basename}>
+```
+
+**Why:** When Zalo opens the mini app, the browser URL is `/zapps/{APP_ID}/`. Without `basename`, React Router sees an unknown path, hits the `path="*"` wildcard, and redirects to `/login` on every cold open.
+
+**Rule:** Never hardcode `/login` or any other absolute path in imperative navigations (`window.location.replace`). Always compute the base:
+
+```ts
+const base = window.APP_ID ? `/zapps/${window.APP_ID}` : '';
+window.location.replace(`${base}/login`);
+```
+
+`window.APP_ID` is the same guard used by `zaloBootstrap.ts` and `storage.ts` — consistent across the app.
+
+---
+
+### Navigation History and Swipe-Back
+
+React Router navigation in Zalo's WebView respects the browser history stack. The swipe-back gesture pops the stack exactly like a browser Back button.
+
+| Method | History effect | Swipe-back result |
+|---|---|---|
+| `navigate('/path')` | **Pushes** new entry | Can swipe back to previous route |
+| `navigate('/path', { replace: true })` | **Replaces** current entry | Previous route is gone — swipe back skips it |
+
+**Design decisions already made:**
+
+- `OutletListPage` → `navigate('/', { replace: true })` after outlet selection — intentional. Users should not land back on the outlet picker by swiping. They can re-select via the `AppLayout` header.
+- `BottomNav` → `navigate(tab.path)` (push) — each tab tap is a new history entry. Users can swipe back through their tab navigation history.
+
+---
+
 ### Zalo Bootstrap
 
 `src/zaloBootstrap.ts` seeds `localStorage` from Zalo's system info before any module that reads it initializes. It runs as a side-effect on module import.
@@ -403,7 +441,7 @@ npx playwright test --ui   # E2E tests with interactive UI
 | axios                                                       | HTTP client (with interceptors for auth + error normalization)           |
 | react-hook-form + @hookform/resolvers                       | Form state management                                                    |
 | zod                                                         | Schema validation (forms)                                                |
-| react-i18next + i18next                                     | Internationalization (VI + EN, namespaces: common, auth, errors)         |
+| react-i18next + i18next                                     | Internationalization (VI + EN, namespaces: common, auth, errors, outlets) |
 | zmp-sdk                                                     | Zalo Mini App SDK — required platform dep, lazy import only              |
 | zmp-ui                                                      | Zalo UI components — required platform dep, import when needed           |
 | zmp-vite-plugin                                             | Zalo Vite plugin — required for Mini App to build and run, do NOT remove |

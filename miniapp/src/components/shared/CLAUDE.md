@@ -6,11 +6,17 @@ App-specific shared components used across multiple pages or layouts. Unlike `ui
 
 | Component | Purpose |
 |---|---|
-| `BottomNav` | Fixed bottom navigation bar for authenticated pages — renders the 5 main routes using icons + i18n labels |
+| `BottomNav` | Fixed bottom navigation bar for authenticated pages — renders the 5 main routes using icons + i18n labels from `common.nav.*` |
 | `LanguageSwitcher` | Dropdown to switch i18n language (VI / EN). Reads `i18n.language`, calls `i18n.changeLanguage` |
 | `OutletGuard` | Route guard: redirects to `/outlets` if no outlet selected in `useOutletStore`; renders outlet otherwise. Sits between `ProtectedRoute` and `AppLayout` |
 | `ProtectedRoute` | Route guard: renders `null` while `!isReady`, redirects to `/login` if no user, renders outlet otherwise |
 | `ThemeSwitcher` | Dropdown to switch theme preference (Light / System / Dark). Reads + writes `useThemeStore`. Pattern mirrors `LanguageSwitcher` |
+
+## BottomNav
+
+Tab labels use `useTranslation('common')` with keys from `common.nav.*` (`nav.home`, `nav.products`, `nav.cart`, `nav.orders`, `nav.profile`). Never hardcode label strings — add new tabs to both `locales/vi/common.json` and `locales/en/common.json`.
+
+Each tab tap calls `navigate(tab.path)` — a **push** navigation that adds to the history stack. Users can swipe back through their tab history. This is intentional; see `miniapp/CLAUDE.md` → Navigation History for the rationale.
 
 ## Dropdown Pattern (LanguageSwitcher / ThemeSwitcher)
 
