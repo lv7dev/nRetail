@@ -1,0 +1,9 @@
+{
+  "loading": "Đang tải...",
+  "outlets": {
+    "selectOutlet": "Chọn cửa hàng",
+    "noOutlets": "Bạn chưa thuộc cửa hàng nào",
+    "contactAdmin": "Liên hệ quản trị viên để được thêm vào cửa hàng",
+    "logout": "Đăng xuất"
+  }
+}

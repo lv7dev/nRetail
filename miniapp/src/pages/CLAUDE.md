@@ -23,7 +23,7 @@ Use a folder when the page has a form (needs `schema.ts`) or multiple sub-compon
 
 ## i18n Rule
 
-**Zero hardcoded strings in pages.** Every visible string comes from `useTranslation`.
+**Zero hardcoded strings in pages or shared components.** Every visible string must come from `useTranslation`.
 
 ```tsx
 // ✅ correct
@@ -34,7 +34,26 @@ const { t } = useTranslation('auth')
 <h1>Sign in</h1>
 ```
 
-Both `src/locales/vi/*.json` and `src/locales/en/*.json` must be updated whenever a new key is added.
+### Checklist — every new or updated page/component must:
+
+- [ ] Use `useTranslation('<namespace>')` for all visible strings
+- [ ] Add all new keys to **both** `src/locales/vi/<namespace>.json` and `src/locales/en/<namespace>.json`
+- [ ] If using a **new namespace** (e.g. `outlets`, `products`):
+  1. Create `src/locales/vi/<namespace>.json` and `src/locales/en/<namespace>.json`
+  2. Import both files in `src/i18n.ts`
+  3. Add the namespace to the `ns` array in `i18n.init()`
+  4. Add the namespace to the `resources` object for both `vi` and `en`
+
+### Namespace assignment
+
+| Namespace | Used for |
+|---|---|
+| `common` | Shared UI — buttons, validation messages, nav labels |
+| `auth` | All auth pages (login, register, OTP, forgot password) |
+| `errors` | API error codes → user-facing messages |
+| `outlets` | Outlet picker page |
+
+When adding a page for a new domain (e.g. products, orders), create a matching namespace rather than adding to `common`.
 
 ## Form Conventions
 

@@ -5,6 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import { useCartStore, cartItemCount } from '@/store/useCartStore';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 // Mock Icon to avoid dynamic SVG imports
 vi.mock('@/components/ui', () => ({
   Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />,
@@ -32,11 +36,11 @@ describe('BottomNav', () => {
 
   it('renders all five tabs', () => {
     renderNav();
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('Products')).toBeInTheDocument();
-    expect(screen.getByText('Cart')).toBeInTheDocument();
-    expect(screen.getByText('Orders')).toBeInTheDocument();
-    expect(screen.getByText('Profile')).toBeInTheDocument();
+    expect(screen.getByText('nav.home')).toBeInTheDocument();
+    expect(screen.getByText('nav.products')).toBeInTheDocument();
+    expect(screen.getByText('nav.cart')).toBeInTheDocument();
+    expect(screen.getByText('nav.orders')).toBeInTheDocument();
+    expect(screen.getByText('nav.profile')).toBeInTheDocument();
   });
 
   it('applies active style to Home tab at root path', () => {
