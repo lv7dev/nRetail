@@ -53,11 +53,13 @@ if (!window.APP_CONFIG) {
 
 const queryClient = new QueryClient();
 
+const basename = window.APP_ID ? `/zapps/${window.APP_ID}` : '/';
+
 const root = createRoot(document.getElementById('app')!);
 root.render(
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <AuthProvider>
           <Routes>
             {/* Auth routes */}

@@ -91,6 +91,7 @@ export default async function globalSetup(): Promise<void> {
   process.env.JWT_SECRET = 'integration-test-secret-minimum-32-chars';
   process.env.JWT_EXPIRES_IN = '15m';
   process.env.NODE_ENV = 'test';
+  process.env.CORS_ORIGINS = 'http://localhost:3000';
 
   // Step 5: Run Prisma migrations
   console.log('[global-setup] Running prisma migrate deploy...');

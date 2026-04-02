@@ -19,11 +19,20 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor(), new LoggingInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // CORS
-  app.enableCors();
+  const configService = app.get(ConfigService);
+
+  // CORS — restrict to configured origins; Authorization header required for authenticated requests
+  const corsOrigins = configService
+    .get<string>('CORS_ORIGINS')!
+    .split(',')
+    .map((s) => s.trim());
+  app.enableCors({
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   // Swagger — non-production only
-  const configService = app.get(ConfigService);
   const nodeEnv = configService.get<string>('NODE_ENV');
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()

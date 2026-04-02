@@ -7,6 +7,7 @@ export const configSchema = z.object({
   REDIS_URL: z.string().url(),
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  CORS_ORIGINS: z.string().min(1),
 });
 
 export type Config = z.infer<typeof configSchema>;
