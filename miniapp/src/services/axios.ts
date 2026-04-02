@@ -86,7 +86,8 @@ apiClient.interceptors.response.use(
 
 function handleAuthFailure(): void {
   storage.clearTokens();
-  window.location.replace('/login');
+  const base = window.APP_ID ? `/zapps/${window.APP_ID}` : '';
+  window.location.replace(`${base}/login`);
 }
 
 function normalizeError(error: unknown): ApiError {
