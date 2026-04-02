@@ -1,0 +1,14 @@
+{
+  "profile": {
+    "defaultName": "User"
+  },
+  "menu": {
+    "viewProfile": "View profile",
+    "changePassword": "Change password",
+    "settings": "Setting",
+    "manual": "Manual",
+    "assistant": "Assistant",
+    "feedback": "Feedback for SABECO B2B",
+    "logout": "Log out"
+  }
+}

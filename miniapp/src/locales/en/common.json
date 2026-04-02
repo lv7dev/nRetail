@@ -16,6 +16,9 @@
     "products": "Products",
     "cart": "Cart",
     "orders": "Orders",
-    "profile": "Profile"
+    "profile": "Profile",
+    "order": "Order",
+    "outlet": "Outlet",
+    "account": "Account"
   }
 }

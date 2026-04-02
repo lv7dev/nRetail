@@ -43,6 +43,8 @@ import CartPage from '@/pages/cart';
 import OrdersPage from '@/pages/orders';
 import ProfilePage from '@/pages/profile';
 import OutletListPage from '@/pages/outlets';
+import OutletDetailPage from '@/pages/outlet-detail';
+import AccountPage from '@/pages/account';
 
 // Expose app configuration
 import appConfig from '../app-config.json';
@@ -84,6 +86,8 @@ root.render(
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/outlet-detail" element={<OutletDetailPage />} />
+                  <Route path="/account" element={<AccountPage />} />
                 </Route>
               </Route>
             </Route>

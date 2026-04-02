@@ -1,21 +1,18 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useCartStore, cartItemCount } from '@/store/useCartStore';
 import { Icon, IconVariant } from '@/components/ui';
 
 const tabs: { labelKey: string; icon: string; variant?: IconVariant; path: string }[] = [
   { labelKey: 'nav.home', icon: 'house', variant: 'solid', path: '/' },
-  { labelKey: 'nav.products', icon: 'box', variant: 'solid', path: '/products' },
-  { labelKey: 'nav.cart', icon: 'cart-shopping', variant: 'solid', path: '/cart' },
-  { labelKey: 'nav.orders', icon: 'clipboard-list', variant: 'solid', path: '/orders' },
-  { labelKey: 'nav.profile', icon: 'user', variant: 'solid', path: '/profile' },
+  { labelKey: 'nav.order', icon: 'clipboard-list', variant: 'solid', path: '/orders' },
+  { labelKey: 'nav.outlet', icon: 'store', variant: 'solid', path: '/outlet-detail' },
+  { labelKey: 'nav.account', icon: 'user', variant: 'solid', path: '/account' },
 ];
 
 export default function BottomNav() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const location = useLocation();
-  const cartCount = useCartStore(cartItemCount);
 
   return (
     <nav
@@ -33,14 +30,6 @@ export default function BottomNav() {
           >
             <Icon name={tab.icon} variant={tab.variant} size={20} />
             <span className="text-xs">{t(tab.labelKey)}</span>
-            {tab.path === '/cart' && cartCount > 0 && (
-              <span
-                className="absolute top-1 right-1/4 bg-destructive text-destructive-fg text-xs rounded-full w-4 h-4 flex items-center justify-center"
-                style={{ fontSize: '10px' }}
-              >
-                {cartCount}
-              </span>
-            )}
           </button>
         );
       })}

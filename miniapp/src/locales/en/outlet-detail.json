@@ -1,0 +1,29 @@
+{
+  "header": {
+    "title": "Outlet information"
+  },
+  "subtitle": "Contact sales representative to update outlet info if needed.",
+  "tabs": {
+    "generalInfo": "General information",
+    "contact": "Contact",
+    "segmentation": "Outlet segmentation"
+  },
+  "contact": {
+    "outletOwner": "Outlet Owner (Me)",
+    "contactPerson": "Contact Person",
+    "name": "Name",
+    "phone": "Phone number",
+    "lastUpdated": "Last updated on",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "actions": {
+    "orderControl": "Order control",
+    "deactivate": "Deactivate",
+    "activate": "Activate"
+  },
+  "stubs": {
+    "generalInfo": "Coming soon",
+    "segmentation": "Coming soon"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "header": {
+    "title": "Thông tin đại lý"
+  },
+  "subtitle": "Liên hệ nhân viên kinh doanh để cập nhật thông tin đại lý.",
+  "tabs": {
+    "generalInfo": "Thông tin chung",
+    "contact": "Liên hệ",
+    "segmentation": "Phân khúc đại lý"
+  },
+  "contact": {
+    "outletOwner": "Chủ đại lý (Tôi)",
+    "contactPerson": "Người liên hệ",
+    "name": "Tên",
+    "phone": "Số điện thoại",
+    "lastUpdated": "Cập nhật lần cuối",
+    "active": "Đang hoạt động",
+    "inactive": "Ngừng hoạt động"
+  },
+  "actions": {
+    "orderControl": "Kiểm soát đặt hàng",
+    "deactivate": "Vô hiệu hóa",
+    "activate": "Kích hoạt"
+  },
+  "stubs": {
+    "generalInfo": "Đang phát triển",
+    "segmentation": "Đang phát triển"
+  }
+}

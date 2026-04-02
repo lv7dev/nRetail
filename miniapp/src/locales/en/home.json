@@ -1,0 +1,16 @@
+{
+  "quickActions": {
+    "outletManagement": "Outlet Management",
+    "suggestedOrder": "Suggested Order",
+    "tradePrograms": "Trade Programs",
+    "orderHistory": "Order History"
+  },
+  "sections": {
+    "consumerPromotion": "Consumer Promotion",
+    "brand": "Brand",
+    "viewAll": "View all"
+  },
+  "banner": {
+    "defaultAlt": "Promotional banner"
+  }
+}

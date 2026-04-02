@@ -1,0 +1,16 @@
+{
+  "quickActions": {
+    "outletManagement": "Quản lý đại lý",
+    "suggestedOrder": "Đề xuất đặt hàng",
+    "tradePrograms": "Chương trình thương mại",
+    "orderHistory": "Lịch sử đơn hàng"
+  },
+  "sections": {
+    "consumerPromotion": "Khuyến mãi người tiêu dùng",
+    "brand": "Thương hiệu",
+    "viewAll": "Xem tất cả"
+  },
+  "banner": {
+    "defaultAlt": "Banner khuyến mãi"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "profile": {
+    "defaultName": "Người dùng"
+  },
+  "menu": {
+    "viewProfile": "Xem hồ sơ",
+    "changePassword": "Đổi mật khẩu",
+    "settings": "Cài đặt",
+    "manual": "Hướng dẫn sử dụng",
+    "assistant": "Trợ lý",
+    "feedback": "Phản hồi cho SABECO B2B",
+    "logout": "Đăng xuất"
+  }
+}
