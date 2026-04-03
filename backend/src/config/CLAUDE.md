@@ -19,6 +19,7 @@ Typed environment configuration validated at startup with Zod. The app refuses t
 | `REDIS_URL`      | `string` (URL)                            | —               | Docker: `redis://localhost:6379`                              |
 | `JWT_SECRET`     | `string` (min 16 chars)                   | —               |                                                               |
 | `JWT_EXPIRES_IN` | `string`                                  | `'7d'`          | e.g. `7d`, `24h`, `3600`                                      |
+| `CORS_ORIGINS`   | `string` (comma-separated URLs)           | —               | Production: `https://h5.zdn.vn` · Dev: add `http://localhost:3000` |
 
 ## How to Use ConfigService
 

@@ -543,7 +543,34 @@ DATABASE_URL=postgresql://nretail:nretail@localhost:5434/nretail
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=<min 16 chars>
 JWT_EXPIRES_IN=7d
+CORS_ORIGINS=https://h5.zdn.vn,http://localhost:3000
 ```
+
+**When adding a new required env var:** add it to `config.schema.ts` (Zod), `.env`, `.env.example`, and the integration test `global-setup.ts` (`process.env.*` block). Missing any one of these causes either a broken deploy or CI failures.
+
+---
+
+### CORS
+
+CORS is configured in `main.ts` using `ConfigService` to read the `CORS_ORIGINS` env var:
+
+```ts
+const corsOrigins = configService.get<string>('CORS_ORIGINS')!.split(',').map(s => s.trim());
+app.enableCors({
+  origin: corsOrigins,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
+```
+
+**Rules:**
+- Never use `app.enableCors()` with no arguments (wildcard) — it blocks authenticated requests because `Authorization` is not in `Access-Control-Allow-Headers`
+- `Authorization` **must** be in `allowedHeaders` — without it the browser's CORS preflight rejects authenticated cross-origin requests silently, and the Axios response interceptor never sees a 401 (it gets a network error instead), so token refresh never triggers
+- `CORS_ORIGINS` is required by Zod — the app will not start without it. Set it in Render / production before deploying
+- For integration tests: add `process.env.CORS_ORIGINS = 'http://localhost:3000'` in `test/global-setup.ts` alongside the other env vars
+
+**Production value:** `https://h5.zdn.vn` (Zalo Mini App WebView origin)
+**Development value:** `https://h5.zdn.vn,http://localhost:3000`
 
 ---
 

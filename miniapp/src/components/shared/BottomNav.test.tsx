@@ -1,9 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import BottomNav from './BottomNav';
-import { useCartStore, cartItemCount } from '@/store/useCartStore';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
 
 // Mock Icon to avoid dynamic SVG imports
 vi.mock('@/components/ui', () => ({
@@ -17,6 +20,23 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+// ResizeObserver mock (not available in jsdom)
+const mockDisconnect = vi.fn();
+const mockObserve = vi.fn();
+let capturedCallback: ResizeObserverCallback | undefined;
+
+vi.stubGlobal(
+  'ResizeObserver',
+  class {
+    constructor(cb: ResizeObserverCallback) {
+      capturedCallback = cb;
+    }
+    observe = mockObserve;
+    disconnect = mockDisconnect;
+    unobserve = vi.fn();
+  },
+);
+
 const renderNav = (initialPath = '/') =>
   render(
     <MemoryRouter initialEntries={[initialPath]}>
@@ -27,63 +47,100 @@ const renderNav = (initialPath = '/') =>
 describe('BottomNav', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
-    useCartStore.setState({ items: [] });
+    mockDisconnect.mockClear();
+    mockObserve.mockClear();
+    capturedCallback = undefined;
   });
 
-  it('renders all five tabs', () => {
+  afterEach(() => {
+    document.documentElement.style.removeProperty('--bottom-nav-height');
+  });
+
+  it('renders exactly 4 tabs', () => {
     renderNav();
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('Products')).toBeInTheDocument();
-    expect(screen.getByText('Cart')).toBeInTheDocument();
-    expect(screen.getByText('Orders')).toBeInTheDocument();
-    expect(screen.getByText('Profile')).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(4);
   });
 
-  it('applies active style to Home tab at root path', () => {
+  it('renders all four tab labels using i18n keys', () => {
+    renderNav();
+    expect(screen.getByText('nav.home')).toBeInTheDocument();
+    expect(screen.getByText('nav.order')).toBeInTheDocument();
+    expect(screen.getByText('nav.outlet')).toBeInTheDocument();
+    expect(screen.getByText('nav.account')).toBeInTheDocument();
+  });
+
+  it('does not render old tabs', () => {
+    renderNav();
+    expect(screen.queryByText('nav.products')).not.toBeInTheDocument();
+    expect(screen.queryByText('nav.cart')).not.toBeInTheDocument();
+    expect(screen.queryByText('nav.orders')).not.toBeInTheDocument();
+    expect(screen.queryByText('nav.profile')).not.toBeInTheDocument();
+  });
+
+  it('Home tab is active when pathname is /', () => {
     renderNav('/');
     const homeBtn = screen.getByRole('button', { name: /home/i });
+    expect(homeBtn.className).toMatch(/text-primary/);
     expect(homeBtn.className).toMatch(/font-bold/);
   });
 
-  it('applies active style to Products tab at /products sub-path', () => {
-    renderNav('/products/123');
-    const productsBtn = screen.getByRole('button', { name: /products/i });
-    expect(productsBtn.className).toMatch(/font-bold/);
-  });
-
-  it('Home is NOT active at /products', () => {
-    renderNav('/products');
+  it('Home tab is NOT active at /orders', () => {
+    renderNav('/orders');
     const homeBtn = screen.getByRole('button', { name: /home/i });
     expect(homeBtn.className).toMatch(/font-normal/);
+    expect(homeBtn.className).not.toMatch(/text-primary/);
   });
 
-  it('navigates to /products on Products tab click', async () => {
-    renderNav();
-    await userEvent.click(screen.getByRole('button', { name: /products/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/products');
+  it('Order tab is active when pathname starts with /orders', () => {
+    renderNav('/orders/123');
+    const orderBtn = screen.getByRole('button', { name: /order/i });
+    expect(orderBtn.className).toMatch(/text-primary/);
+    expect(orderBtn.className).toMatch(/font-bold/);
+  });
+
+  it('Outlet tab is active when pathname starts with /outlet-detail', () => {
+    renderNav('/outlet-detail');
+    const outletBtn = screen.getByRole('button', { name: /outlet/i });
+    expect(outletBtn.className).toMatch(/text-primary/);
+    expect(outletBtn.className).toMatch(/font-bold/);
+  });
+
+  it('Account tab is active when pathname starts with /account', () => {
+    renderNav('/account/settings');
+    const accountBtn = screen.getByRole('button', { name: /account/i });
+    expect(accountBtn.className).toMatch(/text-primary/);
+    expect(accountBtn.className).toMatch(/font-bold/);
   });
 
   it('navigates to / on Home tab click', async () => {
-    renderNav('/products');
+    renderNav('/orders');
     await userEvent.click(screen.getByRole('button', { name: /home/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/');
   });
 
-  it('shows cart badge when cart has items', () => {
-    useCartStore.setState({
-      items: [{ id: 'a', name: 'Item', price: 100, quantity: 2 }],
-    });
-    renderNav();
-    expect(screen.getByText('2')).toBeInTheDocument();
+  it('navigates to /orders on Order tab click', async () => {
+    renderNav('/');
+    await userEvent.click(screen.getByRole('button', { name: /order/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/orders');
   });
 
-  it('hides cart badge when cart is empty', () => {
-    renderNav();
-    // Cart count badge should not be present
-    expect(screen.queryByText('0')).not.toBeInTheDocument();
-    // No numeric badge visible
-    const badges = screen.queryAllByText(/^\d+$/);
-    expect(badges).toHaveLength(0);
+  it('navigates to /outlet-detail on Outlet tab click', async () => {
+    renderNav('/');
+    await userEvent.click(screen.getByRole('button', { name: /outlet/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/outlet-detail');
+  });
+
+  it('navigates to /account on Account tab click', async () => {
+    renderNav('/');
+    await userEvent.click(screen.getByRole('button', { name: /account/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/account');
+  });
+
+  it('inactive tab buttons have text-content-muted class', () => {
+    renderNav('/');
+    const orderBtn = screen.getByRole('button', { name: /order/i });
+    expect(orderBtn.className).toMatch(/text-content-muted/);
   });
 
   it('nav container has dark mode classes', () => {
@@ -93,24 +150,23 @@ describe('BottomNav', () => {
     expect(nav.className).toMatch(/dark:border-border-dark/);
   });
 
-  it('active tab button has text-primary class', () => {
+  it('no cart badge is rendered', () => {
     renderNav('/');
-    const homeBtn = screen.getByRole('button', { name: /home/i });
-    expect(homeBtn.className).toMatch(/text-primary/);
+    const badges = screen.queryAllByText(/^\d+$/);
+    expect(badges).toHaveLength(0);
   });
 
-  it('inactive tab button has text-content-muted and dark:text-content-dark-muted classes', () => {
-    renderNav('/');
-    const productsBtn = screen.getByRole('button', { name: /products/i });
-    expect(productsBtn.className).toMatch(/text-content-muted/);
-    expect(productsBtn.className).toMatch(/dark:text-content-dark-muted/);
+  it('sets --bottom-nav-height CSS variable on mount via ResizeObserver', () => {
+    renderNav();
+    expect(mockObserve).toHaveBeenCalled();
+    const mockEntry = { contentRect: { height: 54 } } as unknown as ResizeObserverEntry;
+    capturedCallback!([mockEntry], {} as ResizeObserver);
+    expect(document.documentElement.style.getPropertyValue('--bottom-nav-height')).toBe('54px');
   });
 
-  it('tab buttons have no inline style color property', () => {
-    renderNav('/');
-    const homeBtn = screen.getByRole('button', { name: /home/i });
-    const productsBtn = screen.getByRole('button', { name: /products/i });
-    expect(homeBtn).not.toHaveAttribute('style');
-    expect(productsBtn).not.toHaveAttribute('style');
+  it('disconnects ResizeObserver on unmount', () => {
+    const { unmount } = renderNav();
+    unmount();
+    expect(mockDisconnect).toHaveBeenCalled();
   });
 });

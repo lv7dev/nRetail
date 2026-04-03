@@ -1,0 +1,29 @@
+{
+  "search": {
+    "placeholder": "Tìm kiếm theo mã, tên sản phẩm,..."
+  },
+  "quickActions": {
+    "outletManagement": "Quản lý đại lý",
+    "suggestedOrder": "Đề xuất đặt hàng",
+    "tradePrograms": "Chương trình thương mại",
+    "orderHistory": "Lịch sử đơn hàng"
+  },
+  "sections": {
+    "consumerPromotion": "Khuyến mãi người tiêu dùng",
+    "brand": "Thương hiệu",
+    "tradePrograms": "Chương trình thương mại",
+    "recommendedProducts": "Sản phẩm đề xuất",
+    "products": "Sản phẩm",
+    "viewAll": "Xem tất cả"
+  },
+  "products": {
+    "code": "Mã sản phẩm",
+    "unit": "Đơn vị",
+    "addToCart": "Thêm vào giỏ",
+    "boughtProducts": "Sản phẩm đã mua",
+    "viewedProducts": "Sản phẩm đã xem"
+  },
+  "banner": {
+    "defaultAlt": "Banner khuyến mãi"
+  }
+}

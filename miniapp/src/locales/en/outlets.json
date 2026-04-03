@@ -1,0 +1,9 @@
+{
+  "loading": "Loading...",
+  "outlets": {
+    "selectOutlet": "Select Outlet",
+    "noOutlets": "You don't belong to any outlet",
+    "contactAdmin": "Contact an administrator to be added to an outlet",
+    "logout": "Logout"
+  }
+}
