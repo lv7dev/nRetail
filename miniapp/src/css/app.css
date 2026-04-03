@@ -2,6 +2,14 @@
   --zalo-chrome-top: calc(var(--zaui-safe-area-inset-top, 0px) + 2.6rem);
 }
 
+body {
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
 .pt-safe {
   padding-top: var(--zaui-safe-area-inset-top, 0px);
 }
