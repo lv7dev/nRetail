@@ -16,13 +16,17 @@ describe('SectionHeader', () => {
 
   it('renders "View all" button when onViewAll is provided', () => {
     const onViewAll = vi.fn();
-    render(<SectionHeader title="Featured Products" onViewAll={onViewAll} />);
+    render(
+      <SectionHeader title="Featured Products" onViewAll={onViewAll} viewAllLabel="View all" />,
+    );
     expect(screen.getByRole('button', { name: 'View all' })).toBeInTheDocument();
   });
 
   it('calls onViewAll when button is clicked', async () => {
     const onViewAll = vi.fn();
-    render(<SectionHeader title="Featured Products" onViewAll={onViewAll} />);
+    render(
+      <SectionHeader title="Featured Products" onViewAll={onViewAll} viewAllLabel="View all" />,
+    );
     await userEvent.click(screen.getByRole('button', { name: 'View all' }));
     expect(onViewAll).toHaveBeenCalledOnce();
   });

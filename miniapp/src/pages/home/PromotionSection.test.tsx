@@ -10,17 +10,16 @@ describe('PromotionSection', () => {
     expect(cards.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('each card has text content', () => {
+  it('renders a horizontally scrollable container', () => {
+    const { container } = render(<PromotionSection />);
+    expect(container.querySelector('.overflow-x-auto')).not.toBeNull();
+  });
+
+  it('each card has fixed dimensions for horizontal scroll', () => {
     render(<PromotionSection />);
     const cards = screen.getAllByRole('article');
     cards.forEach((card) => {
-      expect(card.textContent?.trim()).not.toBe('');
+      expect(card).toHaveClass('w-72');
     });
-  });
-
-  it('renders a horizontally scrollable container', () => {
-    const { container } = render(<PromotionSection />);
-    const scrollContainer = container.querySelector('.overflow-x-auto');
-    expect(scrollContainer).not.toBeNull();
   });
 });

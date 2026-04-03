@@ -12,7 +12,7 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 ├── src/
 │   ├── app.tsx                     # Bootstrap: imports styles, wraps providers, mounts React app
 │   ├── zaloBootstrap.ts            # Seeds localStorage from Zalo system info before i18n/theme init — MUST be imported first in app.tsx
-│   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors, outlets)
+│   ├── i18n.ts                     # i18next setup (namespaces: common, auth, errors, outlets, home, outlet-detail, account)
 │   ├── global.d.ts                 # Global Window augmentations (APP_CONFIG, APP_ID)
 │   ├── components/
 │   │   ├── AppLayout.tsx           # Protected app shell (header row with ThemeSwitcher+LanguageSwitcher, bottom nav, page outlet)
@@ -441,7 +441,7 @@ npx playwright test --ui   # E2E tests with interactive UI
 | axios                                                       | HTTP client (with interceptors for auth + error normalization)           |
 | react-hook-form + @hookform/resolvers                       | Form state management                                                    |
 | zod                                                         | Schema validation (forms)                                                |
-| react-i18next + i18next                                     | Internationalization (VI + EN, namespaces: common, auth, errors, outlets) |
+| react-i18next + i18next                                     | Internationalization (VI + EN, namespaces: common, auth, errors, outlets, home, outlet-detail, account) |
 | zmp-sdk                                                     | Zalo Mini App SDK — required platform dep, lazy import only              |
 | zmp-ui                                                      | Zalo UI components — required platform dep, import when needed           |
 | zmp-vite-plugin                                             | Zalo Vite plugin — required for Mini App to build and run, do NOT remove |

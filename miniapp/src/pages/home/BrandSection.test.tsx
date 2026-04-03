@@ -10,17 +10,21 @@ describe('BrandSection', () => {
     expect(brands).toHaveLength(3);
   });
 
-  it('renders brand names: 333, BIA SAIGON, BIA LẠC VIỆT', () => {
+  it('renders brand names', () => {
     render(<BrandSection />);
-    // Use selector:'span' to target the name label, not the initials circle which may share the same text
-    expect(screen.getByText('333', { selector: 'span' })).toBeInTheDocument();
-    expect(screen.getByText('BIA SAIGON', { selector: 'span' })).toBeInTheDocument();
-    expect(screen.getByText('BIA LẠC VIỆT', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText('CHILL')).toBeInTheDocument();
+    expect(screen.getByText('SPECIAL')).toBeInTheDocument();
+    expect(screen.getByText('LAGER')).toBeInTheDocument();
   });
 
   it('renders a horizontally scrollable container', () => {
     const { container } = render(<BrandSection />);
-    const scrollContainer = container.querySelector('.overflow-x-auto');
-    expect(scrollContainer).not.toBeNull();
+    expect(container.querySelector('.overflow-x-auto')).not.toBeNull();
+  });
+
+  it('renders logo boxes with fixed width', () => {
+    const { container } = render(<BrandSection />);
+    const logoBoxes = container.querySelectorAll('[data-testid="brand-logo"]');
+    expect(logoBoxes).toHaveLength(3);
   });
 });

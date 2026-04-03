@@ -3,27 +3,33 @@ import { cn } from '@/utils/cn';
 interface BannerCarouselProps {
   alt: string;
   className?: string;
+  totalSlides?: number;
+  activeSlide?: number;
 }
 
-export default function BannerCarousel({ alt, className }: BannerCarouselProps) {
+export default function BannerCarousel({
+  alt,
+  className,
+  totalSlides = 6,
+  activeSlide = 1,
+}: BannerCarouselProps) {
   return (
     <div
-      className={cn('relative flex h-36 w-full items-center justify-center bg-primary/20', className)}
+      className={cn('relative h-40 w-full overflow-hidden rounded-xl bg-surface-muted', className)}
       role="img"
       aria-label={alt}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/30">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="text-primary"
-          aria-hidden="true"
-        >
-          <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-        </svg>
+      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-2">
+        {Array.from({ length: totalSlides }).map((_, i) => (
+          <span
+            key={i}
+            data-testid="banner-dot"
+            className={cn(
+              'h-2 w-2 rounded-full',
+              i === activeSlide ? 'bg-destructive' : 'bg-surface opacity-60',
+            )}
+          />
+        ))}
       </div>
     </div>
   );

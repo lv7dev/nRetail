@@ -9,20 +9,28 @@ describe('BannerCarousel', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders with a placeholder background', () => {
-    const { container } = render(<BannerCarousel alt="Test banner" />);
-    // The root element should have some background styling
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  it('accepts an alt prop for accessibility', () => {
+  it('renders with accessible label', () => {
     render(<BannerCarousel alt="Promotional banner" />);
-    // The component renders (renders without crashing with the alt prop)
-    expect(screen.getByRole('img', { hidden: true }) ?? document.querySelector('[aria-label]') ?? document.querySelector('[title]') ?? document.body.firstChild).not.toBeNull();
+    expect(screen.getByRole('img', { name: 'Promotional banner' })).toBeInTheDocument();
   });
 
   it('accepts optional className prop', () => {
     const { container } = render(<BannerCarousel alt="Test" className="my-custom-class" />);
     expect(container.firstChild).toHaveClass('my-custom-class');
+  });
+
+  it('renders pagination dots', () => {
+    const { container } = render(<BannerCarousel alt="Test banner" totalSlides={6} />);
+    const dots = container.querySelectorAll('[data-testid="banner-dot"]');
+    expect(dots).toHaveLength(6);
+  });
+
+  it('highlights the active dot', () => {
+    const { container } = render(
+      <BannerCarousel alt="Test banner" totalSlides={3} activeSlide={1} />,
+    );
+    const dots = container.querySelectorAll('[data-testid="banner-dot"]');
+    expect(dots[1]).toHaveClass('bg-destructive');
+    expect(dots[0]).not.toHaveClass('bg-destructive');
   });
 });

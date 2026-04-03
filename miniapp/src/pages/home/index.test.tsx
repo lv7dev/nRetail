@@ -11,6 +11,10 @@ vi.mock('@/components/ui', () => ({
   SectionHeader: ({ title }: { title: string }) => <div data-testid="section-header">{title}</div>,
 }));
 
+vi.mock('./SearchBar', () => ({
+  default: () => <div data-testid="search-bar" />,
+}));
+
 vi.mock('./QuickActionsGrid', () => ({
   default: () => <div data-testid="quick-actions-grid" />,
 }));
@@ -27,6 +31,14 @@ vi.mock('./BrandSection', () => ({
   default: () => <div data-testid="brand-section" />,
 }));
 
+vi.mock('./ProductSection', () => ({
+  default: () => <div data-testid="product-section" />,
+}));
+
+vi.mock('./TabbedProductSection', () => ({
+  default: () => <div data-testid="tabbed-product-section" />,
+}));
+
 import HomePage from './index';
 
 const renderPage = () =>
@@ -37,6 +49,11 @@ const renderPage = () =>
   );
 
 describe('HomePage', () => {
+  it('renders the search bar', () => {
+    renderPage();
+    expect(screen.getByTestId('search-bar')).toBeInTheDocument();
+  });
+
   it('renders the quick actions grid', () => {
     renderPage();
     expect(screen.getByTestId('quick-actions-grid')).toBeInTheDocument();
@@ -57,9 +74,19 @@ describe('HomePage', () => {
     expect(screen.getByTestId('brand-section')).toBeInTheDocument();
   });
 
+  it('renders product sections', () => {
+    renderPage();
+    expect(screen.getAllByTestId('product-section').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders the tabbed product section', () => {
+    renderPage();
+    expect(screen.getByTestId('tabbed-product-section')).toBeInTheDocument();
+  });
+
   it('renders section headers with i18n keys', () => {
     renderPage();
     const headers = screen.getAllByTestId('section-header');
-    expect(headers.length).toBeGreaterThanOrEqual(2);
+    expect(headers.length).toBeGreaterThanOrEqual(5);
   });
 });

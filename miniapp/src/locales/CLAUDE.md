@@ -10,6 +10,9 @@ Translation files for Vietnamese (`vi/`) and English (`en/`). Every namespace mu
 | `auth` | `auth.json` | All auth pages — login, register, OTP, forgot-password, new-password |
 | `errors` | `errors.json` | API error codes → user-facing messages (via `resolveApiError`) |
 | `outlets` | `outlets.json` | Outlet picker page |
+| `home` | `home.json` | Home page — search, quick actions, section titles, product labels |
+| `outlet-detail` | `outlet-detail.json` | Outlet detail page — tabs, fields, status badges |
+| `account` | `account.json` | Account page — menu items, section headers |
 
 New domain pages (products, orders, etc.) get their own namespace — do NOT pile everything into `common`.
 

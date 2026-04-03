@@ -26,7 +26,7 @@ This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full 
 bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
+bd update <id> --status=closed  # Complete work (bd close has ID resolver bug in v0.62.0)
 ```
 
 ### Rules
@@ -78,13 +78,13 @@ This project uses three tools together. Each owns a distinct concern:
 ### Workflow
 
 ```
-bd ready → claim task → /opsx:propose → implement with TDD → /opsx:verify → bd close → git push
+bd ready → claim task → /opsx:propose → implement with TDD → /opsx:verify → bd update <id> --status=closed → git push
 ```
 
 ### Rules
 
 - **Planning**: Use OpenSpec (`/opsx:propose`, `/opsx:explore`) for specs and plans — NOT Superpowers' deprecated `/write-plan`
-- **Task tracking**: Use Beads (`bd create`, `bd ready`, `bd close`) — NOT TodoWrite or markdown TODOs
+- **Task tracking**: Use Beads (`bd create`, `bd ready`, `bd update <id> --status=closed`) — NOT TodoWrite or markdown TODOs
 - **TDD**: Superpowers enforces this automatically — no need to request it
 - **Code review**: Superpowers dispatches reviewer subagents automatically
 - **Specs live in**: `openspec/changes/<name>/` (active) and `openspec/specs/` (archived)

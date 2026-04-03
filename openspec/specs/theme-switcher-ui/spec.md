@@ -44,20 +44,15 @@ The component SHALL visually distinguish the currently active preference option.
 - **WHEN** `useThemeStore.preference` is `'system'` and the dropdown is open
 - **THEN** the System option has `text-primary font-medium` classes
 
-## Requirement: ThemeSwitcher is placed in all three app contexts
+## Requirement: ThemeSwitcher is placed in AuthLayout and Account page only
 The component SHALL be rendered in:
 1. `AuthLayout` — next to the existing `LanguageSwitcher` in the top-right floating area.
-2. `AppLayout` — in a new flex header row added at the top of the layout, containing both `ThemeSwitcher` and `LanguageSwitcher`.
-3. The Profile page — as a settings row that labels the section "Theme" and renders the `ThemeSwitcher` inline.
+2. The Account page — as a settings row that labels the section "Theme" and renders the `ThemeSwitcher` inline.
 
 ### Scenario: ThemeSwitcher present in AuthLayout
 - **WHEN** any auth page is rendered
 - **THEN** `ThemeSwitcher` is visible alongside `LanguageSwitcher` in the top-right area
 
-### Scenario: ThemeSwitcher present in AppLayout header
-- **WHEN** any authenticated app page is rendered
-- **THEN** `AppLayout` renders a header row containing `ThemeSwitcher` and `LanguageSwitcher`
-
-### Scenario: ThemeSwitcher present on Profile page
-- **WHEN** the Profile page is rendered
+### Scenario: ThemeSwitcher present on Account page
+- **WHEN** the Account page is rendered
 - **THEN** a theme settings row containing `ThemeSwitcher` is visible

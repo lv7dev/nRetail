@@ -7,12 +7,7 @@ export interface SectionHeaderProps {
   className?: string;
 }
 
-export function SectionHeader({
-  title,
-  onViewAll,
-  viewAllLabel = 'View all',
-  className,
-}: SectionHeaderProps) {
+export function SectionHeader({ title, onViewAll, viewAllLabel, className }: SectionHeaderProps) {
   return (
     <div className={cn('flex items-center justify-between', className)}>
       <span className="text-base font-semibold text-content dark:text-content-dark">{title}</span>
