@@ -10,6 +10,14 @@ vi.mock('@/components/shared/BottomNav', () => ({
   default: () => <nav aria-label="Bottom navigation">BottomNav</nav>,
 }));
 
+vi.mock('@/components/shared/ThemeSwitcher', () => ({
+  ThemeSwitcher: () => <button>ThemeSwitcher</button>,
+}));
+
+vi.mock('@/components/shared/LanguageSwitcher', () => ({
+  LanguageSwitcher: () => <button>LanguageSwitcher</button>,
+}));
+
 vi.mock('@/store/useOutletStore');
 
 const mockNavigate = vi.fn();
@@ -54,6 +62,12 @@ describe('AppLayout', () => {
     expect(screen.getByText('My page')).toBeInTheDocument();
   });
 
+  it('page-content has paddingBottom clearing the BottomNav', () => {
+    const { container } = renderAppLayout();
+    const pageContent = container.querySelector('.page-content')!;
+    expect(pageContent.style.paddingBottom).toContain('--bottom-nav-height');
+  });
+
   it('renders BottomNav', () => {
     renderAppLayout();
     expect(screen.getByRole('navigation', { name: 'Bottom navigation' })).toBeInTheDocument();
@@ -68,5 +82,15 @@ describe('AppLayout', () => {
     renderAppLayout(mockOutlet);
     await userEvent.click(screen.getByRole('button', { name: 'Main Store' }));
     expect(mockNavigate).toHaveBeenCalledWith('/outlets');
+  });
+
+  it('does not render ThemeSwitcher', () => {
+    renderAppLayout();
+    expect(screen.queryByText('ThemeSwitcher')).not.toBeInTheDocument();
+  });
+
+  it('does not render LanguageSwitcher', () => {
+    renderAppLayout();
+    expect(screen.queryByText('LanguageSwitcher')).not.toBeInTheDocument();
   });
 });

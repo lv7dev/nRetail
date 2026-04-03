@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Icon, IconVariant } from '@/components/ui';
@@ -13,9 +14,23 @@ export default function BottomNav() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!navRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      document.documentElement.style.setProperty(
+        '--bottom-nav-height',
+        `${entry.contentRect.height}px`,
+      );
+    });
+    observer.observe(navRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <nav
+      ref={navRef}
       className="fixed left-0 right-0 flex bg-surface border-t border-border z-50 dark:bg-surface-dark dark:border-border-dark"
       style={{ bottom: 'var(--zaui-safe-area-inset-bottom, 0px)' }}
     >

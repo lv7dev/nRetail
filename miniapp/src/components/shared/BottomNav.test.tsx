@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -20,6 +20,23 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+// ResizeObserver mock (not available in jsdom)
+const mockDisconnect = vi.fn();
+const mockObserve = vi.fn();
+let capturedCallback: ResizeObserverCallback | undefined;
+
+vi.stubGlobal(
+  'ResizeObserver',
+  class {
+    constructor(cb: ResizeObserverCallback) {
+      capturedCallback = cb;
+    }
+    observe = mockObserve;
+    disconnect = mockDisconnect;
+    unobserve = vi.fn();
+  },
+);
+
 const renderNav = (initialPath = '/') =>
   render(
     <MemoryRouter initialEntries={[initialPath]}>
@@ -30,6 +47,13 @@ const renderNav = (initialPath = '/') =>
 describe('BottomNav', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
+    mockDisconnect.mockClear();
+    mockObserve.mockClear();
+    capturedCallback = undefined;
+  });
+
+  afterEach(() => {
+    document.documentElement.style.removeProperty('--bottom-nav-height');
   });
 
   it('renders exactly 4 tabs', () => {
@@ -130,5 +154,19 @@ describe('BottomNav', () => {
     renderNav('/');
     const badges = screen.queryAllByText(/^\d+$/);
     expect(badges).toHaveLength(0);
+  });
+
+  it('sets --bottom-nav-height CSS variable on mount via ResizeObserver', () => {
+    renderNav();
+    expect(mockObserve).toHaveBeenCalled();
+    const mockEntry = { contentRect: { height: 54 } } as unknown as ResizeObserverEntry;
+    capturedCallback!([mockEntry], {} as ResizeObserver);
+    expect(document.documentElement.style.getPropertyValue('--bottom-nav-height')).toBe('54px');
+  });
+
+  it('disconnects ResizeObserver on unmount', () => {
+    const { unmount } = renderNav();
+    unmount();
+    expect(mockDisconnect).toHaveBeenCalled();
   });
 });
