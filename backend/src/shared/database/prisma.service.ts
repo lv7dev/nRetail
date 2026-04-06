@@ -7,8 +7,10 @@ import { PrismaClient } from '@prisma/client';
 /* istanbul ignore next */
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor(configService: ConfigService) {
+    const isProduction = configService.get<string>('NODE_ENV') === 'production';
     const adapter = new PrismaPg({
       connectionString: configService.getOrThrow<string>('DATABASE_URL'),
+      ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     });
     super({ adapter });
   }
