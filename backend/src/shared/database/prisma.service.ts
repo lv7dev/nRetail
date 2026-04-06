@@ -16,7 +16,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       connectionString: configService.getOrThrow<string>('DATABASE_URL'),
       ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     });
-    const adapter = new PrismaPg(pool);
+    // @prisma/adapter-pg bundles its own @types/pg, causing a structural type mismatch
+    // with the top-level pg.Pool. Both are the same class at runtime — cast is safe.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const adapter = new PrismaPg(pool as any);
     super({ adapter });
   }
 
