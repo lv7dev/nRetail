@@ -17,6 +17,7 @@ Requires Docker to be running. The global setup starts a `postgres:15-alpine` co
 test/
 ├── jest-integration.config.ts   # Separate Jest config for integration tests
 ├── global-setup.ts              # Start Docker Postgres, create DB, run migrations
+├── setup-integration-env.ts     # Set required env vars in each Jest worker process
 ├── global-teardown.ts           # Truncate all tables (container stays running)
 ├── constants.ts                 # TEST_DB_URL, TEST_OTP
 ├── helpers/
@@ -36,6 +37,7 @@ test/
 {
   rootDir: '../',
   testMatch: ['**/test/**/*.integration.spec.ts'],
+  setupFiles: ['<rootDir>/test/setup-integration-env.ts'],
   globalSetup: '<rootDir>/test/global-setup.ts',
   globalTeardown: '<rootDir>/test/global-teardown.ts',
 }
@@ -43,13 +45,19 @@ test/
 
 Run with `--runInBand` (configured in `package.json`) to prevent parallel test files from corrupting the shared DB.
 
+### `setup-integration-env.ts`
+
+Sets required env vars in **each Jest worker process** before the NestJS app bootstraps. This is necessary because `globalSetup` runs in a separate process — its `process.env` mutations do not propagate to test workers. Without this file, Zod's env validation throws "Invalid environment configuration" when the app starts in CI.
+
+Values use `??=` so a real environment (e.g. CI overrides) takes precedence.
+
 ### `global-setup.ts`
 
 Runs once before all test files:
 1. Starts `postgres:15-alpine` Docker container on port 5433 (or reuses existing)
 2. Creates `test_nretail` database if it doesn't exist
 3. Runs `npx prisma migrate deploy` from `backend/`
-4. Sets `process.env.DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `NODE_ENV`
+4. Sets `process.env` — note: these changes are **not visible to test workers** (see `setup-integration-env.ts` above)
 
 ### `global-teardown.ts`
 
