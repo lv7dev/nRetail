@@ -2,16 +2,21 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 
 @Injectable()
 /* istanbul ignore next */
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor(configService: ConfigService) {
     const isProduction = configService.get<string>('NODE_ENV') === 'production';
-    const adapter = new PrismaPg({
+    // Create the pg.Pool explicitly so ssl options are guaranteed to be applied.
+    // PrismaPg does not forward unknown PoolConfig fields — passing ssl to it directly
+    // has no effect and the pool ignores certificate verification settings.
+    const pool = new Pool({
       connectionString: configService.getOrThrow<string>('DATABASE_URL'),
       ssl: isProduction ? { rejectUnauthorized: false } : undefined,
     });
+    const adapter = new PrismaPg(pool);
     super({ adapter });
   }
 
