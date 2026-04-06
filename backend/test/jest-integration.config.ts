@@ -9,6 +9,7 @@ const config: Config = {
   },
   testEnvironment: 'node',
   testEnvironmentOptions: { env: { NODE_ENV: 'test' } },
+  setupFiles: ['<rootDir>/test/setup-integration-env.ts'],
   passWithNoTests: true,
   globalSetup: '<rootDir>/test/global-setup.ts',
   globalTeardown: '<rootDir>/test/global-teardown.ts',

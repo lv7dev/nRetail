@@ -19,6 +19,7 @@ describe('PrismaService', () => {
 
   beforeEach(() => {
     const configService = {
+      get: jest.fn().mockReturnValue('test'),
       getOrThrow: jest.fn().mockReturnValue('postgresql://test:test@localhost:5432/test'),
     } as unknown as ConfigService;
     service = new PrismaService(configService);
