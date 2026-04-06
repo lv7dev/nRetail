@@ -184,4 +184,6 @@ export class ProductsRepository {
 
 `PrismaModule` is `@Global()` — do not add it to module `imports` arrays. It is available everywhere automatically.
 
-> **Prisma v7 note:** `PrismaService` injects `ConfigService` and passes `new PrismaPg({ connectionString })` as the adapter. An empty `new PrismaClient()` without an adapter throws in Prisma v7.
+> **Prisma v7 note:** `PrismaService` creates a `pg.Pool` explicitly (with `ssl: { rejectUnauthorized: false }` in production) and passes it to `PrismaPg(pool)`. The pool is created explicitly rather than via `PrismaPg({ connectionString })` because `PrismaPg` does not forward unknown `PoolConfig` fields — passing `ssl` directly to `PrismaPg` has no effect. An empty `new PrismaClient()` without an adapter throws in Prisma v7.
+>
+> **SSL note:** The `ssl: { rejectUnauthorized: false }` is required for Supabase on Render — Render's TLS stack cannot verify Supabase's certificate chain. The `Pool` is cast with `as any` to suppress a structural type mismatch between the top-level `@types/pg` and the version bundled inside `@prisma/adapter-pg`; both resolve to the same runtime class.
