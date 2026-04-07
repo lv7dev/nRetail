@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Outlet context is displayed in a dedicated OutletContextCard component on the home page
 The outlet name and quick actions SHALL be rendered in a standalone `OutletContextCard` component (extracted from `QuickActionsGrid`) that accepts a `collapsed?: boolean` prop. When `collapsed={false}` (default), it shows the outlet name row and the 4 quick action buttons. When `collapsed={true}`, it renders as a compact pill showing only the outlet name and a chevron. Tapping the outlet name in either state navigates to `/outlets`.
@@ -25,9 +25,8 @@ The outlet name and quick actions SHALL be rendered in a standalone `OutletConte
 
 ---
 
-### Requirement: AppLayout contains no outlet switcher
-`AppLayout` SHALL NOT render any outlet name, outlet button, or navigation control related to outlet selection. It SHALL only render the page content outlet and `BottomNav`.
+## REMOVED Requirements
 
-#### Scenario: No outlet button in AppLayout
-- **WHEN** any authenticated app page is rendered via `AppLayout`
-- **THEN** `AppLayout` SHALL NOT contain a button or element displaying the outlet name
+### Requirement: AppLayout header displays the current outlet name
+**Reason:** The `refine-home-layout` change moved the outlet name from `AppLayout` into `QuickActionsGrid`. This change completes that migration by extracting it into `OutletContextCard`, slotted into `CollapsibleHeader` on the home page. `AppLayout` is not involved in outlet display.
+**Migration:** Outlet context is now displayed via `OutletContextCard` inside `CollapsibleHeader` on the home page only. Other pages do not show the outlet name in a header card.

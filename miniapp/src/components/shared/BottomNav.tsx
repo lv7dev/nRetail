@@ -17,14 +17,13 @@ export default function BottomNav() {
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!navRef.current) return;
     const observer = new ResizeObserver(([entry]) => {
       document.documentElement.style.setProperty(
         '--bottom-nav-height',
         `${entry.contentRect.height}px`,
       );
     });
-    observer.observe(navRef.current);
+    observer.observe(navRef.current!);
     return () => observer.disconnect();
   }, []);
 

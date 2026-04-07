@@ -79,7 +79,23 @@ When ready to implement, run /opsx:apply
       - Use **AskUserQuestion tool** to clarify
       - Then continue with creation
 
-5. **Show final status**
+5. **Create a Beads issue and link it to the OpenSpec change**
+
+   After all artifacts are complete, create a Beads tracking issue:
+   ```bash
+   bd create \
+     --title="<concise summary of the change>" \
+     --description="<1-2 sentences: what and why. Include: OpenSpec change at openspec/changes/<name>/>" \
+     --type=feature \
+     --priority=2
+   ```
+   Then link the issue to the OpenSpec change:
+   ```bash
+   bd update <issue-id> --spec-id "openspec/changes/<name>"
+   ```
+   Show the issue ID to the user (e.g. `beads-abc`).
+
+6. **Show final status**
    ```bash
    openspec status --change "<name>"
    ```
@@ -89,6 +105,7 @@ When ready to implement, run /opsx:apply
 After completing all artifacts, summarize:
 - Change name and location
 - List of artifacts created with brief descriptions
+- Beads issue created: `<issue-id>` (linked to OpenSpec change)
 - What's ready: "All artifacts created! Ready for implementation."
 - Prompt: "Run `/opsx:apply` or ask me to implement to start working on the tasks."
 

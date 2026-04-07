@@ -51,4 +51,14 @@ describe('TabbedProductSection', () => {
     await user.click(viewedTab);
     expect(viewedTab).toHaveClass('bg-primary');
   });
+
+  it('keeps bought products active when the bought tab is clicked again', async () => {
+    const user = userEvent.setup();
+    render(<TabbedProductSection boughtProducts={PRODUCTS} viewedProducts={[]} />);
+
+    const boughtTab = screen.getByRole('button', { name: 'products.boughtProducts' });
+    await user.click(boughtTab);
+
+    expect(boughtTab).toHaveClass('bg-primary');
+  });
 });

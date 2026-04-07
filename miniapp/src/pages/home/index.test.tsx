@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -9,14 +10,15 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/components/ui', () => ({
   Icon: ({ name }: { name: string }) => <span data-testid={`icon-${name}`} />,
   SectionHeader: ({ title }: { title: string }) => <div data-testid="section-header">{title}</div>,
+  AppHeader: ({ title }: { title: string }) => <div data-testid="app-header">{title}</div>,
 }));
 
 vi.mock('./SearchBar', () => ({
   default: () => <div data-testid="search-bar" />,
 }));
 
-vi.mock('./QuickActionsGrid', () => ({
-  default: () => <div data-testid="quick-actions-grid" />,
+vi.mock('./OutletContextCard', () => ({
+  default: () => <div data-testid="outlet-context-card" />,
 }));
 
 vi.mock('./BannerCarousel', () => ({
@@ -39,6 +41,43 @@ vi.mock('./TabbedProductSection', () => ({
   default: () => <div data-testid="tabbed-product-section" />,
 }));
 
+const refetch = vi.fn();
+vi.mock('./useHomeRefresh', () => ({
+  useHomeRefresh: () => ({ refetch }),
+}));
+
+vi.mock('@/components/shared', () => ({
+  CollapsibleHeader: ({
+    topBar,
+    children,
+    card,
+  }: {
+    topBar?: ReactNode;
+    children?: ReactNode;
+    card?: ReactNode;
+  }) => (
+    <div data-testid="collapsible-header">
+      <div data-testid="collapsible-top-bar">{topBar}</div>
+      <div data-testid="collapsible-children">{children}</div>
+      <div data-testid="collapsible-card">{card}</div>
+    </div>
+  ),
+  ScrollablePage: ({
+    children,
+    onRefresh,
+  }: {
+    children?: ReactNode;
+    onRefresh?: () => void;
+  }) => (
+    <div data-testid="scrollable-page">
+      <button type="button" onClick={onRefresh}>
+        trigger-refresh
+      </button>
+      {children}
+    </div>
+  ),
+}));
+
 import HomePage from './index';
 
 const renderPage = () =>
@@ -49,14 +88,27 @@ const renderPage = () =>
   );
 
 describe('HomePage', () => {
+  it('renders the collapsible header', () => {
+    renderPage();
+    expect(screen.getByTestId('collapsible-header')).toBeInTheDocument();
+  });
+
   it('renders the search bar', () => {
     renderPage();
     expect(screen.getByTestId('search-bar')).toBeInTheDocument();
   });
 
-  it('renders the quick actions grid', () => {
+  it('renders the outlet context card in the header card slot', () => {
     renderPage();
-    expect(screen.getByTestId('quick-actions-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('outlet-context-card')).toBeInTheDocument();
+    expect(screen.getByTestId('collapsible-card')).toContainElement(
+      screen.getByTestId('outlet-context-card'),
+    );
+  });
+
+  it('wraps the home sections in ScrollablePage', () => {
+    renderPage();
+    expect(screen.getByTestId('scrollable-page')).toBeInTheDocument();
   });
 
   it('renders the banner carousel', () => {
@@ -88,5 +140,11 @@ describe('HomePage', () => {
     renderPage();
     const headers = screen.getAllByTestId('section-header');
     expect(headers.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('wires onRefresh to the home refetch hook', async () => {
+    renderPage();
+    screen.getByRole('button', { name: 'trigger-refresh' }).click();
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

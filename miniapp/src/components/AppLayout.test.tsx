@@ -31,8 +31,16 @@ describe('AppLayout', () => {
 
   it('page-content has paddingBottom clearing the BottomNav', () => {
     const { container } = renderAppLayout();
-    const pageContent = container.querySelector('.page-content')!;
+    const pageContent = container.querySelector<HTMLElement>('.page-content')!;
     expect(pageContent.style.paddingBottom).toContain('--bottom-nav-height');
+  });
+
+  it('page-content is a flex column so the scrollable page can fill remaining height', () => {
+    const { container } = renderAppLayout();
+    const pageContent = container.querySelector<HTMLElement>('.page-content')!;
+    expect(pageContent.className).toMatch(/flex/);
+    expect(pageContent.className).toMatch(/flex-col/);
+    expect(pageContent.className).toMatch(/min-h-0/);
   });
 
   it('does not render any outlet name button', () => {
