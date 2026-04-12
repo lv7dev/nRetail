@@ -2,6 +2,11 @@
   --zalo-chrome-top: calc(var(--zaui-safe-area-inset-top, 0px) + 2.6rem);
 }
 
+#app {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   scrollbar-width: none;
 }

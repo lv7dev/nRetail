@@ -8,12 +8,16 @@ The home page (`src/pages/home/`) is composed of self-contained sub-components. 
 
 ```
 src/pages/home/
-├── index.tsx                  ← page root, composes all sections
+├── index.tsx                  ← page root, composes CollapsibleHeader + ScrollablePage + sections
 ├── index.test.tsx
-├── SearchBar.tsx              ← search input bar (shown below AppBar)
+├── SearchBar.tsx              ← search input bar (rendered inside CollapsibleHeader children slot)
 ├── SearchBar.test.tsx
-├── QuickActionsGrid.tsx       ← outlet info card + 4 quick action buttons
+├── OutletContextCard.tsx      ← outlet name + 4 quick actions; accepts collapsed prop (pill mode)
+├── OutletContextCard.test.tsx
+├── QuickActionsGrid.tsx       ← thin wrapper — delegates to OutletContextCard (kept for compat)
 ├── QuickActionsGrid.test.tsx
+├── useHomeRefresh.ts          ← returns refetch() for pull-to-refresh; stub until real queries added
+├── useHomeRefresh.test.ts
 ├── BannerCarousel.tsx         ← image banner with dot pagination
 ├── BannerCarousel.test.tsx
 ├── PromotionSection.tsx       ← horizontal scroll of promotion banner cards
@@ -28,20 +32,46 @@ src/pages/home/
 └── TabbedProductSection.test.tsx
 ```
 
-## Page Layout (top → bottom)
+## Page Layout
 
-| Section | Component | Notes |
-|---|---|---|
-| Search bar | `SearchBar` | Inside primary bg strip at top |
-| Outlet card | `QuickActionsGrid` | White card, -mt-4 overlap over primary bg |
-| Banner carousel | `BannerCarousel` | Dot pagination, 6 dots by default |
-| Consumer Promotion | `SectionHeader` + `PromotionSection` | Horizontal scroll |
-| Brand | `SectionHeader` + `BrandSection` | Horizontal scroll of logo boxes |
-| Trade Programs | `SectionHeader` + `ProductSection` | Vertical product list |
-| Recommended Products | `SectionHeader` + `ProductSection showPagination` | Vertical + pagination dot |
-| Products | `SectionHeader` + `TabbedProductSection` | Bought / Viewed tabs |
+```
+AppLayout (page-content: flex column)
+  └── HomePage (flex:1 flex-col)
+        ├── CollapsibleHeader        ← static zone, not scrollable
+        │    ├── topBar: AppHeader   ← always visible
+        │    ├── children: SearchBar ← inside primary bg
+        │    └── card: OutletContextCard  ← collapses to pill on scroll
+        │
+        └── ScrollablePage          ← flex:1, overflow-y:auto — owns the scroll
+             ├── BannerCarousel
+             ├── PromotionSection
+             ├── BrandSection
+             ├── ProductSection (Trade Programs)
+             ├── ProductSection (Recommended, showPagination)
+             └── TabbedProductSection
+```
+
+`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a sticky pill on scroll and re-expands at the top.
 
 ## Component Contracts
+
+### `OutletContextCard`
+```tsx
+<OutletContextCard collapsed?={false} onAction?={(key: string) => void} />
+```
+- `collapsed={false}` (default): shows outlet name row + 4 quick action buttons
+- `collapsed={true}` (pill): outlet name + chevron visible; quick-actions grid animates to zero height
+- **Animation**: Uses CSS `grid-template-rows` transition (`1fr` ↔ `0fr`, 200ms ease-in-out) with `overflow-hidden` wrapper — the quick-actions DOM stays mounted in both states (required for CSS animation, no conditional render)
+- Reads `selectedOutlet.name` from `useOutletStore`; tapping outlet name navigates to `/outlets`
+- 4 actions: `outletManagement`, `suggestedOrder`, `tradePrograms`, `orderHistory`
+- **`collapsed` is injected automatically by `CollapsibleHeader` via `cloneElement`** — do not pass it manually when using inside `CollapsibleHeader`
+
+### `useHomeRefresh`
+```ts
+const { refetch } = useHomeRefresh();
+```
+- Returns `refetch()` async function wired to `ScrollablePage onRefresh`
+- Currently a stub — wire real TanStack Query `refetch` calls here as API integrations are added
 
 ### `SearchBar`
 ```tsx
@@ -49,14 +79,6 @@ src/pages/home/
 ```
 - Reads `search.placeholder` from `home` namespace
 - Uses `Icon name="magnifying-glass"`
-
-### `QuickActionsGrid`
-```tsx
-<QuickActionsGrid onAction?={(key: string) => void} />
-```
-- Reads `selectedOutlet.name` from `useOutletStore`
-- 4 actions: `outletManagement`, `suggestedOrder`, `tradePrograms`, `orderHistory`
-- Reads labels from `quickActions.*` in `home` namespace
 
 ### `BannerCarousel`
 ```tsx

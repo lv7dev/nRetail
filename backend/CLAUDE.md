@@ -48,7 +48,7 @@ Required variables:
 |---|---|---|
 | `PORT` | `3000` | Change if port conflicts — avoid 3000, 5000 on macOS |
 | `NODE_ENV` | `development` | `development` \| `production` \| `test` |
-| `DATABASE_URL` | — | PostgreSQL URL — Docker: `postgresql://nretail:nretail@localhost:5434/nretail` — Production (Supabase): use session mode pooler (port 5432), NOT transaction mode (port 6543) |
+| `DATABASE_URL` | — | PostgreSQL URL — Docker: `postgresql://nretail:nretail@localhost:5434/nretail` — Production (Supabase): use session mode pooler (port 5432), NOT transaction mode (port 6543). **Do NOT append `?sslmode=require`** — pg-connection-string v3 treats it as `verify-full`, overriding `ssl: { rejectUnauthorized: false }` in the Pool and causing `self-signed certificate in certificate chain` errors. SSL is handled by `PrismaService` directly. |
 | `REDIS_URL` | — | Redis URL — Docker: `redis://localhost:6379` |
 | `JWT_SECRET` | — | Min 16 chars |
 | `JWT_EXPIRES_IN` | `7d` | e.g. `7d`, `24h` |

@@ -27,6 +27,11 @@ beforeEach(() => {
 });
 
 describe('QuickActionsGrid', () => {
+  it('renders the outlet context card content', () => {
+    render(<QuickActionsGrid />);
+    expect(screen.getByText('Test Outlet')).toBeInTheDocument();
+  });
+
   it('renders the outlet name from store', () => {
     render(<QuickActionsGrid />);
     expect(screen.getByText('Test Outlet')).toBeInTheDocument();
