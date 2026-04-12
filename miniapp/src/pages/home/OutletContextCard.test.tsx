@@ -39,14 +39,18 @@ describe('OutletContextCard', () => {
     expect(screen.getByText('quickActions.orderHistory')).toBeInTheDocument();
   });
 
-  it('renders only the pill when collapsed', () => {
+  it('hides the quick actions grid when collapsed', () => {
     render(<OutletContextCard collapsed />);
 
     expect(screen.getByRole('button', { name: /test outlet/i })).toBeInTheDocument();
-    expect(screen.queryByText('quickActions.outletManagement')).not.toBeInTheDocument();
-    expect(screen.queryByText('quickActions.suggestedOrder')).not.toBeInTheDocument();
-    expect(screen.queryByText('quickActions.tradePrograms')).not.toBeInTheDocument();
-    expect(screen.queryByText('quickActions.orderHistory')).not.toBeInTheDocument();
+
+    const actionsGrid = screen
+      .getByText('quickActions.outletManagement')
+      .closest('[class*="overflow-hidden"]');
+    expect(actionsGrid).toBeInTheDocument();
+
+    const animationWrapper = actionsGrid!.parentElement!;
+    expect(animationWrapper).toHaveStyle({ gridTemplateRows: '0fr' });
   });
 
   it('navigates to /outlets when the expanded card header is tapped', async () => {

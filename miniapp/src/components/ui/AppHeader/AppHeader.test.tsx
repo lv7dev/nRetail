@@ -32,6 +32,12 @@ describe('AppHeader', () => {
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   });
 
+  it('keeps the title centered when no back button is provided', () => {
+    render(<AppHeader title="My Page" />);
+    expect(screen.getByRole('heading', { name: 'My Page' })).toHaveClass('text-center');
+    expect(screen.getByRole('heading', { name: 'My Page' })).not.toHaveClass('text-left');
+  });
+
   it('forwards className to root element', () => {
     const { container } = render(<AppHeader title="My Page" className="custom-class" />);
     expect(container.firstChild).toHaveClass('custom-class');

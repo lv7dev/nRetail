@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppHeader, SectionHeader } from '@/components/ui';
 import { CollapsibleHeader, ScrollablePage } from '@/components/shared';
+import waveHeader from '@/static/wave-header.svg';
 import SearchBar from './SearchBar';
 import OutletContextCard from './OutletContextCard';
 import BannerCarousel from './BannerCarousel';
@@ -9,6 +10,7 @@ import PromotionSection from './PromotionSection';
 import BrandSection from './BrandSection';
 import ProductSection from './ProductSection';
 import TabbedProductSection from './TabbedProductSection';
+import HeaderActions from './HeaderActions';
 import { useHomeRefresh } from './useHomeRefresh';
 
 const TRADE_PROGRAM_PRODUCTS = [
@@ -33,25 +35,33 @@ const VIEWED_PRODUCTS = [
 
 export default function HomePage() {
   const { t } = useTranslation(['home', 'common']);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { refetch } = useHomeRefresh();
   const [collapsed, setCollapsed] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <CollapsibleHeader
-        topBar={<AppHeader title={t('common:nav.home')} />}
+        topBar={<AppHeader title={t('common:nav.home')} right={<HeaderActions />} />}
+        decoration={
+          <img
+            src={waveHeader}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover object-bottom"
+          />
+        }
         card={<OutletContextCard />}
-        scrollContainerRef={scrollContainerRef}
         collapsed={collapsed}
+        scrollContainerRef={scrollRef}
       >
         <SearchBar />
       </CollapsibleHeader>
 
       <ScrollablePage
-        scrollContainerRef={scrollContainerRef}
         onRefresh={refetch}
         onCollapsedChange={setCollapsed}
+        scrollContainerRef={scrollRef}
       >
         <div className="space-y-4 px-4 py-6">
           <BannerCarousel alt={t('banner.defaultAlt')} className="rounded-xl" />

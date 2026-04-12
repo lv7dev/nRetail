@@ -1,4 +1,3 @@
-import { createRef } from 'react';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,10 +60,7 @@ describe('CollapsibleHeader', () => {
 
   it('renders topBar, children, and card slots', () => {
     render(
-      <CollapsibleHeader
-        topBar={<div>Top bar</div>}
-        card={<MockCard />}
-      >
+      <CollapsibleHeader topBar={<div>Top bar</div>} card={<MockCard />}>
         <div>Sub header</div>
       </CollapsibleHeader>,
     );
@@ -74,9 +70,31 @@ describe('CollapsibleHeader', () => {
     expect(screen.getByTestId('card-state')).toHaveTextContent('expanded');
   });
 
+  it('renders a decoration node inside the background zone when provided', () => {
+    render(
+      <CollapsibleHeader
+        topBar={<div>Top bar</div>}
+        decoration={<div data-testid="header-decoration">Wave</div>}
+      >
+        <div>Sub header</div>
+      </CollapsibleHeader>,
+    );
+
+    expect(screen.getByTestId('header-decoration')).toBeInTheDocument();
+  });
+
+  it('renders a clean background when no decoration prop is provided', () => {
+    render(
+      <CollapsibleHeader topBar={<div>Top bar</div>}>
+        <div>Sub header</div>
+      </CollapsibleHeader>,
+    );
+
+    expect(screen.queryByTestId('header-decoration')).not.toBeInTheDocument();
+  });
+
   it('passes collapsed=false initially, then true when sentinel exits, then false when it re-enters', () => {
-    const scrollContainerRef = createRef<HTMLDivElement>();
-    scrollContainerRef.current = document.createElement('div');
+    const scrollContainerRef = { current: document.createElement('div') };
 
     render(<CollapsibleHeader card={<MockCard />} scrollContainerRef={scrollContainerRef} />);
 

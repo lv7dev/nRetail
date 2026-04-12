@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Outlet context is displayed in a dedicated OutletContextCard component on the home page
 The outlet name and quick actions SHALL be rendered in a standalone `OutletContextCard` component that accepts a `collapsed?: boolean` prop. When `collapsed={false}` (default), it shows the outlet name row and the 4 quick action buttons. When `collapsed={true}`, the quick-actions grid animates to zero height via CSS `grid-template-rows` transition (200ms ease-in-out) — the outlet name row and chevron remain visible. The quick-actions DOM stays mounted in both states (required for CSS animation). Tapping the outlet name in either state navigates to `/outlets`. On the home page, `collapsed` is driven by `ScrollablePage.onCollapsedChange` → `HomePage` state → `CollapsibleHeader` controlled prop.
@@ -37,12 +37,3 @@ The outlet name and quick actions SHALL be rendered in a standalone `OutletConte
 #### Scenario: Home page re-expands OutletContextCard when scrolled back to top
 - **WHEN** the user scrolls back to the top (scrollTop === 0)
 - **THEN** the OutletContextCard re-expands — quick-actions grid animates back to full height
-
----
-
-### Requirement: AppLayout contains no outlet switcher
-`AppLayout` SHALL NOT render any outlet name, outlet button, or navigation control related to outlet selection. It SHALL only render the page content outlet and `BottomNav`.
-
-#### Scenario: No outlet button in AppLayout
-- **WHEN** any authenticated app page is rendered via `AppLayout`
-- **THEN** `AppLayout` SHALL NOT contain a button or element displaying the outlet name

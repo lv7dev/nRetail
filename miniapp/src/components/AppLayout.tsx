@@ -3,7 +3,7 @@ import BottomNav from '@/components/shared/BottomNav';
 
 const AppLayout = () => {
   return (
-    <div className="app-shell">
+    <div className="app-shell flex h-full flex-col">
       <div
         className="page-content flex min-h-0 flex-col"
         style={{

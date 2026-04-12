@@ -51,7 +51,7 @@ AppLayout (page-content: flex column)
              └── TabbedProductSection
 ```
 
-`ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → HomePage `collapsed` state → `CollapsibleHeader` controlled prop.
+`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a sticky pill on scroll and re-expands at the top.
 
 ## Component Contracts
 
@@ -60,7 +60,8 @@ AppLayout (page-content: flex column)
 <OutletContextCard collapsed?={false} onAction?={(key: string) => void} />
 ```
 - `collapsed={false}` (default): shows outlet name row + 4 quick action buttons
-- `collapsed={true}` (pill): shows outlet name + chevron only; action grid hidden
+- `collapsed={true}` (pill): outlet name + chevron visible; quick-actions grid animates to zero height
+- **Animation**: Uses CSS `grid-template-rows` transition (`1fr` ↔ `0fr`, 200ms ease-in-out) with `overflow-hidden` wrapper — the quick-actions DOM stays mounted in both states (required for CSS animation, no conditional render)
 - Reads `selectedOutlet.name` from `useOutletStore`; tapping outlet name navigates to `/outlets`
 - 4 actions: `outletManagement`, `suggestedOrder`, `tradePrograms`, `orderHistory`
 - **`collapsed` is injected automatically by `CollapsibleHeader` via `cloneElement`** — do not pass it manually when using inside `CollapsibleHeader`

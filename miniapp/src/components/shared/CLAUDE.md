@@ -30,6 +30,8 @@ App-specific shared components used across multiple pages or layouts. Unlike `ui
 - The `card` element receives `collapsed: boolean` injected via `cloneElement` — the card component must accept and handle this prop.
 - `stickyTop` is computed via `ResizeObserver` on the `topBar + children` zone so the pill always sticks at the correct offset regardless of topBar height.
 - Works in both controlled (`collapsed` prop) and uncontrolled (internal `IntersectionObserver` on sentinel) modes.
+- **Important**: In uncontrolled mode, the internal `collapsed` state starts as `false` (expanded). The IntersectionObserver uses `scrollContainerRef?.current` as root — if no ref is passed, it observes against the viewport.
+- **Recommended usage**: Use controlled mode (pass `collapsed` + `scrollContainerRef`) when `ScrollablePage` is the scroll container, since the sentinel lives outside the scroll container and the uncontrolled IntersectionObserver may not fire correctly.
 
 ## ScrollablePage
 

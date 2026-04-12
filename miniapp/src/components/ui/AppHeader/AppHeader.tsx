@@ -24,16 +24,9 @@ export function AppHeader({ title, onBack, right, className }: AppHeaderProps) {
         )}
       </div>
 
-      <h1
-        className={cn(
-          'flex-1 text-center text-base font-semibold text-content-inverse',
-          !onBack && 'text-left',
-        )}
-      >
-        {title}
-      </h1>
+      <h1 className="flex-1 text-center text-base font-semibold text-content-inverse">{title}</h1>
 
-      <div className="flex w-10 shrink-0 items-center justify-end">{right}</div>
+      <div className="flex min-w-[2.5rem] shrink-0 items-center justify-end">{right}</div>
     </div>
   );
 }

@@ -16,6 +16,7 @@ export interface CollapsibleHeaderProps {
   topBar?: ReactNode;
   children?: ReactNode;
   card?: ReactElement<CollapsibleCardProps>;
+  decoration?: ReactNode;
   scrollContainerRef?: React.MutableRefObject<HTMLElement | null>;
   collapsed?: boolean;
 }
@@ -24,6 +25,7 @@ export function CollapsibleHeader({
   topBar,
   children,
   card,
+  decoration,
   scrollContainerRef,
   collapsed: controlledCollapsed,
 }: CollapsibleHeaderProps) {
@@ -82,9 +84,20 @@ export function CollapsibleHeader({
 
   return (
     <div className="bg-primary">
-      <div ref={topZoneRef} style={{ paddingTop: 'var(--zalo-chrome-top)' }}>
-        {topBar}
-        {children}
+      <div
+        ref={topZoneRef}
+        className="relative overflow-hidden"
+        style={{ paddingTop: 'var(--zalo-chrome-top)' }}
+      >
+        {decoration && (
+          <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+            {decoration}
+          </div>
+        )}
+        <div className="relative z-10">
+          {topBar}
+          {children}
+        </div>
       </div>
 
       {renderedCard && (

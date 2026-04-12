@@ -21,10 +21,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   { key: 'orderHistory', icon: 'clock-rotate-left', labelKey: 'quickActions.orderHistory' },
 ];
 
-export default function OutletContextCard({
-  collapsed = false,
-  onAction,
-}: OutletContextCardProps) {
+export default function OutletContextCard({ collapsed = false, onAction }: OutletContextCardProps) {
   const { t } = useTranslation('home');
   const navigate = useNavigate();
   const selectedOutlet = useOutletStore((s) => s.selectedOutlet);
@@ -43,8 +40,11 @@ export default function OutletContextCard({
         <Icon name="chevron-right" size={16} className="text-content-muted" />
       </button>
 
-      {!collapsed && (
-        <>
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+        style={{ gridTemplateRows: collapsed ? '0fr' : '1fr' }}
+      >
+        <div className="overflow-hidden">
           <div className="h-px bg-border" />
           <div className="grid grid-cols-4 gap-1 p-3">
             {QUICK_ACTIONS.map((action) => (
@@ -61,8 +61,8 @@ export default function OutletContextCard({
               </button>
             ))}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
