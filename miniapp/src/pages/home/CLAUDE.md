@@ -55,7 +55,7 @@ AppLayout (page-content: flex column)
 
 **Height chain:** `AppLayout.page-content` must have `flex-1` for `ScrollablePage`'s `overflow-y-auto` to have a bounded height to overflow against. Without it, the container grows to content height and no scroll events fire (collapse never triggers, pull-to-refresh never triggers).
 
-**Refresh:** `onRefresh={refetch}` wires both pull-to-refresh (mobile touch) and wheel-up overscroll (desktop) to `useHomeRefresh`. The `isRefreshing` prop is intentionally omitted while `useHomeRefresh` is a stub — the wheel handler manages the spinner lifecycle directly via `pullDistance`.
+**Refresh:** `onRefresh={refetch}` and `isRefreshing={isRefreshing}` are both wired from `useHomeRefresh`. The spinner stays visible from finger-lift through the end of the refresh cycle. `handleTouchEnd` awaits `onRefresh()` before clearing `pullDistance` to avoid a one-frame flicker between gesture release and state update.
 
 ## Component Contracts
 
@@ -75,11 +75,12 @@ AppLayout (page-content: flex column)
 ### `useHomeRefresh`
 
 ```ts
-const { refetch } = useHomeRefresh();
+const { refetch, isRefreshing } = useHomeRefresh();
 ```
 
-- Returns `refetch()` async function wired to `ScrollablePage onRefresh`
-- Currently a stub — wire real TanStack Query `refetch` calls here as API integrations are added
+- `refetch`: async function passed to `ScrollablePage onRefresh`; sets `isRefreshing` true while running
+- `isRefreshing`: boolean passed to `ScrollablePage isRefreshing`; keeps spinner alive after finger-lift until refresh resolves
+- Currently a stub (2 s timeout) — replace with real TanStack Query `refetch` + `isRefetching` when queries are added
 
 ### `SearchBar`
 
