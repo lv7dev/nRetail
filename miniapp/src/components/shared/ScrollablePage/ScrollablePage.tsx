@@ -90,13 +90,11 @@ export function ScrollablePage({
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, onLoadMore]);
 
+  // Touch pull-to-refresh
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     if (!onRefresh) return;
     const touch = event.touches[0]!;
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-    };
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     pullingRef.current = false;
   };
 
@@ -115,17 +113,27 @@ export function ScrollablePage({
     setPullDistance(Math.min(deltaY, 120));
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = async () => {
     if (!onRefresh) return;
 
     const shouldRefresh = pullingRef.current && pullDistance >= 60;
     pullingRef.current = false;
     touchStartRef.current = null;
-    setPullDistance(0);
 
     if (shouldRefresh) {
-      void onRefresh();
+      await onRefresh();
     }
+
+    setPullDistance(0);
+  };
+
+  // Mouse wheel overscroll-to-refresh: spin up at scrollTop=0
+  const handleWheel = async (event: React.WheelEvent<HTMLDivElement>) => {
+    if (!onRefresh || isRefreshing) return;
+    if (internalRef.current!.scrollTop !== 0 || event.deltaY >= 0) return;
+    setPullDistance(60);
+    await onRefresh();
+    setPullDistance(0);
   };
 
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -140,6 +148,7 @@ export function ScrollablePage({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onWheel={handleWheel}
       onScroll={handleScroll}
     >
       {(pullDistance > 0 || isRefreshing) && <Spinner label="Refreshing content" />}
