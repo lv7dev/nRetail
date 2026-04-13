@@ -51,7 +51,7 @@ AppLayout (page-content: flex column)
              └── TabbedProductSection
 ```
 
-`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange` using a hysteresis band (emit `false` at `scrollTop===0`, emit `true` at `scrollTop>=20px`, dead zone 1–19px) → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a compact pill on scroll and re-expands at the top.
+`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a compact pill on scroll and re-expands at the top.
 
 **Height chain:** `AppLayout.page-content` must have `flex-1` for `ScrollablePage`'s `overflow-y-auto` to have a bounded height to overflow against. Without it, the container grows to content height and no scroll events fire (collapse never triggers, pull-to-refresh never triggers).
 
