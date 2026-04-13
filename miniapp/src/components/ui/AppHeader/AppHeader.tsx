@@ -11,7 +11,7 @@ export interface AppHeaderProps {
 
 export function AppHeader({ title, onBack, right, className }: AppHeaderProps) {
   return (
-    <div className={cn('flex items-center bg-primary px-4 py-3', className)}>
+    <div className={cn('flex items-center bg-transparent px-4', className)}>
       <div className="flex w-10 shrink-0 items-center">
         {onBack && (
           <button

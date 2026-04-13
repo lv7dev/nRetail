@@ -7,11 +7,11 @@
   overflow: hidden;
 }
 
-body {
+div {
   scrollbar-width: none;
 }
 
-body::-webkit-scrollbar {
+div::-webkit-scrollbar {
   display: none;
 }
 
@@ -34,7 +34,7 @@ body::-webkit-scrollbar {
   margin-bottom: 24px;
 }
 
-[html.dark] .section-container {
+html.dark .section-container {
   background: #18181b;
 }
 

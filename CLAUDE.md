@@ -90,6 +90,7 @@ bd ready → claim task → /opsx:propose → implement with TDD → /opsx:verif
 - **Specs live in**: `openspec/changes/<name>/` (active) and `openspec/specs/` (archived)
 - Link Beads issues to OpenSpec: `bd update <id> --spec-id "openspec/changes/<name>"`
 - Include Beads issue ID in commits: `feat: add dark mode (nretail-xxx)`
+- **ALWAYS create a Beads issue BEFORE generating an OpenSpec proposal** — run `bd create` then `bd update <id> --spec-id "openspec/changes/<name>"` as the first two steps of `/opsx:propose`
 
 ### OpenSpec Context
 

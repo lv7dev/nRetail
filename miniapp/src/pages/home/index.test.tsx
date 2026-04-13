@@ -50,8 +50,11 @@ vi.mock('./TabbedProductSection', () => ({
 }));
 
 const refetch = vi.fn();
+const isRefreshing = false;
+let lastScrollablePageOnRefresh: (() => void) | undefined;
+let lastScrollablePageIsRefreshing: boolean | undefined;
 vi.mock('./useHomeRefresh', () => ({
-  useHomeRefresh: () => ({ refetch }),
+  useHomeRefresh: () => ({ refetch, isRefreshing }),
 }));
 
 vi.mock('@/components/shared', () => ({
@@ -80,22 +83,29 @@ vi.mock('@/components/shared', () => ({
   ScrollablePage: ({
     children,
     onRefresh,
+    isRefreshing,
     onCollapsedChange,
   }: {
     children?: ReactNode;
     onRefresh?: () => void;
+    isRefreshing?: boolean;
     onCollapsedChange?: (collapsed: boolean) => void;
-  }) => (
-    <div data-testid="scrollable-page">
-      <button type="button" onClick={onRefresh}>
-        trigger-refresh
-      </button>
-      <button type="button" onClick={() => onCollapsedChange?.(true)}>
-        trigger-collapse
-      </button>
-      {children}
-    </div>
-  ),
+  }) => {
+    lastScrollablePageOnRefresh = onRefresh;
+    lastScrollablePageIsRefreshing = isRefreshing;
+
+    return (
+      <div data-testid="scrollable-page">
+        <button type="button" onClick={onRefresh}>
+          trigger-refresh
+        </button>
+        <button type="button" onClick={() => onCollapsedChange?.(true)}>
+          trigger-collapse
+        </button>
+        {children}
+      </div>
+    );
+  },
 }));
 
 import HomePage from './index';
@@ -108,6 +118,12 @@ const renderPage = () =>
   );
 
 describe('HomePage', () => {
+  beforeEach(() => {
+    refetch.mockClear();
+    lastScrollablePageOnRefresh = undefined;
+    lastScrollablePageIsRefreshing = undefined;
+  });
+
   it('shows the cart badge count in the AppHeader actions', () => {
     useCartStore.setState({
       items: [{ id: 'cart-1', name: 'Cart item', price: 10_000, quantity: 3 }],
@@ -188,8 +204,12 @@ describe('HomePage', () => {
 
   it('wires onRefresh to the home refetch hook', async () => {
     renderPage();
-    screen.getByRole('button', { name: 'trigger-refresh' }).click();
-    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(lastScrollablePageOnRefresh).toBe(refetch);
+  });
+
+  it('forwards isRefreshing from useHomeRefresh into ScrollablePage', () => {
+    renderPage();
+    expect(lastScrollablePageIsRefreshing).toBe(isRefreshing);
   });
 
   it('collapses the outlet context card when ScrollablePage reports scrolled state', async () => {

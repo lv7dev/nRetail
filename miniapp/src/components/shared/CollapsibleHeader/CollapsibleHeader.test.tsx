@@ -118,7 +118,7 @@ describe('CollapsibleHeader', () => {
     expect(screen.getByTestId('card-state')).toHaveTextContent('expanded');
   });
 
-  it('renders the collapsed card wrapper as sticky', () => {
+  it('renders the collapsed card wrapper as relative instead of sticky', () => {
     render(<CollapsibleHeader card={<MockCard />} />);
 
     act(() => {
@@ -128,7 +128,8 @@ describe('CollapsibleHeader', () => {
       );
     });
 
-    expect(screen.getByTestId('collapsible-header-card-shell').className).toMatch(/sticky/);
+    expect(screen.getByTestId('collapsible-header-card-shell').className).toMatch(/relative/);
+    expect(screen.getByTestId('collapsible-header-card-shell').className).not.toMatch(/sticky/);
   });
 
   it('uses the controlled collapsed prop when provided', () => {
@@ -152,6 +153,36 @@ describe('CollapsibleHeader', () => {
     expect(screen.queryByTestId('collapsible-header-card-shell')).not.toBeInTheDocument();
   });
 
+  it('omits card overlap spacing styles when no card is provided', () => {
+    render(
+      <CollapsibleHeader topBar={<div>Top bar</div>}>
+        <div>Sub header</div>
+      </CollapsibleHeader>,
+    );
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone).not.toBeNull();
+    expect(topZone?.className).not.toMatch(/pb-8/);
+    expect(topZone?.className).not.toMatch(/rounded-b-3xl/);
+    expect(topZone?.className).toMatch(/bg-primary/);
+  });
+
+  it('applies card overlap spacing styles when a card is provided', () => {
+    render(
+      <CollapsibleHeader topBar={<div>Top bar</div>} card={<MockCard />}>
+        <div>Sub header</div>
+      </CollapsibleHeader>,
+    );
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone).not.toBeNull();
+    expect(topZone).toHaveStyle({ paddingBottom: '32px' });
+    expect(topZone?.className).toMatch(/rounded-b-3xl/);
+    expect(topZone?.className).toMatch(/bg-primary/);
+  });
+
   it('still renders when ResizeObserver is unavailable', () => {
     vi.stubGlobal('ResizeObserver', undefined);
 
@@ -168,34 +199,77 @@ describe('CollapsibleHeader', () => {
     expect(screen.getByTestId('card-state')).toHaveTextContent('expanded');
   });
 
-  it('updates the sticky top offset when the top zone is resized', () => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(callback: ResizeObserverCallback) {
-          resizeCallback = callback;
-        }
-
-        observe = resizeObserve;
-        disconnect = resizeDisconnect;
-        unobserve = vi.fn();
-      },
-    );
-
-    const rectSpy = vi
-      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({ height: 48 } as DOMRect);
-
-    render(<CollapsibleHeader card={<MockCard />} topBar={<div>Top bar</div>} />);
+  it('does not render an inline sticky offset style when collapsed', () => {
+    render(<CollapsibleHeader card={<MockCard />} />);
 
     act(() => {
-      resizeCallback?.(
-        [{ contentRect: { height: 48 } } as ResizeObserverEntry],
-        {} as ResizeObserver,
+      intersectionCallback?.(
+        [{ isIntersecting: false } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
       );
     });
 
-    expect(resizeCallback).toBeTypeOf('function');
-    rectSpy.mockRestore();
+    expect(screen.getByTestId('collapsible-header-card-shell')).not.toHaveStyle({ top: '0px' });
+  });
+
+  it('applies default cardOverlap of 32px to topZone paddingBottom and card shell marginTop', () => {
+    render(<CollapsibleHeader topBar={<div>Top bar</div>} card={<MockCard />} />);
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+    const cardShell = screen.getByTestId('collapsible-header-card-shell');
+
+    expect(topZone).toHaveStyle({ paddingBottom: '32px' });
+    expect(cardShell).toHaveStyle({ marginTop: '-32px' });
+  });
+
+  it('applies custom cardOverlap to topZone paddingBottom and card shell marginTop', () => {
+    render(<CollapsibleHeader topBar={<div>Top bar</div>} card={<MockCard />} cardOverlap={48} />);
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+    const cardShell = screen.getByTestId('collapsible-header-card-shell');
+
+    expect(topZone).toHaveStyle({ paddingBottom: '48px' });
+    expect(cardShell).toHaveStyle({ marginTop: '-48px' });
+  });
+
+  it('does not apply paddingBottom or marginTop when no card is provided', () => {
+    render(<CollapsibleHeader topBar={<div>Top bar</div>} />);
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone).not.toHaveStyle({ paddingBottom: '32px' });
+    expect(screen.queryByTestId('collapsible-header-card-shell')).not.toBeInTheDocument();
+  });
+
+  it('applies default cardRadius rounded-b-3xl to topZone when card is present', () => {
+    render(<CollapsibleHeader topBar={<div>Top bar</div>} card={<MockCard />} />);
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone?.className).toMatch(/rounded-b-3xl/);
+  });
+
+  it('applies custom cardRadius to topZone when provided', () => {
+    render(
+      <CollapsibleHeader
+        topBar={<div>Top bar</div>}
+        card={<MockCard />}
+        cardRadius="rounded-b-xl"
+      />,
+    );
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone?.className).toMatch(/rounded-b-xl/);
+    expect(topZone?.className).not.toMatch(/rounded-b-3xl/);
+  });
+
+  it('does not apply any radius class to topZone when no card is provided', () => {
+    render(<CollapsibleHeader topBar={<div>Top bar</div>} />);
+
+    const topZone = screen.getByText('Top bar').parentElement?.parentElement;
+
+    expect(topZone?.className).not.toMatch(/rounded-b-3xl/);
+    expect(topZone?.className).not.toMatch(/rounded-b-xl/);
   });
 });

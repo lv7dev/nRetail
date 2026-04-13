@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { cn } from '@/utils/cn';
 
 interface CollapsibleCardProps {
   collapsed?: boolean;
@@ -19,6 +20,9 @@ export interface CollapsibleHeaderProps {
   decoration?: ReactNode;
   scrollContainerRef?: React.MutableRefObject<HTMLElement | null>;
   collapsed?: boolean;
+  cardOverlap?: number;
+  cardRadius?: string;
+  className?: string;
 }
 
 export function CollapsibleHeader({
@@ -28,33 +32,12 @@ export function CollapsibleHeader({
   decoration,
   scrollContainerRef,
   collapsed: controlledCollapsed,
+  cardOverlap = 32,
+  cardRadius = 'rounded-b-3xl',
+  className,
 }: CollapsibleHeaderProps) {
-  const topZoneRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [stickyTop, setStickyTop] = useState(0);
-
-  useEffect(() => {
-    const topZone = topZoneRef.current;
-
-    if (!topZone || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const updateHeight = () => {
-      setStickyTop(topZone.getBoundingClientRect().height);
-    };
-
-    updateHeight();
-
-    const observer = new ResizeObserver(() => {
-      updateHeight();
-    });
-
-    observer.observe(topZone);
-
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (controlledCollapsed !== undefined) {
@@ -83,11 +66,13 @@ export function CollapsibleHeader({
     card && isValidElement(card) ? cloneElement(card, { collapsed: resolvedCollapsed }) : null;
 
   return (
-    <div className="bg-primary">
+    <div className={cn('relative', className)}>
       <div
-        ref={topZoneRef}
-        className="relative overflow-hidden"
-        style={{ paddingTop: 'var(--zalo-chrome-top)' }}
+        className={cn('relative overflow-hidden bg-primary', renderedCard && cardRadius)}
+        style={{
+          paddingTop: 'var(--zalo-chrome-top)',
+          ...(renderedCard ? { paddingBottom: `${cardOverlap}px` } : {}),
+        }}
       >
         {decoration && (
           <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
@@ -103,8 +88,8 @@ export function CollapsibleHeader({
       {renderedCard && (
         <div
           data-testid="collapsible-header-card-shell"
-          className={resolvedCollapsed ? 'sticky z-20 px-4 pb-2' : 'px-4 pb-4'}
-          style={resolvedCollapsed ? { top: `${stickyTop}px` } : undefined}
+          className={cn('relative px-4')}
+          style={{ marginTop: `-${cardOverlap}px` }}
         >
           <div className="transition-all duration-200">{renderedCard}</div>
           <div ref={sentinelRef} className="h-px" data-testid="collapsible-header-sentinel" />

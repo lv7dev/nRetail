@@ -35,13 +35,14 @@ const VIEWED_PRODUCTS = [
 
 export default function HomePage() {
   const { t } = useTranslation(['home', 'common']);
-  const { refetch } = useHomeRefresh();
+  const { refetch, isRefreshing } = useHomeRefresh();
   const [collapsed, setCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <CollapsibleHeader
+        className="pb-4"
         topBar={<AppHeader title={t('common:nav.home')} right={<HeaderActions />} />}
         decoration={
           <img
@@ -60,10 +61,11 @@ export default function HomePage() {
 
       <ScrollablePage
         onRefresh={refetch}
+        isRefreshing={isRefreshing}
         onCollapsedChange={setCollapsed}
         scrollContainerRef={scrollRef}
       >
-        <div className="space-y-4 px-4 py-6">
+        <div className="space-y-4 px-4 pb-4">
           <BannerCarousel alt={t('banner.defaultAlt')} className="rounded-xl" />
 
           <div>

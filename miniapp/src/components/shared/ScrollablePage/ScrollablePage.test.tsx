@@ -1,5 +1,5 @@
-import { createRef } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, createRef } from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 let intersectionCallback: IntersectionObserverCallback | undefined;
@@ -41,7 +41,11 @@ describe('ScrollablePage', () => {
 
   it('calls onRefresh after a pull gesture of at least 60px from scrollTop=0', () => {
     const onRefresh = vi.fn();
-    render(<ScrollablePage onRefresh={onRefresh}><div>Page body</div></ScrollablePage>);
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
 
     const container = screen.getByTestId('scrollable-page');
     Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0, writable: true });
@@ -59,7 +63,11 @@ describe('ScrollablePage', () => {
 
   it('does not call onRefresh when scrollTop is greater than 0', () => {
     const onRefresh = vi.fn();
-    render(<ScrollablePage onRefresh={onRefresh}><div>Page body</div></ScrollablePage>);
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
 
     const container = screen.getByTestId('scrollable-page');
     Object.defineProperty(container, 'scrollTop', {
@@ -169,7 +177,11 @@ describe('ScrollablePage', () => {
 
   it('does not trigger pull-to-refresh for a horizontal-dominant gesture', () => {
     const onRefresh = vi.fn();
-    render(<ScrollablePage onRefresh={onRefresh}><div>Page body</div></ScrollablePage>);
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
 
     const container = screen.getByTestId('scrollable-page');
     Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0, writable: true });
@@ -195,6 +207,45 @@ describe('ScrollablePage', () => {
     expect(screen.getByLabelText('Refreshing content')).toBeInTheDocument();
   });
 
+  it('keeps the refresh indicator visible until touch-triggered onRefresh resolves', async () => {
+    let resolveRefresh: (() => void) | undefined;
+    const onRefresh = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRefresh = resolve;
+        }),
+    );
+
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0, writable: true });
+
+    fireEvent.touchStart(container, {
+      touches: [{ clientX: 0, clientY: 0 }],
+    });
+    fireEvent.touchMove(container, {
+      touches: [{ clientX: 0, clientY: 80 }],
+    });
+    fireEvent.touchEnd(container);
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('Refreshing content')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveRefresh?.();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Refreshing content')).not.toBeInTheDocument();
+    });
+  });
+
   it('reports collapsed=false at the top and collapsed=true after scroll', () => {
     const onCollapsedChange = vi.fn();
     render(
@@ -207,7 +258,11 @@ describe('ScrollablePage', () => {
     Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0, writable: true });
     fireEvent.scroll(container);
 
-    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 24, writable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      configurable: true,
+      value: 24,
+      writable: true,
+    });
     fireEvent.scroll(container);
 
     expect(onCollapsedChange).toHaveBeenNthCalledWith(1, false);
@@ -223,5 +278,102 @@ describe('ScrollablePage', () => {
     );
 
     expect(scrollContainerRef.current).toBe(screen.getByTestId('scrollable-page'));
+  });
+
+  it('calls onRefresh when scrolling up (wheel) at scrollTop=0', () => {
+    const onRefresh = vi.fn();
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0 });
+
+    fireEvent.wheel(container, { deltaY: -10 });
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onRefresh when scrolling down (wheel) at scrollTop=0', () => {
+    const onRefresh = vi.fn();
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0 });
+
+    fireEvent.wheel(container, { deltaY: 10 });
+
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not call onRefresh on wheel-up when scrollTop is greater than 0', () => {
+    const onRefresh = vi.fn();
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 10 });
+
+    fireEvent.wheel(container, { deltaY: -10 });
+
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not call onRefresh on wheel-up when no onRefresh handler is provided', () => {
+    render(
+      <ScrollablePage>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0 });
+
+    fireEvent.wheel(container, { deltaY: -10 });
+
+    expect(screen.queryByLabelText('Refreshing content')).not.toBeInTheDocument();
+  });
+
+  it('shows the refresh spinner immediately on wheel-up at scrollTop=0', () => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0 });
+
+    fireEvent.wheel(container, { deltaY: -10 });
+
+    expect(screen.getByLabelText('Refreshing content')).toBeInTheDocument();
+  });
+
+  it('hides the refresh spinner after onRefresh resolves on wheel-up', async () => {
+    const onRefresh = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ScrollablePage onRefresh={onRefresh}>
+        <div>Page body</div>
+      </ScrollablePage>,
+    );
+
+    const container = screen.getByTestId('scrollable-page');
+    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0 });
+
+    fireEvent.wheel(container, { deltaY: -10 });
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Refreshing content')).not.toBeInTheDocument();
+    });
   });
 });
