@@ -20,5 +20,9 @@
     "order": "Đặt hàng",
     "outlet": "Đại lý",
     "account": "Tài khoản"
+  },
+  "scrollablePage": {
+    "pullToRefresh": "Kéo xuống để làm mới",
+    "releaseToRefresh": "Thả để làm mới"
   }
 }
