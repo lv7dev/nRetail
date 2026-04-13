@@ -4,31 +4,30 @@ App-specific shared components used across multiple pages or layouts. Unlike `ui
 
 ## Components
 
-| Component | Purpose |
-|---|---|
-| `BottomNav` | Fixed bottom navigation bar for authenticated pages — renders the 5 main routes using icons + i18n labels from `common.nav.*` |
-| `CollapsibleHeader` | Sticky header zone with `topBar`, `children`, and `card` slots. The `card` collapses to a compact pill when the user scrolls down (scroll-driven via `onCollapsedChange` from `ScrollablePage`) and re-expands on scroll up. The pill sticks just below the sub-header zone using `position: sticky`. |
-| `LanguageSwitcher` | Dropdown to switch i18n language (VI / EN). Reads `i18n.language`, calls `i18n.changeLanguage` |
-| `OutletGuard` | Route guard: redirects to `/outlets` if no outlet selected in `useOutletStore`; renders outlet otherwise. Sits between `ProtectedRoute` and `AppLayout` |
-| `ProtectedRoute` | Route guard: renders `null` while `!isReady`, redirects to `/login` if no user, renders outlet otherwise |
-| `ScrollablePage` | Full-height scroll container (`flex:1 overflow-y:auto`). Provides pull-to-refresh (touch events, 60px threshold) and infinite load-more (IntersectionObserver on bottom sentinel). Calls `onRefresh`, `onLoadMore`, and `onCollapsedChange` callbacks; data fetching stays in the page via TanStack Query. |
-| `ThemeSwitcher` | Dropdown to switch theme preference (Light / System / Dark). Reads + writes `useThemeStore`. Pattern mirrors `LanguageSwitcher` |
+| Component           | Purpose                                                                                                                                                                                                                                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BottomNav`         | Fixed bottom navigation bar for authenticated pages — renders the 5 main routes using icons + i18n labels from `common.nav.*`                                                                                                                                                                              |
+| `CollapsibleHeader` | Header zone with `topBar`, `children`, and `card` slots. The `card` collapses to a compact pill when the user scrolls down (scroll-driven via `onCollapsedChange` from `ScrollablePage`) and re-expands on scroll up. Card-overlap spacing is only applied when a card is present.                         |
+| `LanguageSwitcher`  | Dropdown to switch i18n language (VI / EN). Reads `i18n.language`, calls `i18n.changeLanguage`                                                                                                                                                                                                             |
+| `OutletGuard`       | Route guard: redirects to `/outlets` if no outlet selected in `useOutletStore`; renders outlet otherwise. Sits between `ProtectedRoute` and `AppLayout`                                                                                                                                                    |
+| `ProtectedRoute`    | Route guard: renders `null` while `!isReady`, redirects to `/login` if no user, renders outlet otherwise                                                                                                                                                                                                   |
+| `ScrollablePage`    | Full-height scroll container (`flex:1 overflow-y:auto`). Provides pull-to-refresh (touch events, 60px threshold) and infinite load-more (IntersectionObserver on bottom sentinel). Calls `onRefresh`, `onLoadMore`, and `onCollapsedChange` callbacks; data fetching stays in the page via TanStack Query. |
+| `ThemeSwitcher`     | Dropdown to switch theme preference (Light / System / Dark). Reads + writes `useThemeStore`. Pattern mirrors `LanguageSwitcher`                                                                                                                                                                            |
 
 ## CollapsibleHeader
 
 ```tsx
 <CollapsibleHeader
-  topBar={<AppHeader title="..." />}   // always visible, sits at the very top
-  card={<OutletContextCard />}         // receives collapsed prop automatically via cloneElement
-  scrollContainerRef={ref}             // ref to the ScrollablePage container (for IntersectionObserver root)
-  collapsed={collapsed}                // controlled mode — driven by ScrollablePage onCollapsedChange
+  topBar={<AppHeader title="..." />} // always visible, sits at the very top
+  card={<OutletContextCard />} // receives collapsed prop automatically via cloneElement
+  scrollContainerRef={ref} // ref to the ScrollablePage container (for IntersectionObserver root)
+  collapsed={collapsed} // controlled mode — driven by ScrollablePage onCollapsedChange
 >
-  <SearchBar />                        // rendered inside the primary bg zone, above the card
+  <SearchBar /> // rendered inside the primary bg zone, above the card
 </CollapsibleHeader>
 ```
 
 - The `card` element receives `collapsed: boolean` injected via `cloneElement` — the card component must accept and handle this prop.
-- `stickyTop` is computed via `ResizeObserver` on the `topBar + children` zone so the pill always sticks at the correct offset regardless of topBar height.
 - Works in both controlled (`collapsed` prop) and uncontrolled (internal `IntersectionObserver` on sentinel) modes.
 - **Important**: In uncontrolled mode, the internal `collapsed` state starts as `false` (expanded). The IntersectionObserver uses `scrollContainerRef?.current` as root — if no ref is passed, it observes against the viewport.
 - **Recommended usage**: Use controlled mode (pass `collapsed` + `scrollContainerRef`) when `ScrollablePage` is the scroll container, since the sentinel lives outside the scroll container and the uncontrolled IntersectionObserver may not fire correctly.

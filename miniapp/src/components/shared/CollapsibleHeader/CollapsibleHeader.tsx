@@ -29,32 +29,8 @@ export function CollapsibleHeader({
   scrollContainerRef,
   collapsed: controlledCollapsed,
 }: CollapsibleHeaderProps) {
-  const topZoneRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [stickyTop, setStickyTop] = useState(0);
-
-  useEffect(() => {
-    const topZone = topZoneRef.current;
-
-    if (!topZone || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const updateHeight = () => {
-      setStickyTop(topZone.getBoundingClientRect().height);
-    };
-
-    updateHeight();
-
-    const observer = new ResizeObserver(() => {
-      updateHeight();
-    });
-
-    observer.observe(topZone);
-
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (controlledCollapsed !== undefined) {
@@ -81,12 +57,12 @@ export function CollapsibleHeader({
 
   const renderedCard =
     card && isValidElement(card) ? cloneElement(card, { collapsed: resolvedCollapsed }) : null;
+  const topZoneCardClasses = renderedCard !== null ? ' pb-8 rounded-b-3xl' : '';
 
   return (
-    <div className="bg-primary">
+    <div>
       <div
-        ref={topZoneRef}
-        className="relative overflow-hidden"
+        className={`relative overflow-hidden bg-primary${topZoneCardClasses}`}
         style={{ paddingTop: 'var(--zalo-chrome-top)' }}
       >
         {decoration && (
@@ -101,11 +77,7 @@ export function CollapsibleHeader({
       </div>
 
       {renderedCard && (
-        <div
-          data-testid="collapsible-header-card-shell"
-          className={resolvedCollapsed ? 'sticky z-20 px-4 pb-2' : 'px-4 pb-4'}
-          style={resolvedCollapsed ? { top: `${stickyTop}px` } : undefined}
-        >
+        <div data-testid="collapsible-header-card-shell" className="relative px-4 z-20 mt-[-32px]">
           <div className="transition-all duration-200">{renderedCard}</div>
           <div ref={sentinelRef} className="h-px" data-testid="collapsible-header-sentinel" />
         </div>

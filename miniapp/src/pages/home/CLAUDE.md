@@ -51,14 +51,16 @@ AppLayout (page-content: flex column)
              └── TabbedProductSection
 ```
 
-`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a sticky pill on scroll and re-expands at the top.
+`HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a compact pill on scroll and re-expands at the top.
 
 ## Component Contracts
 
 ### `OutletContextCard`
+
 ```tsx
 <OutletContextCard collapsed?={false} onAction?={(key: string) => void} />
 ```
+
 - `collapsed={false}` (default): shows outlet name row + 4 quick action buttons
 - `collapsed={true}` (pill): outlet name + chevron visible; quick-actions grid animates to zero height
 - **Animation**: Uses CSS `grid-template-rows` transition (`1fr` ↔ `0fr`, 200ms ease-in-out) with `overflow-hidden` wrapper — the quick-actions DOM stays mounted in both states (required for CSS animation, no conditional render)
@@ -67,48 +69,62 @@ AppLayout (page-content: flex column)
 - **`collapsed` is injected automatically by `CollapsibleHeader` via `cloneElement`** — do not pass it manually when using inside `CollapsibleHeader`
 
 ### `useHomeRefresh`
+
 ```ts
 const { refetch } = useHomeRefresh();
 ```
+
 - Returns `refetch()` async function wired to `ScrollablePage onRefresh`
 - Currently a stub — wire real TanStack Query `refetch` calls here as API integrations are added
 
 ### `SearchBar`
+
 ```tsx
 <SearchBar className? />
 ```
+
 - Reads `search.placeholder` from `home` namespace
 - Uses `Icon name="magnifying-glass"`
 
 ### `BannerCarousel`
+
 ```tsx
 <BannerCarousel alt={string} className? totalSlides?={6} activeSlide?={1} />
 ```
+
 - `activeSlide` dot highlighted with `bg-destructive`; others `bg-surface opacity-60`
 
 ### `PromotionSection`
+
 - Renders `PROMOTION_COUNT` (3) placeholder cards — replace with API data when available
 
 ### `BrandSection`
+
 - Renders `BRANDS` array (`CHILL`, `SPECIAL`, `LAGER`) — replace with API data when available
 
 ### `ProductCard`
+
 ```tsx
 <ProductCard name code unit imageSrc? onAddToCart?={() => void} />
 ```
+
 - Image placeholder shown when `imageSrc` is absent
 - Add to cart button calls `onAddToCart` if provided
 
 ### `ProductSection`
+
 ```tsx
 <ProductSection products={ProductCardData[]} showPagination?={false} />
 ```
+
 - `showPagination` shows a small scroll indicator below the list
 
 ### `TabbedProductSection`
+
 ```tsx
 <TabbedProductSection boughtProducts={ProductCardData[]} viewedProducts={ProductCardData[]} />
 ```
+
 - Internal state controls active tab; no external state needed
 - Active tab: `bg-primary text-content-inverse`; inactive: `border border-border text-content-muted`
 
@@ -126,16 +142,16 @@ banner.defaultAlt
 
 All tokens come from `tailwind.config.js` — no hardcoded hex values.
 
-| Token | Usage |
-|---|---|
+| Token                         | Usage                                                           |
+| ----------------------------- | --------------------------------------------------------------- |
 | `bg-primary` / `text-primary` | Search bar bg, tab active bg, Add to cart button, View all text |
-| `text-content-inverse` | Text on primary bg |
-| `bg-surface` | Card backgrounds |
-| `bg-surface-muted` | Image placeholders, banner placeholders |
-| `text-content` | Primary text |
-| `text-content-muted` | Secondary text, placeholder, inactive tabs |
-| `border-border` | Card borders, dividers, inactive tab borders |
-| `bg-destructive` | Active pagination dot |
-| `shadow-sm` | Card elevation |
-| `rounded-xl` | Cards, images, search input |
-| `rounded-lg` | Buttons, tabs |
+| `text-content-inverse`        | Text on primary bg                                              |
+| `bg-surface`                  | Card backgrounds                                                |
+| `bg-surface-muted`            | Image placeholders, banner placeholders                         |
+| `text-content`                | Primary text                                                    |
+| `text-content-muted`          | Secondary text, placeholder, inactive tabs                      |
+| `border-border`               | Card borders, dividers, inactive tab borders                    |
+| `bg-destructive`              | Active pagination dot                                           |
+| `shadow-sm`                   | Card elevation                                                  |
+| `rounded-xl`                  | Cards, images, search input                                     |
+| `rounded-lg`                  | Buttons, tabs                                                   |
