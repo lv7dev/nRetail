@@ -53,6 +53,10 @@ AppLayout (page-content: flex column)
 
 `HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange(scrollTop > 0)` → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a compact pill on scroll and re-expands at the top.
 
+**Height chain:** `AppLayout.page-content` must have `flex-1` for `ScrollablePage`'s `overflow-y-auto` to have a bounded height to overflow against. Without it, the container grows to content height and no scroll events fire (collapse never triggers, pull-to-refresh never triggers).
+
+**Refresh:** `onRefresh={refetch}` wires both pull-to-refresh (mobile touch) and wheel-up overscroll (desktop) to `useHomeRefresh`. The `isRefreshing` prop is intentionally omitted while `useHomeRefresh` is a stub — the wheel handler manages the spinner lifecycle directly via `pullDistance`.
+
 ## Component Contracts
 
 ### `OutletContextCard`

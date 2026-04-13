@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { cn } from '@/utils/cn';
 
 interface CollapsibleCardProps {
   collapsed?: boolean;
@@ -19,6 +20,9 @@ export interface CollapsibleHeaderProps {
   decoration?: ReactNode;
   scrollContainerRef?: React.MutableRefObject<HTMLElement | null>;
   collapsed?: boolean;
+  cardOverlap?: number;
+  cardRadius?: string;
+  className?: string;
 }
 
 export function CollapsibleHeader({
@@ -28,6 +32,9 @@ export function CollapsibleHeader({
   decoration,
   scrollContainerRef,
   collapsed: controlledCollapsed,
+  cardOverlap = 32,
+  cardRadius = 'rounded-b-3xl',
+  className,
 }: CollapsibleHeaderProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -57,13 +64,15 @@ export function CollapsibleHeader({
 
   const renderedCard =
     card && isValidElement(card) ? cloneElement(card, { collapsed: resolvedCollapsed }) : null;
-  const topZoneCardClasses = renderedCard !== null ? ' pb-8 rounded-b-3xl' : '';
 
   return (
-    <div>
+    <div className={cn('relative', className)}>
       <div
-        className={`relative overflow-hidden bg-primary${topZoneCardClasses}`}
-        style={{ paddingTop: 'var(--zalo-chrome-top)' }}
+        className={cn('relative overflow-hidden bg-primary', renderedCard && cardRadius)}
+        style={{
+          paddingTop: 'var(--zalo-chrome-top)',
+          ...(renderedCard ? { paddingBottom: `${cardOverlap}px` } : {}),
+        }}
       >
         {decoration && (
           <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
@@ -77,7 +86,11 @@ export function CollapsibleHeader({
       </div>
 
       {renderedCard && (
-        <div data-testid="collapsible-header-card-shell" className="relative px-4 z-20 mt-[-32px]">
+        <div
+          data-testid="collapsible-header-card-shell"
+          className={cn('relative px-4')}
+          style={{ marginTop: `-${cardOverlap}px` }}
+        >
           <div className="transition-all duration-200">{renderedCard}</div>
           <div ref={sentinelRef} className="h-px" data-testid="collapsible-header-sentinel" />
         </div>

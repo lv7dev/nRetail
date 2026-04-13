@@ -272,7 +272,7 @@ Dark/light/system theme is managed by three cooperating pieces:
 - Token mapping: `surface` → `surface.dark`, `surface-muted` → `surface.dark-muted`, `border` → `border.dark`, `content` → `content.dark`, `content-muted` → `content.dark-muted`, `content-subtle` → `content.dark-subtle`
 - Tokens `primary`, `destructive`, `success` have no dark variants — they remain the same in both modes
 - Never use `[zaui-theme="dark"]` selectors in JSX — use `dark:` prefix only (covered in `components/CLAUDE.md`)
-- `.section-container` in `app.css` uses `[html.dark] .section-container { background: ... }` (CSS-defined class can't use `dark:` inline)
+- `.section-container` in `app.css` uses `html.dark .section-container { background: ... }` (CSS-defined class can't use `dark:` inline). **Note:** use `html.dark` (element + class selector), never `[html.dark]` (attribute selector — invalid for class-based dark mode).
 
 ```ts
 import { useThemeStore } from '@/store/useThemeStore';

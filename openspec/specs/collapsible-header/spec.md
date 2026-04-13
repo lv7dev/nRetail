@@ -9,7 +9,7 @@
 
 #### Scenario: Card slot omitted
 - **WHEN** `CollapsibleHeader` is rendered without a `card` prop
-- **THEN** the topBar and children render normally with no card area
+- **THEN** the topBar and children render normally with no card area, no bottom radius class, and no overlap padding/margin styles
 
 ---
 
@@ -27,15 +27,6 @@
 #### Scenario: Uncontrolled mode via IntersectionObserver
 - **WHEN** no `collapsed` prop is provided and the sentinel exits the IntersectionObserver root
 - **THEN** the card transitions to its collapsed state internally
-
----
-
-### Requirement: The collapsed pill sticks just below the sub-header children
-In the collapsed state, the card SHALL be `position: sticky` with `top` equal to the height of the `topBar` + `children` zone, so it presses against the bottom of the sub-header rather than scrolling away.
-
-#### Scenario: Pill remains visible while content scrolls
-- **WHEN** the card is collapsed and the user continues scrolling down
-- **THEN** the pill stays fixed just below the SearchBar (or other children) while the page content scrolls beneath it
 
 ---
 
@@ -62,3 +53,46 @@ In the collapsed state, the card SHALL be `position: sticky` with `top` equal to
 #### Scenario: Decoration omitted
 - **WHEN** `CollapsibleHeader` receives no `decoration` prop
 - **THEN** the bg zone renders as a flat solid primary color with no additional elements
+
+---
+
+### Requirement: CollapsibleHeader accepts a configurable card overlap depth
+`CollapsibleHeader` SHALL accept a `cardOverlap` prop (`number`, default `32`) that controls how many pixels the card peeks up into the topZone. The topZone SHALL use `paddingBottom: cardOverlap + 'px'` (inline style) and the card shell SHALL use `marginTop: -cardOverlap + 'px'` (inline style) so the values are always in sync. Inline styles are used instead of Tailwind arbitrary classes to avoid JIT purge in production.
+
+#### Scenario: Default overlap depth
+- **WHEN** `CollapsibleHeader` is rendered with a `card` prop and no `cardOverlap` prop
+- **THEN** the topZone has `paddingBottom` of `32px` and the card shell has `marginTop` of `-32px`
+
+#### Scenario: Custom overlap depth
+- **WHEN** `CollapsibleHeader` is rendered with `card` and `cardOverlap={48}`
+- **THEN** the topZone has `paddingBottom` of `48px` and the card shell has `marginTop` of `-48px`
+
+#### Scenario: Overlap styles are absent when no card is provided
+- **WHEN** `CollapsibleHeader` is rendered without a `card` prop
+- **THEN** no `paddingBottom` inline style is applied to the topZone
+
+---
+
+### Requirement: CollapsibleHeader accepts a configurable card bottom radius
+`CollapsibleHeader` SHALL accept a `cardRadius` prop (`string`, default `'rounded-b-3xl'`) that is applied as a Tailwind class to the topZone when a card is present. When no card is present, no radius class is applied. The value is a Tailwind `rounded-b-*` class string.
+
+#### Scenario: Default radius
+- **WHEN** `CollapsibleHeader` is rendered with a `card` prop and no `cardRadius` prop
+- **THEN** the topZone has the `rounded-b-3xl` class
+
+#### Scenario: Custom radius
+- **WHEN** `CollapsibleHeader` is rendered with `card` and `cardRadius="rounded-b-xl"`
+- **THEN** the topZone has the `rounded-b-xl` class and does not have `rounded-b-3xl`
+
+#### Scenario: No radius class when card is absent
+- **WHEN** `CollapsibleHeader` is rendered without a `card` prop
+- **THEN** no `rounded-b-*` class is applied to the topZone
+
+---
+
+### Requirement: CollapsibleHeader accepts an optional className prop on the outer wrapper
+`CollapsibleHeader` SHALL accept a `className?: string` prop and apply it via `cn()` to the outermost wrapper div, alongside `'relative'`. This allows callers to apply spacing, sizing, or other layout classes to the component root.
+
+#### Scenario: className applied
+- **WHEN** `CollapsibleHeader` is rendered with `className="pb-4"`
+- **THEN** the outermost div has both `relative` and `pb-4` classes
