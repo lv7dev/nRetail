@@ -24,11 +24,11 @@ jobs:
             miniapp:
               - 'miniapp/**'
 
-      - name: Setup Node 22
+      - name: Setup Node 24
         if: steps.changes.outputs.miniapp == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: miniapp/package-lock.json
 
@@ -57,11 +57,11 @@ jobs:
             miniapp:
               - 'miniapp/**'
 
-      - name: Setup Node 22
+      - name: Setup Node 24
         if: steps.changes.outputs.miniapp == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: miniapp/package-lock.json
 
@@ -90,11 +90,11 @@ jobs:
             miniapp:
               - 'miniapp/**'
 
-      - name: Setup Node 22
+      - name: Setup Node 24
         if: steps.changes.outputs.miniapp == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: miniapp/package-lock.json
 
