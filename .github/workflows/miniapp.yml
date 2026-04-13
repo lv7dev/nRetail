@@ -1,0 +1,107 @@
+name: Miniapp CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: ci / build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if miniapp files changed
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            miniapp:
+              - 'miniapp/**'
+
+      - name: Setup Node 22
+        if: steps.changes.outputs.miniapp == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: miniapp/package-lock.json
+
+      - name: Install dependencies
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npm ci
+
+      - name: Type check
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npx tsc --noEmit
+
+  lint:
+    name: ci / lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if miniapp files changed
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            miniapp:
+              - 'miniapp/**'
+
+      - name: Setup Node 22
+        if: steps.changes.outputs.miniapp == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: miniapp/package-lock.json
+
+      - name: Install dependencies
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npm ci
+
+      - name: Prettier check
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npx prettier --check "src/**/*.{ts,tsx}"
+
+  test:
+    name: ci / test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if miniapp files changed
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            miniapp:
+              - 'miniapp/**'
+
+      - name: Setup Node 22
+        if: steps.changes.outputs.miniapp == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: miniapp/package-lock.json
+
+      - name: Install dependencies
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npm ci
+
+      - name: Unit tests
+        if: steps.changes.outputs.miniapp == 'true'
+        run: npm run test
