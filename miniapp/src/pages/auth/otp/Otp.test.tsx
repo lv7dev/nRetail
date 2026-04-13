@@ -132,7 +132,9 @@ describe('OtpPage', () => {
     );
     renderOtp({ flow: 'register', phone: '0901234567' });
     await userEvent.click(screen.getByTestId('otp-complete'));
-    await waitFor(() => expect(document.querySelector('p.text-sm.text-content-muted')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(document.querySelector('p.text-sm.text-content-muted')).toBeInTheDocument(),
+    );
     const pendingPara = document.querySelector('p.text-sm.text-content-muted')!;
     expect(pendingPara.className).toMatch(/dark:text-content-dark-muted/);
   });

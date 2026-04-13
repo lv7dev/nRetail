@@ -6,10 +6,7 @@ interface AccountProfileHeaderProps {
   className?: string;
 }
 
-export default function AccountProfileHeader({
-  outletName,
-  phone,
-}: AccountProfileHeaderProps) {
+export default function AccountProfileHeader({ outletName, phone }: AccountProfileHeaderProps) {
   return (
     <div className="bg-primary px-4 pt-4 pb-6">
       <div className="flex items-center gap-3">

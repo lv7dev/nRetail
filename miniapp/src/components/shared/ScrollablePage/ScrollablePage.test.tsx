@@ -13,13 +13,9 @@ vi.mock('@/components/ui', async () => {
 
   return {
     ...actual,
-    Icon: ({
-      name,
-      className,
-    }: {
-      name: string;
-      className?: string;
-    }) => <svg data-testid={`icon-${name}`} className={className} aria-hidden="true" />,
+    Icon: ({ name, className }: { name: string; className?: string }) => (
+      <svg data-testid={`icon-${name}`} className={className} aria-hidden="true" />
+    ),
   };
 });
 
@@ -444,7 +440,11 @@ describe('ScrollablePage', () => {
     Object.defineProperty(container, 'scrollTop', { configurable: true, value: 0, writable: true });
     fireEvent.scroll(container);
 
-    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 20, writable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      configurable: true,
+      value: 20,
+      writable: true,
+    });
     fireEvent.scroll(container);
 
     expect(onCollapsedChange).toHaveBeenNthCalledWith(1, false);
@@ -492,7 +492,11 @@ describe('ScrollablePage', () => {
     );
 
     const container = screen.getByTestId('scrollable-page');
-    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 19, writable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      configurable: true,
+      value: 19,
+      writable: true,
+    });
 
     fireEvent.scroll(container);
 
@@ -508,7 +512,11 @@ describe('ScrollablePage', () => {
     );
 
     const container = screen.getByTestId('scrollable-page');
-    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 20, writable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      configurable: true,
+      value: 20,
+      writable: true,
+    });
 
     fireEvent.scroll(container);
 
@@ -527,7 +535,11 @@ describe('ScrollablePage', () => {
     const container = screen.getByTestId('scrollable-page');
 
     for (const scrollTop of [0, 3, 0, 2, 0]) {
-      Object.defineProperty(container, 'scrollTop', { configurable: true, value: scrollTop, writable: true });
+      Object.defineProperty(container, 'scrollTop', {
+        configurable: true,
+        value: scrollTop,
+        writable: true,
+      });
       fireEvent.scroll(container);
     }
 
@@ -548,7 +560,11 @@ describe('ScrollablePage', () => {
     const container = screen.getByTestId('scrollable-page');
 
     for (const scrollTop of [30, 50, 80]) {
-      Object.defineProperty(container, 'scrollTop', { configurable: true, value: scrollTop, writable: true });
+      Object.defineProperty(container, 'scrollTop', {
+        configurable: true,
+        value: scrollTop,
+        writable: true,
+      });
       fireEvent.scroll(container);
     }
 
@@ -619,7 +635,11 @@ describe('ScrollablePage', () => {
       touches: [{ clientX: 0, clientY: 80 }],
     });
 
-    Object.defineProperty(container, 'scrollTop', { configurable: true, value: 24, writable: true });
+    Object.defineProperty(container, 'scrollTop', {
+      configurable: true,
+      value: 24,
+      writable: true,
+    });
     fireEvent.scroll(container);
 
     expect(onCollapsedChange).not.toHaveBeenCalled();

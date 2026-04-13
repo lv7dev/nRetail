@@ -23,6 +23,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
 
     applyTheme(preference === 'dark');
+    return undefined;
   }, [preference]);
 
   // eslint-disable-next-line react/jsx-no-useless-fragment
