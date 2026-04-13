@@ -15,15 +15,16 @@ vi.mock('react-i18next', () => ({
 
 // Avoid dynamic SVG imports from PasswordInput — forward ref so react-hook-form can read values
 vi.mock('@/components/ui/PasswordInput/PasswordInput', () => ({
-  PasswordInput: reactForwardRef<HTMLInputElement, { label?: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>>(
-    ({ label, error, ...props }, ref) => (
-      <div>
-        {label && <label>{label}</label>}
-        <input type="password" ref={ref} aria-label={label ?? 'password'} {...props} />
-        {error && <span>{error}</span>}
-      </div>
-    ),
-  ),
+  PasswordInput: reactForwardRef<
+    HTMLInputElement,
+    { label?: string; error?: string } & React.InputHTMLAttributes<HTMLInputElement>
+  >(({ label, error, ...props }, ref) => (
+    <div>
+      {label && <label>{label}</label>}
+      <input type="password" ref={ref} aria-label={label ?? 'password'} {...props} />
+      {error && <span>{error}</span>}
+    </div>
+  )),
 }));
 
 const mockMutate = vi.fn();
@@ -53,9 +54,7 @@ function renderWithState(state: Record<string, string> | null) {
   const Wrapper = createWrapper();
   return render(
     <Wrapper>
-      <MemoryRouter
-        initialEntries={[{ pathname: '/register/complete', state }]}
-      >
+      <MemoryRouter initialEntries={[{ pathname: '/register/complete', state }]}>
         <Routes>
           <Route path="/register/complete" element={<RegisterCompletePage />} />
           <Route path="/login" element={<div>login page</div>} />
@@ -87,8 +86,8 @@ describe('RegisterCompletePage', () => {
   });
 
   it('navigates to / on success', async () => {
-    mockMutate.mockImplementation(
-      (_data: unknown, { onSuccess }: { onSuccess: () => void }) => onSuccess(),
+    mockMutate.mockImplementation((_data: unknown, { onSuccess }: { onSuccess: () => void }) =>
+      onSuccess(),
     );
     renderWithState({ phone: '0901234567', otpToken: 'tok' });
     await userEvent.type(document.querySelector('input[name="name"]')!, 'Alice');
@@ -112,9 +111,7 @@ describe('RegisterCompletePage', () => {
     await userEvent.type(pwdInputs[1], 'secret123');
     await userEvent.click(screen.getByRole('button', { name: /register\.submit/i }));
     // resolveApiError returns t('errors.PHONE_ALREADY_EXISTS') which with t=k=>k is 'errors.PHONE_ALREADY_EXISTS'
-    await waitFor(() =>
-      expect(screen.getByText('PHONE_ALREADY_EXISTS')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText('PHONE_ALREADY_EXISTS')).toBeInTheDocument());
   });
 
   it('h1 has dark mode class', () => {

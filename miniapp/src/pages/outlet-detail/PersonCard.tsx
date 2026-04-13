@@ -37,9 +37,7 @@ export default function PersonCard({
           <span
             className={cn(
               'text-xs px-2 py-0.5 rounded-full',
-              isActive
-                ? 'bg-success/10 text-success'
-                : 'bg-surface-overlay text-content-muted',
+              isActive ? 'bg-success/10 text-success' : 'bg-surface-overlay text-content-muted',
             )}
           >
             {isActive ? t('contact.active') : t('contact.inactive')}

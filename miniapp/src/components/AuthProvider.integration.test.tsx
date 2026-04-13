@@ -18,7 +18,11 @@ beforeEach(() => {
 describe('AuthProvider integration', () => {
   it('renders children and sets user when getMe succeeds', async () => {
     localStorage.setItem('accessToken', 'valid-token');
-    render(<AuthProvider><div>app content</div></AuthProvider>);
+    render(
+      <AuthProvider>
+        <div>app content</div>
+      </AuthProvider>,
+    );
     await waitFor(() => expect(screen.getByText('app content')).toBeInTheDocument());
     expect(useAuthStore.getState().user).not.toBeNull();
     expect(useAuthStore.getState().isReady).toBe(true);
@@ -27,11 +31,13 @@ describe('AuthProvider integration', () => {
   it('clears auth and shows children when getMe returns 401', async () => {
     localStorage.setItem('accessToken', 'expired-token');
     server.use(
-      http.get('*/auth/me', () =>
-        HttpResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-      ),
+      http.get('*/auth/me', () => HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })),
     );
-    render(<AuthProvider><div>app content</div></AuthProvider>);
+    render(
+      <AuthProvider>
+        <div>app content</div>
+      </AuthProvider>,
+    );
     await waitFor(() => expect(screen.getByText('app content')).toBeInTheDocument());
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().isReady).toBe(true);
@@ -46,7 +52,11 @@ describe('AuthProvider integration', () => {
         return HttpResponse.json({ data: {} });
       }),
     );
-    render(<AuthProvider><div>app content</div></AuthProvider>);
+    render(
+      <AuthProvider>
+        <div>app content</div>
+      </AuthProvider>,
+    );
     await waitFor(() => expect(screen.getByText('app content')).toBeInTheDocument());
     expect(getmeCalled).toBe(false);
     expect(useAuthStore.getState().user).toBeNull();

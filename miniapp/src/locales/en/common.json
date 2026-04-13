@@ -20,5 +20,9 @@
     "order": "Order",
     "outlet": "Outlet",
     "account": "Account"
+  },
+  "scrollablePage": {
+    "pullToRefresh": "Pull down to refresh",
+    "releaseToRefresh": "Release to refresh"
   }
 }

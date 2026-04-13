@@ -1,4 +1,9 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Icon } from '@/components/ui';
+
+const WHEEL_SETTLE_MS = 400;
+const COLLAPSE_THRESHOLD_PX = 20;
 
 export interface ScrollablePageProps {
   children: ReactNode;
@@ -39,6 +44,43 @@ function Spinner({ label }: { label: string }) {
   );
 }
 
+function PullIndicator({
+  pullDistance,
+  isRefreshing,
+}: {
+  pullDistance: number;
+  isRefreshing: boolean;
+}) {
+  const { t } = useTranslation('common');
+
+  if (isRefreshing && pullDistance === 0) {
+    return <Spinner label="Refreshing content" />;
+  }
+
+  if (pullDistance <= 0) {
+    return null;
+  }
+
+  const isReadyToRefresh = pullDistance >= 60;
+
+  return (
+    <div style={{ height: `${Math.min(pullDistance, 48)}px` }} className="overflow-hidden">
+      <div className="flex items-center justify-center gap-2 py-3 text-sm text-content-muted">
+        <div
+          className={`transition-transform duration-200 ${isReadyToRefresh ? 'rotate-180' : ''}`}
+        >
+          <Icon name="chevron-down" />
+        </div>
+        <span>
+          {isReadyToRefresh
+            ? t('scrollablePage.releaseToRefresh')
+            : t('scrollablePage.pullToRefresh')}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function ScrollablePage({
   children,
   onRefresh,
@@ -53,8 +95,11 @@ export function ScrollablePage({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const pullingRef = useRef(false);
+  const arrivedAtTopRef = useRef<number | null>(null);
+  const lastCollapsedRef = useRef(false);
   const loadMoreLockRef = useRef(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshPending, setIsRefreshPending] = useState(false);
 
   useEffect(() => {
     if (scrollContainerRef) {
@@ -67,6 +112,25 @@ export function ScrollablePage({
       loadMoreLockRef.current = false;
     }
   }, [isLoadingMore]);
+
+  useEffect(() => {
+    const element = internalRef.current;
+    if (!element || !onRefresh) {
+      return;
+    }
+
+    const preventTouchScroll = (event: TouchEvent) => {
+      if (pullingRef.current) {
+        event.preventDefault();
+      }
+    };
+
+    element.addEventListener('touchmove', preventTouchScroll, { passive: false });
+
+    return () => {
+      element.removeEventListener('touchmove', preventTouchScroll);
+    };
+  }, [onRefresh]);
 
   useEffect(() => {
     if (!onLoadMore || !sentinelRef.current || typeof IntersectionObserver === 'undefined') {
@@ -121,7 +185,14 @@ export function ScrollablePage({
     touchStartRef.current = null;
 
     if (shouldRefresh) {
-      await onRefresh();
+      setPullDistance(0);
+      setIsRefreshPending(true);
+      try {
+        await onRefresh();
+      } finally {
+        setIsRefreshPending(false);
+      }
+      return;
     }
 
     setPullDistance(0);
@@ -129,29 +200,55 @@ export function ScrollablePage({
 
   // Mouse wheel overscroll-to-refresh: spin up at scrollTop=0
   const handleWheel = async (event: React.WheelEvent<HTMLDivElement>) => {
-    if (!onRefresh || isRefreshing) return;
+    if (!onRefresh || isRefreshing || isRefreshPending) return;
     if (internalRef.current!.scrollTop !== 0 || event.deltaY >= 0) return;
-    setPullDistance(60);
-    await onRefresh();
+    const elapsed = performance.now() - (arrivedAtTopRef.current ?? -Infinity);
+    if (elapsed < WHEEL_SETTLE_MS) return;
     setPullDistance(0);
+    setIsRefreshPending(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshPending(false);
+    }
   };
 
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    onCollapsedChange?.(event.currentTarget.scrollTop > 0);
+    const scrollTop = event.currentTarget.scrollTop;
+
+    if (scrollTop === 0) {
+      arrivedAtTopRef.current = performance.now();
+    }
+    if (pullingRef.current) {
+      return;
+    }
+
+    if (scrollTop === 0) {
+      lastCollapsedRef.current = false;
+      onCollapsedChange?.(false);
+      return;
+    }
+
+    if (scrollTop < COLLAPSE_THRESHOLD_PX || lastCollapsedRef.current) {
+      return;
+    }
+
+    lastCollapsedRef.current = true;
+    onCollapsedChange?.(true);
   };
 
   return (
     <div
       ref={internalRef}
       data-testid="scrollable-page"
-      className="min-h-0 flex-1 overflow-y-auto"
+      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
       onScroll={handleScroll}
     >
-      {(pullDistance > 0 || isRefreshing) && <Spinner label="Refreshing content" />}
+      <PullIndicator pullDistance={pullDistance} isRefreshing={isRefreshing || isRefreshPending} />
       <div>{children}</div>
       {onLoadMore && (
         <div ref={sentinelRef} data-testid="scrollable-page-sentinel" className="h-px" />

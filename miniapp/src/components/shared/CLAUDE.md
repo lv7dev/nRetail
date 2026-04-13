@@ -71,10 +71,27 @@ App-specific shared components used across multiple pages or layouts. Unlike `ui
 
 **Refresh triggers:**
 
-- **Mobile (touch)**: Pull-to-refresh — drag down ≥ 60px from `scrollTop === 0`, gesture must be predominantly vertical (`deltaY > deltaX * 2`).
-- **Desktop (mouse wheel)**: Spin wheel upward (`deltaY < 0`) at `scrollTop === 0` → triggers refresh immediately. This is the desktop equivalent of pull-to-refresh.
+- **Mobile (touch)**: Pull-to-refresh — drag down ≥ 60px from `scrollTop === 0`, gesture must be predominantly vertical (`deltaY > deltaX * 2`). During the gesture a `PullIndicator` sub-component shows:
+  - `pullDistance < 60`: chevron-down icon + i18n label `scrollablePage.pullToRefresh` ("Pull down to refresh"). Container height = `min(pullDistance, 48)px`.
+  - `pullDistance >= 60`: chevron flips 180° (`rotate-180`) + label changes to `scrollablePage.releaseToRefresh` ("Release to refresh"). Release at this point calls `onRefresh`.
+  - Release below 60px: gesture cancelled, no refresh, indicator disappears.
+  - While `isRefreshing=true` and `pullDistance=0`: spinner shown instead of the text indicator.
+- **Desktop (mouse wheel)**: Spin wheel upward (`deltaY < 0`) at `scrollTop === 0` → triggers refresh after a 400 ms settle period (see below). This is the desktop equivalent of pull-to-refresh.
 
 **Spinner lifecycle (wheel):** The component sets `pullDistance = 60` (showing the spinner) before `await onRefresh()`, then clears it to `0` after the promise resolves. The spinner disappears as soon as `onRefresh()` settles.
+
+**onCollapsedChange — hysteresis band:** The component uses a dead zone to prevent spurious flips from iOS elastic bounce:
+
+- `scrollTop === 0` → emit `false` (expanded)
+- `scrollTop >= COLLAPSE_THRESHOLD_PX` (20) → emit `true` (collapsed)
+- `1 ≤ scrollTop ≤ 19` → emit nothing (dead zone)
+- Consecutive identical values are deduplicated — never emits the same value twice in a row.
+
+The scroll container also has `overscroll-behavior-y: contain` applied (via `overscroll-y-contain` Tailwind class) to reduce iOS elastic bounce propagation.
+
+**Pull gesture blocks scroll and onCollapsedChange:** While a pull gesture is active (`pullingRef.current = true`), an imperative `touchmove` listener (attached with `{ passive: false }`) calls `preventDefault()` to prevent the container from scrolling. This ensures `onCollapsedChange` is NOT fired during an active pull gesture, eliminating the simultaneous refresh + collapse condition.
+
+**Wheel settle period:** After `scrollTop` transitions to `0`, wheel-triggered refresh is suppressed for `WHEEL_SETTLE_MS` (400 ms). This prevents an accidental refresh fire on the first upward wheel tick after scrolling back to the top. If the page opens at `scrollTop === 0` with no prior scroll (no `arrivedAtTopRef` timestamp), wheel refresh fires immediately.
 
 **Layout requirement:** `ScrollablePage` uses `flex-1 overflow-y-auto`. For scrolling to work, **all ancestor elements up to the viewport must have a bounded height**. The full chain must be:
 
