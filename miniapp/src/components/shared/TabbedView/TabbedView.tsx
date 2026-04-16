@@ -24,7 +24,9 @@ export function TabbedView({
   activeTab: controlledActiveTab,
   onTabChange,
 }: TabbedViewProps) {
-  const [uncontrolledActiveTab, setUncontrolledActiveTab] = useState(defaultTab ?? tabs[0]?.key ?? '');
+  const [uncontrolledActiveTab, setUncontrolledActiveTab] = useState(
+    defaultTab ?? tabs[0]?.key ?? '',
+  );
 
   useEffect(() => {
     if (!controlledActiveTab && !uncontrolledActiveTab && tabs[0]?.key) {

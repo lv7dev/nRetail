@@ -223,7 +223,8 @@ describe('TabbedView', () => {
       </TabbedView>,
     );
 
-    const panelsElement = screen.getByText('Bought panel').parentElement?.parentElement as HTMLDivElement;
+    const panelsElement = screen.getByText('Bought panel').parentElement
+      ?.parentElement as HTMLDivElement;
     vi.spyOn(panelsElement, 'getBoundingClientRect').mockImplementation(
       () =>
         ({
@@ -231,9 +232,9 @@ describe('TabbedView', () => {
         }) as DOMRect,
     );
 
-    const handleScroll = addEventListener.mock.calls.find(([eventName]) => eventName === 'scroll')?.[1] as
-      | EventListener
-      | undefined;
+    const handleScroll = addEventListener.mock.calls.find(
+      ([eventName]) => eventName === 'scroll',
+    )?.[1] as EventListener | undefined;
 
     expect(handleScroll).toBeTypeOf('function');
 
@@ -277,9 +278,9 @@ describe('TabbedView', () => {
       </TabbedView>,
     );
 
-    const handleScroll = addEventListener.mock.calls.find(([eventName]) => eventName === 'scroll')?.[1] as
-      | EventListener
-      | undefined;
+    const handleScroll = addEventListener.mock.calls.find(
+      ([eventName]) => eventName === 'scroll',
+    )?.[1] as EventListener | undefined;
 
     expect(handleScroll).toBeTypeOf('function');
 
@@ -318,7 +319,11 @@ describe('TabbedView', () => {
       </TabbedView>,
     );
 
-    expect(addEventListener).not.toHaveBeenCalledWith('scroll', expect.any(Function), expect.anything());
+    expect(addEventListener).not.toHaveBeenCalledWith(
+      'scroll',
+      expect.any(Function),
+      expect.anything(),
+    );
     expect(removeEventListener).not.toHaveBeenCalled();
   });
 });

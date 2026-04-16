@@ -196,9 +196,7 @@ vi.mock('@/components/shared', () => ({
       if (!context) return null;
 
       return (
-        <div style={context.activeTab === tabKey ? undefined : { display: 'none' }}>
-          {children}
-        </div>
+        <div style={context.activeTab === tabKey ? undefined : { display: 'none' }}>{children}</div>
       );
     };
 
