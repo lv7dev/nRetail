@@ -106,6 +106,8 @@ The scroll container also has `overscroll-behavior-y: contain` applied (via `ove
 
 If any ancestor in this chain lacks an explicit height constraint, `overflow-y-auto` has nothing to overflow against and no scroll events fire.
 
+**`scrollContainerRef` timing:** `ScrollablePage` assigns `scrollContainerRef.current` in a `useLayoutEffect` (not `useEffect`). React runs all layout effects before any passive effects, so descendant components that read `outerScrollRef.current` in their own `useEffect` (e.g. `TabbedViewPanels`'s scroll listener) always find the ref populated on first mount — regardless of tree depth.
+
 **Other notes:**
 - Load-more fires at most once per `isLoadingMore` cycle — a `loadMoreLockRef` prevents double-fires.
 - `onLoadMore` is optional; if omitted, no sentinel is rendered.
@@ -209,9 +211,11 @@ Inactive panels receive `style={{ display: 'none' }}` — they are never unmount
 
 **Outer mode scroll save/restore**
 `TabbedViewPanels` maintains a `Map<tabKey, number>` of saved scroll positions. On tab switch:
-1. Save `outerScrollRef.current.scrollTop` for the outgoing tab.
+1. Save `lastKnownScrollTopRef.current` for the outgoing tab.
 2. If the incoming tab has a saved position → restore it.
 3. If first visit → scroll to position the panels top just below any sticky preceding sibling.
+
+`lastKnownScrollTopRef` is updated by a **passive `scroll` event listener** on the outer container (attached in outer mode only). Reading `outerScrollRef.current.scrollTop` directly in `useLayoutEffect` is wrong here: `display: none` on the outgoing panel reduces `scrollHeight` and the browser silently clamps `scrollTop` during the layout pass — before `useLayoutEffect` runs. Scroll events are not fired by layout-time clamping, so `lastKnownScrollTopRef` always holds the user's last intentional position.
 
 **Sticky sibling offset (first-visit only)**
 On first visit, the target scroll position is computed via `getBoundingClientRect()` and uses `useLayoutEffect` (fires before paint) to avoid a visible flash. If `TabbedView.TabBar` is a direct preceding sibling with `position: sticky`, its height is subtracted so the first panel item appears below the tab bar rather than behind it.
