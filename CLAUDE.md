@@ -199,9 +199,47 @@ nRetail/
 - **Always rebase** before merge, no merge commits
 - **Never force push** to main
 - **Never commit** `.env`, credentials, or secrets
-- **NEVER push directly to `main`** — always work on a feature branch
-- **Always open a PR** to merge into `main` — CI must pass before merging
+- **NEVER push directly to `main`** — always work on a feature branch; branch protection (Ruleset) blocks direct pushes
+- **Always open a PR** to merge into `main` — required CI checks must pass before merging
 - **Delete the branch** after the PR is merged
+
+### CI/CD
+
+#### GitHub Actions
+
+Two workflows in `.github/workflows/`:
+
+| Workflow | File | Triggers on | Jobs |
+|---|---|---|---|
+| **Miniapp CI** | `miniapp.yml` | All PRs/pushes to `main` | `ci / build` (tsc --noEmit), `ci / lint` (prettier --check), `ci / test` (vitest) |
+| **Backend CI** | `backend.yml` | PRs/pushes to `main` touching `backend/**` | `test` (lint + unit + integration) |
+
+**Miniapp CI — important notes:**
+- Uses **Node 24** — must match the local dev Node version so `npm ci` reads the lock file correctly. If the lock file is regenerated locally with a different Node version, CI will fail with `npm ci` sync errors.
+- `zmp build` is **not used** in CI — it requires Zalo credentials. Type checking is done via `tsc --noEmit` instead.
+- All three jobs (`ci / build`, `ci / lint`, `ci / test`) always run on every PR, but skip actual work when no `miniapp/**` files changed. This ensures they always report a result to satisfy GitHub's required status checks.
+- Job names must exactly match the required check names in the branch Ruleset (`ci / build`, `ci / lint`, `ci / test` with spaces around `/`).
+
+**Backend CI — important notes:**
+- Only runs when `backend/**` or `.github/workflows/backend.yml` files change (path filter in `on:` trigger).
+- Uses Node 22 to match the backend's `.nvmrc` / runtime.
+
+#### Branch Protection (Ruleset)
+
+`main` is protected via a GitHub **Ruleset** (not classic branch protection). Key rules:
+- Direct pushes blocked — all changes must go through a PR
+- Required status checks: `ci / build`, `ci / lint`, `ci / test` (miniapp jobs) — must all pass before merge
+- Required approvals: **0** — solo repo, self-merge allowed without approval
+
+> **Ruleset vs classic:** The protection uses the newer Rulesets API (`/repos/{owner}/{repo}/rulesets`), not the classic branch protection API (`/branches/main/protection`). The classic API returns 404 — use `gh api repos/lv7dev/nRetail/rulesets` to inspect.
+
+#### Render Deployment
+
+The backend service (`nRetail` on Render, `rootDir: backend`) auto-deploys from `main`.
+
+- **Auto-deploy trigger**: set to **"Yes" (on every push)** — deploys on every merge to `main` regardless of which files changed.
+- **Do NOT set to "When checks pass"** — the backend CI only runs when `backend/**` files change. For non-backend PRs, the backend CI never runs and never reports, so Render would wait forever.
+- Render dashboard: https://dashboard.render.com/web/srv-d76c5loule4c73er4er0/settings
 
 ### Code Style
 
