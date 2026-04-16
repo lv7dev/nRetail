@@ -14,25 +14,20 @@ export interface TabBarProps {
 
 export function TabBar({ tabs, activeTab, onChange, className }: TabBarProps) {
   return (
-    <div
-      role="tablist"
-      className={cn('flex border-b border-border dark:border-border-dark', className)}
-    >
+    <div className={cn('flex gap-3 overflow-x-auto', className)}>
       {tabs.map((tab) => {
         const isActive = tab.key === activeTab;
         return (
           <button
             key={tab.key}
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => {
-              if (!isActive) onChange(tab.key);
-            }}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange(tab.key)}
             className={cn(
-              'py-2 px-4 text-sm -mb-px',
+              'flex-1 min-w-max whitespace-nowrap rounded-lg py-2 text-sm',
               isActive
-                ? 'text-primary font-semibold border-b-2 border-primary'
-                : 'text-content-muted dark:text-content-dark-muted',
+                ? 'bg-primary text-content-inverse'
+                : 'border border-border text-content-muted',
             )}
           >
             {tab.label}

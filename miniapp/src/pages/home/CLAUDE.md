@@ -28,8 +28,7 @@ src/pages/home/
 ├── ProductCard.test.tsx
 ├── ProductSection.tsx         ← vertical list of ProductCards + optional pagination
 ├── ProductSection.test.tsx
-├── TabbedProductSection.tsx   ← two-tab switcher (Bought / Viewed) + ProductSection
-└── TabbedProductSection.test.tsx
+└── index.tsx                  ← uses shared TabbedView for Bought / Viewed product lists
 ```
 
 ## Page Layout
@@ -48,7 +47,9 @@ AppLayout (page-content: flex column)
              ├── BrandSection
              ├── ProductSection (Trade Programs)
              ├── ProductSection (Recommended, showPagination)
-             └── TabbedProductSection
+             └── TabbedView (outer mode)
+                  ├── TabBar (sticky under the section header)
+                  └── Panels (shares the outer ScrollablePage scroll container)
 ```
 
 `HomePage` holds `collapsed` state + `scrollRef`. `ScrollablePage` reports `onCollapsedChange` using a hysteresis band (emit `false` at `scrollTop===0`, emit `true` at `scrollTop>=20px`, dead zone 1–19px) → sets `collapsed` state → `CollapsibleHeader` receives controlled `collapsed` prop + shared `scrollContainerRef`. This wires the scroll-driven collapse so the `OutletContextCard` collapses to a compact pill on scroll and re-expands at the top.
@@ -124,14 +125,45 @@ const { refetch, isRefreshing } = useHomeRefresh();
 
 - `showPagination` shows a small scroll indicator below the list
 
-### `TabbedProductSection`
+### `TabbedView` usage in HomePage
+
+Home uses **controlled mode** because the outer `ScrollablePage.onLoadMore` must fetch data for whichever tab is currently active — the page needs to own `activeTab` to route that correctly.
 
 ```tsx
-<TabbedProductSection boughtProducts={ProductCardData[]} viewedProducts={ProductCardData[]} />
+// HomePage state
+const [activeProductTab, setActiveProductTab] = useState<'bought' | 'viewed'>('bought');
+const hasMore = activeProductTab === 'bought' ? boughtHasMore : viewedHasMore;
+
+// ScrollablePage gets onLoadMore at the page level
+<ScrollablePage
+  onLoadMore={handleLoadMore}   // reads activeProductTab to fetch the right tab's data
+  hasMore={hasMore}
+  isLoadingMore={isLoadingMore}
+  ...
+>
+  ...
+  <TabbedView
+    tabs={productTabs}
+    activeTab={activeProductTab}
+    onTabChange={(key) => setActiveProductTab(key as 'bought' | 'viewed')}
+  >
+    <TabbedView.TabBar className="sticky top-0 z-10 bg-surface" />
+    <TabbedView.Panels mode="outer" outerScrollRef={scrollRef}>
+      <TabbedView.Panel tabKey="bought">
+        <ProductSection products={boughtProducts} />
+      </TabbedView.Panel>
+      <TabbedView.Panel tabKey="viewed">
+        <ProductSection products={viewedProducts} />
+      </TabbedView.Panel>
+    </TabbedView.Panels>
+  </TabbedView>
+</ScrollablePage>
 ```
 
-- Internal state controls active tab; no external state needed
-- Active tab: `bg-primary text-content-inverse`; inactive: `border border-border text-content-muted`
+- **Controlled mode** (`activeTab` + `onTabChange`) is required here so `handleLoadMore` can read `activeProductTab` and fetch the right tab's next page
+- `mode="outer"` — bought/viewed lists scroll inside the page-level `ScrollablePage` (no nested scroll containers)
+- `outerScrollRef={scrollRef}` — `TabbedViewPanels` saves/restores each tab's scroll position on switch; first visit scrolls to just below the sticky TabBar
+- `TabbedView.TabBar className="sticky top-0 z-10 bg-surface"` — sticks inside `ScrollablePage` at `top: 0`, which visually aligns to the bottom of `CollapsibleHeader`; `bg-surface` prevents content scrolling through from showing behind it
 
 ## i18n Keys (`home` namespace)
 
