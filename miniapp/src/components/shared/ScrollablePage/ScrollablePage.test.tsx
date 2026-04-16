@@ -1,4 +1,4 @@
-import { act, createRef } from 'react';
+import { act, createRef, useEffect } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -654,6 +654,26 @@ describe('ScrollablePage', () => {
     );
 
     expect(scrollContainerRef.current).toBe(screen.getByTestId('scrollable-page'));
+  });
+
+  it('scrollContainerRef is populated before descendant useEffects run', () => {
+    const scrollContainerRef = createRef<HTMLDivElement>();
+    let refValueInEffect: HTMLDivElement | null | undefined = undefined;
+
+    function DescendantConsumer() {
+      useEffect(() => {
+        refValueInEffect = scrollContainerRef.current;
+      });
+      return null;
+    }
+
+    render(
+      <ScrollablePage scrollContainerRef={scrollContainerRef}>
+        <DescendantConsumer />
+      </ScrollablePage>,
+    );
+
+    expect(refValueInEffect).toBe(screen.getByTestId('scrollable-page'));
   });
 
   it('calls onRefresh when scrolling up (wheel) at scrollTop=0', () => {

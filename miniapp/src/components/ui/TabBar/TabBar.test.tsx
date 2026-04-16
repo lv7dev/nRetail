@@ -10,35 +10,88 @@ const tabs = [
 ];
 
 describe('TabBar', () => {
-  it('renders all tab labels', () => {
+  it('renders one button per tab entry', () => {
     render(<TabBar tabs={tabs} activeTab="overview" onChange={vi.fn()} />);
+
+    expect(screen.getAllByRole('button')).toHaveLength(tabs.length);
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Details')).toBeInTheDocument();
     expect(screen.getByText('Reviews')).toBeInTheDocument();
   });
 
-  it('active tab has aria-selected="true"', () => {
+  it('applies active and inactive tab styles', () => {
     render(<TabBar tabs={tabs} activeTab="details" onChange={vi.fn()} />);
-    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+
+    expect(screen.getByRole('button', { name: 'Details' })).toHaveClass(
+      'bg-primary',
+      'text-content-inverse',
+    );
+    expect(screen.getByRole('button', { name: 'Overview' })).toHaveClass(
+      'border',
+      'border-border',
+      'text-content-muted',
+    );
+    expect(screen.getByRole('button', { name: 'Reviews' })).toHaveClass(
+      'border',
+      'border-border',
+      'text-content-muted',
+    );
   });
 
-  it('inactive tabs have aria-selected="false"', () => {
-    render(<TabBar tabs={tabs} activeTab="details" onChange={vi.fn()} />);
-    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'false');
-    expect(screen.getByRole('tab', { name: 'Reviews' })).toHaveAttribute('aria-selected', 'false');
-  });
-
-  it('clicking an inactive tab calls onChange with its key', async () => {
+  it('calls onChange with the clicked tab key', async () => {
     const onChange = vi.fn();
     render(<TabBar tabs={tabs} activeTab="overview" onChange={onChange} />);
-    await userEvent.click(screen.getByRole('tab', { name: 'Details' }));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Details' }));
+
     expect(onChange).toHaveBeenCalledWith('details');
   });
 
-  it('clicking the active tab does NOT call onChange', async () => {
+  it('still calls onChange when clicking the active tab', async () => {
     const onChange = vi.fn();
     render(<TabBar tabs={tabs} activeTab="overview" onChange={onChange} />);
-    await userEvent.click(screen.getByRole('tab', { name: 'Overview' }));
-    expect(onChange).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Overview' }));
+
+    expect(onChange).toHaveBeenCalledWith('overview');
+  });
+
+  it('forwards className to the root element', () => {
+    const { container } = render(
+      <TabBar tabs={tabs} activeTab="overview" onChange={vi.fn()} className="sticky top-0" />,
+    );
+
+    expect(container.firstElementChild).toHaveClass('sticky', 'top-0');
+  });
+
+  it('uses horizontal overflow on the root and no-wrap sizing on each button', () => {
+    const { container } = render(<TabBar tabs={tabs} activeTab="overview" onChange={vi.fn()} />);
+
+    expect(container.firstElementChild).toHaveClass('overflow-x-auto');
+
+    for (const tab of tabs) {
+      expect(screen.getByRole('button', { name: tab.label })).toHaveClass(
+        'flex-1',
+        'min-w-max',
+        'whitespace-nowrap',
+        'py-2',
+        'text-sm',
+        'rounded-lg',
+      );
+    }
+  });
+
+  it('keeps a long tab label on a single line', () => {
+    render(
+      <TabBar
+        tabs={[{ key: 'recent', label: 'San pham da mua gan day' }]}
+        activeTab="recent"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'San pham da mua gan day' })).toHaveClass(
+      'whitespace-nowrap',
+    );
   });
 });

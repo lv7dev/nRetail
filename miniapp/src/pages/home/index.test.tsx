@@ -1,7 +1,15 @@
 import { act, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { cloneElement, isValidElement, type ReactNode, type ReactElement } from 'react';
+import {
+  cloneElement,
+  createContext,
+  isValidElement,
+  useContext,
+  useState,
+  type ReactNode,
+  type ReactElement,
+} from 'react';
 import { useCartStore } from '@/store/useCartStore';
 
 vi.mock('react-i18next', () => ({
@@ -43,10 +51,6 @@ vi.mock('./BrandSection', () => ({
 
 vi.mock('./ProductSection', () => ({
   default: () => <div data-testid="product-section" />,
-}));
-
-vi.mock('./TabbedProductSection', () => ({
-  default: () => <div data-testid="tabbed-product-section" />,
 }));
 
 const refetch = vi.fn();
@@ -106,6 +110,98 @@ vi.mock('@/components/shared', () => ({
       </div>
     );
   },
+  TabbedView: (() => {
+    interface TabContextValue {
+      activeTab: string;
+      onTabChange: (key: string) => void;
+      tabs: { key: string; label: string }[];
+    }
+
+    const TabContext = createContext<TabContextValue | null>(null);
+
+    const Root = ({
+      children,
+      tabs = [],
+      defaultTab,
+      activeTab,
+      onTabChange,
+    }: {
+      children?: ReactNode;
+      tabs?: { key: string; label: string }[];
+      defaultTab?: string;
+      activeTab?: string;
+      onTabChange?: (key: string) => void;
+    }) => {
+      const [internalActiveTab, setInternalActiveTab] = useState(defaultTab ?? tabs[0]?.key ?? '');
+      const currentActiveTab = activeTab ?? internalActiveTab;
+
+      return (
+        <TabContext.Provider
+          value={{
+            activeTab: currentActiveTab,
+            tabs,
+            onTabChange: (key: string) => {
+              if (activeTab === undefined) {
+                setInternalActiveTab(key);
+              }
+              onTabChange?.(key);
+            },
+          }}
+        >
+          {children}
+        </TabContext.Provider>
+      );
+    };
+
+    const TabBar = ({ className }: { className?: string }) => {
+      const context = useContext(TabContext);
+      if (!context) return null;
+
+      return (
+        <div data-testid="tabbed-view-tab-bar" className={className}>
+          {context.tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={context.activeTab === tab.key ? 'bg-primary' : 'border'}
+              onClick={() => context.onTabChange(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      );
+    };
+
+    const Panels = ({
+      children,
+      mode,
+      outerScrollRef,
+    }: {
+      children?: ReactNode;
+      mode: 'self' | 'outer';
+      outerScrollRef?: { current: HTMLDivElement | null };
+    }) => (
+      <div
+        data-testid="tabbed-view-panels"
+        data-mode={mode}
+        data-has-outer-scroll-ref={outerScrollRef ? 'true' : 'false'}
+      >
+        {children}
+      </div>
+    );
+
+    const Panel = ({ tabKey, children }: { tabKey: string; children?: ReactNode }) => {
+      const context = useContext(TabContext);
+      if (!context) return null;
+
+      return (
+        <div style={context.activeTab === tabKey ? undefined : { display: 'none' }}>{children}</div>
+      );
+    };
+
+    return Object.assign(Root, { TabBar, Panels, Panel });
+  })(),
 }));
 
 import HomePage from './index';
@@ -191,9 +287,34 @@ describe('HomePage', () => {
     expect(screen.getAllByTestId('product-section').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders the tabbed product section', () => {
+  it('renders the home products section with TabbedView in outer mode', () => {
     renderPage();
-    expect(screen.getByTestId('tabbed-product-section')).toBeInTheDocument();
+
+    expect(screen.getByTestId('tabbed-view-panels')).toHaveAttribute('data-mode', 'outer');
+    expect(screen.getByTestId('tabbed-view-panels')).toHaveAttribute(
+      'data-has-outer-scroll-ref',
+      'true',
+    );
+  });
+
+  it('renders a sticky tab bar for the products section', () => {
+    renderPage();
+
+    expect(screen.getByTestId('tabbed-view-tab-bar')).toHaveClass('sticky', 'top-0');
+  });
+
+  it('switches between bought and viewed tabs', async () => {
+    renderPage();
+
+    const boughtTab = screen.getByRole('button', { name: 'products.boughtProducts' });
+    const viewedTab = screen.getByRole('button', { name: 'products.viewedProducts' });
+
+    expect(boughtTab).toHaveClass('bg-primary');
+    expect(viewedTab).toHaveClass('border');
+
+    await act(() => viewedTab.click());
+
+    expect(viewedTab).toHaveClass('bg-primary');
   });
 
   it('renders section headers with i18n keys', () => {

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/ui';
 
@@ -101,7 +101,7 @@ export function ScrollablePage({
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshPending, setIsRefreshPending] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (scrollContainerRef) {
       scrollContainerRef.current = internalRef.current;
     }

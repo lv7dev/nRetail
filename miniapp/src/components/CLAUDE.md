@@ -50,6 +50,37 @@ All components are re-exported from `src/components/ui/index.ts`.
 
 Always wire `isPending` from a TanStack Query mutation to the submit button. Never manage submit loading state with `useState`.
 
+## TabBar
+
+Generic horizontally-scrollable tab row. Used by `TabbedView.TabBar` but also consumable standalone.
+
+```tsx
+<TabBar
+  tabs={[{ key: 'a', label: 'Tab A' }, { key: 'b', label: 'Tab B' }]}
+  activeTab="a"
+  onChange={(key) => setActive(key)}
+  className="sticky top-0 z-10 bg-surface"
+/>
+```
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `tabs` | `Tab[]` | `{ key: string, label: string }[]` — tab definitions |
+| `activeTab` | `string` | Key of the currently active tab |
+| `onChange` | `(key: string) => void` | Called when a tab is clicked |
+| `className` | `string` | Forwarded to the root wrapper via `cn()` |
+
+**Layout:** `flex gap-3 overflow-x-auto`. Each tab is `flex-1 min-w-max whitespace-nowrap` so tabs share space evenly but never wrap. Active tab: `bg-primary text-content-inverse`. Inactive: `border border-border text-content-muted`.
+
+**Accessibility:** Each tab renders as `<button type="button" aria-pressed={isActive}>`.
+
+**`Tab` type** is exported from `@/components/ui` for use in page-level state:
+```ts
+import type { Tab } from '@/components/ui';
+```
+
 ## Testing Rules
 
 - Tests are co-located as `<ComponentName>.test.tsx` in the same folder

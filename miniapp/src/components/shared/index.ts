@@ -4,4 +4,5 @@ export * from './LanguageSwitcher';
 export * from './OutletGuard';
 export * from './ProtectedRoute';
 export * from './ScrollablePage';
+export * from './TabbedView';
 export * from './ThemeSwitcher';
