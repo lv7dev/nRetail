@@ -1,21 +1,4 @@
-## ADDED Requirements
-
-### Requirement: Outlet picker is required before accessing app features
-The app SHALL require an outlet to be selected before rendering any protected app routes. An `OutletGuard` component SHALL sit between `ProtectedRoute` and `AppLayout` in the route tree. If no outlet is selected, the user is redirected to `/outlets`.
-
-#### Scenario: Authenticated user with no selected outlet is redirected
-- **WHEN** an authenticated user navigates to `/` with no outlet in `useOutletStore`
-- **THEN** the app redirects to `/outlets`
-
-#### Scenario: Authenticated user with selected outlet accesses the app
-- **WHEN** an authenticated user navigates to `/` with an outlet in `useOutletStore`
-- **THEN** the app renders the requested page normally
-
-#### Scenario: Unauthenticated user is not shown the outlet picker
-- **WHEN** an unauthenticated user navigates to `/outlets`
-- **THEN** `ProtectedRoute` redirects them to `/login` before `OutletListPage` renders
-
----
+## MODIFIED Requirements
 
 ### Requirement: Outlet list page shows the user's assigned outlets
 `OutletListPage` at `/outlets` SHALL fetch the user's connected outlets via `outletService.getOutlets({ connected: true })` and display them in the Connected tab of a `TabbedView`. Each outlet SHALL be rendered as an `OutletItem`. Tapping an outlet selects it via `useOutletStore.setSelectedOutlet` and navigates to `/`.
@@ -74,20 +57,3 @@ If `outletService.getOutlets({ connected: true })` returns an empty list **and**
 #### Scenario: Back arrow navigates to previous page
 - **WHEN** the user taps the back arrow on `/outlets`
 - **THEN** `navigate(-1)` is called, returning them to the previous route
-
----
-
-### Requirement: Selected outlet persists across app restarts
-The selected outlet SHALL be stored in `localStorage` via Zustand `persist` middleware so that it survives page reloads and app restarts.
-
-#### Scenario: Selected outlet survives page reload
-- **WHEN** the user selects an outlet and then reloads the app
-- **THEN** the previously selected outlet is still in `useOutletStore` and `OutletGuard` lets them through
-
-#### Scenario: Selected outlet is cleared on logout
-- **WHEN** the user logs out (via any logout action that calls `clearAuth()`)
-- **THEN** `useOutletStore.selectedOutlet` is set to `null` and the persisted value is removed from `localStorage`
-
-#### Scenario: User must re-select after logout and re-login
-- **WHEN** the user logs out and logs back in
-- **THEN** no outlet is pre-selected and the user is redirected to `/outlets`

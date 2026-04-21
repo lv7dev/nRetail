@@ -62,11 +62,13 @@ interface Outlet {
   id: string;
   name: string;
   address: string | null;
-  role: 'OWNER' | 'MANAGER' | 'STAFF'; // the authenticated user's role in this outlet
+  role: 'OWNER' | 'MANAGER' | 'STAFF' | null; // null when outlet is not yet connected
+  code?: string | null;     // e.g. "CU000014603"
+  imageUrl?: string | null; // outlet avatar/thumbnail URL
 }
 ```
 
-`role` here is the caller's membership role in this outlet — not the platform-level `User.role`. It comes from the `UserOutlet` join table on the backend.
+`role` is the caller's membership role in this outlet — not the platform-level `User.role`. It is `null` for outlets the user has not yet connected to (returned by `GET /outlets?connected=false`). It comes from the `UserOutlet` join table on the backend.
 
 ---
 

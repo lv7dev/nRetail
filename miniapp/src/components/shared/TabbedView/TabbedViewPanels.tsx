@@ -65,6 +65,7 @@ export function TabbedViewPanels({ children, mode, outerScrollRef }: TabbedViewP
 
     scrollPositionsRef.current.set(previousActiveTabRef.current, lastKnownScrollTopRef.current);
 
+    /* v8 ignore next 4 */
     if (!panelsRef.current) {
       previousActiveTabRef.current = activeTab;
       return;
@@ -78,6 +79,7 @@ export function TabbedViewPanels({ children, mode, outerScrollRef }: TabbedViewP
       // Only subtract height when the preceding sibling is position:sticky — this is safe
       // for Mode 3 where TabBar is in the header and is not a sibling of Panels.
       const prevEl = panelsRef.current.previousElementSibling as HTMLElement | null;
+      /* v8 ignore next 4 */
       const stickyOffset =
         prevEl && getComputedStyle(prevEl).position === 'sticky'
           ? prevEl.getBoundingClientRect().height

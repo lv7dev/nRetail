@@ -2,6 +2,8 @@
 // Do NOT move '@/i18n' above '@/zaloBootstrap'.
 import '@/zaloBootstrap';
 import '@/i18n';
+// CSS reset (normalize browser defaults before any framework styles)
+import '@/css/reset.css';
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
 // Tailwind stylesheet
