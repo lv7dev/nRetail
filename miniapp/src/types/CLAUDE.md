@@ -8,7 +8,7 @@ Shared TypeScript interfaces and type aliases. No logic, no imports from other `
 | ------------ | -------------------------------------------------------- | ------------------------------------------------- |
 | `auth.ts`    | `User`, `TokenPair`, `AuthResponse`, `OtpVerifyResponse` | `useAuthStore`, `useAuth` hooks, `authService`    |
 | `cart.ts`    | `CartItem`                                               | `useCartStore`, cart-related pages                |
-| `outlet.ts`  | `Outlet`                                                 | `useOutletStore`, `outletService`, `OutletGuard`, `OutletListPage` |
+| `outlet.ts`  | `Outlet`, `OutletTabKey`                                 | `useOutletStore`, `outletService`, `useOutlets`, `OutletGuard`, `OutletListPage` |
 
 ---
 
@@ -66,9 +66,13 @@ interface Outlet {
   code?: string | null;     // e.g. "CU000014603"
   imageUrl?: string | null; // outlet avatar/thumbnail URL
 }
+
+type OutletTabKey = 'connected' | 'not-connected';
 ```
 
 `role` is the caller's membership role in this outlet — not the platform-level `User.role`. It is `null` for outlets the user has not yet connected to (returned by `GET /outlets?connected=false`). It comes from the `UserOutlet` join table on the backend.
+
+`OutletTabKey` lives here (not in the page) because both `useOutlets` and `OutletListPage` reference it — defining it in either would create an awkward dependency direction.
 
 ---
 

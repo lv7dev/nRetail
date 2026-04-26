@@ -18,51 +18,62 @@ Outlet picker — shown after login before any app features are accessible. Prot
 
 ```
 ┌─────────────────────────────────────┐
-│  bg-primary header (pt-safe)        │
+│  CollapsibleHeader / bg-primary     │
 │  ← (back arrow — conditional)       │
 │  Title (centered)                   │
-│  Search input                       │
+│  Connected | Not connected TabBar   │
 ├─────────────────────────────────────┤
-│  rounded-t-3xl bg-background card   │
-│  ┌─────────────────────────────┐    │
-│  │  TabbedView (mode="self")   │    │
-│  │  Connected | Not-connected  │    │
-│  │  (pill TabBar in px-4 wrap) │    │
-│  │  Panels — vertically scroll │    │
-│  └─────────────────────────────┘    │
+│  rounded-t-3xl bg-background zone   │
+│  Search input                       │
+│  TabbedView.Panels (mode="self")    │
+│  Active panel scrolls vertically    │
 └─────────────────────────────────────┘
 ```
 
 ### TabbedView usage
 
-Uses `TabbedView` with **`mode="self"`** (self-contained scroll). The `TabBar` lives inside a `px-4` wrapper beneath the header. Each `Panel` handles its own overflow; the header remains fixed above.
+Uses `TabbedView` Mode 3: the `TabbedView` root wraps the whole page, `TabbedView.TabBar` renders inside `CollapsibleHeader`, and `TabbedView.Panels` stays in **`mode="self"`** inside the white content zone. Each `Panel` handles its own overflow while the header stays fixed above.
 
 ```tsx
 <TabbedView tabs={...} activeTab={activeTab} onTabChange={...}>
-  <div className="px-4">
-    <TabbedView.TabBar className="rounded-2xl bg-surface-muted p-1 dark:bg-surface-dark-muted" />
+  <CollapsibleHeader topBar={<AppHeader title={t('outlets.selectOutlet')} onBack={canGoBack ? () => navigate(-1) : undefined} />}>
+    <TabbedView.TabBar variant="on-primary" />
+  </CollapsibleHeader>
+
+  <div className="rounded-t-3xl bg-background">
+    <Input ... />
+    <TabbedView.Panels mode="self">
+      <TabbedView.Panel tabKey="connected" onLoadMore={...} hasMore={...} isLoadingMore={...}>
+        ...
+      </TabbedView.Panel>
+      <TabbedView.Panel tabKey="not-connected" ...>
+        ...
+      </TabbedView.Panel>
+    </TabbedView.Panels>
   </div>
-  <TabbedView.Panels mode="self">
-    <TabbedView.Panel tabKey="connected" onLoadMore={...} hasMore={...} isLoadingMore={...}>
-      ...
-    </TabbedView.Panel>
-    <TabbedView.Panel tabKey="not-connected" ...>
-      ...
-    </TabbedView.Panel>
-  </TabbedView.Panels>
 </TabbedView>
 ```
 
 ### Data fetching
 
-Both tabs use `useInfiniteQuery` with cursor-based pagination. The query is only `enabled` when its tab is active to avoid unnecessary requests.
+All server state comes from `useOutlets` (`src/hooks/useOutlets.ts`). The page owns only UI state: `activeTab`, `searchTerm`, and the debounced copy via `useDebounce`.
 
 ```ts
-queryKey: ['outlets', { connected: true, q: debouncedSearchTerm }]
-// Changing q resets pagination automatically (new key = new query)
+const [searchTerm, setSearchTerm] = useState('');
+const debouncedSearchTerm = useDebounce(searchTerm.trim(), 300);
+const { connectedQuery, connectedOutlets, notConnectedQuery, notConnectedOutlets,
+        hasSearch, handleMembershipAction } = useOutlets({ activeTab, searchTerm: debouncedSearchTerm });
 ```
 
-Search is debounced (300 ms) using `useEffect` + `window.setTimeout`. The debounced term goes into both query keys.
+`useOutlets` runs two `useInfiniteQuery` calls with cursor-based pagination. Each query is only `enabled` when its tab is active. Query key convention:
+
+```ts
+['outlets', { connected: boolean, q: string | undefined }]
+// Changing q resets pagination automatically (new key = new query)
+// Empty string → q: undefined to avoid cache fragmentation
+```
+
+See `src/hooks/CLAUDE.md` for the full `useOutlets` API and mutation side effects.
 
 ### Connected tab logic
 
@@ -94,7 +105,7 @@ const canGoBack = location.key !== 'default';
 // Any other key = user navigated here from another route
 ```
 
-When `canGoBack` is true, a `<button aria-label={t('common:button.back')}>` appears top-left in the header and calls `navigate(-1)`. This handles the home → `/outlets` re-selection flow.
+When `canGoBack` is true, `AppHeader` renders a back button (`aria-label="back"`) and calls `navigate(-1)` via the `onBack` prop. This handles the home → `/outlets` re-selection flow.
 
 ### Outlet selection
 
@@ -110,7 +121,8 @@ navigate('/', { replace: true });
 
 Uses `useTranslation(['outlets', 'common'])` (array form for multiple namespaces). Keys:
 - `outlets.*` — all page-specific strings
-- `common:button.back` — back arrow aria-label
+
+The back button aria-label is `"back"` (hardcoded inside `AppHeader`) — no i18n key needed.
 
 ## OutletItem
 
@@ -181,7 +193,7 @@ function renderPage() {
 }
 ```
 
-Back arrow assertions use `aria-label` via `'common:button.back'` (colon namespace separator, not dot — matches what `t('common:button.back')` returns when mocked).
+Back arrow assertions use `aria-label="back"` — `AppHeader` hardcodes this label, so `getByRole('button', { name: 'back' })` finds it regardless of i18n mock.
 
 ### Integration test patterns
 

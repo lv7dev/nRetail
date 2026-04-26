@@ -1,6 +1,70 @@
 # Hooks
 
-Custom React hooks live in `src/hooks/`. They are the only place where TanStack Query mutations and queries are created. Pages and components call hooks — never `authService` or `apiClient` directly.
+Custom React hooks live in `src/hooks/`. They are the only place where TanStack Query mutations and queries are created. Pages and components call hooks — never a service module or `apiClient` directly.
+
+## useDebounce.ts — Generic debounce
+
+```ts
+import { useDebounce } from '@/hooks/useDebounce';
+
+const debouncedValue = useDebounce(rawValue, 300); // delay in ms
+```
+
+Returns a value that only updates after the input has been stable for `delay` ms. The caller owns the raw state — the hook only returns the delayed copy. Works with any type `T` (string, number, object).
+
+**Use whenever** a user-input value drives a query key or an expensive side effect and should not fire on every keystroke.
+
+---
+
+## useOutlets.ts — Outlets domain hook
+
+All TanStack Query logic for the outlets domain lives here. Pages must not call `outletService` directly.
+
+### API
+
+```ts
+const {
+  connectedQuery,       // UseInfiniteQueryResult for connected outlets
+  notConnectedQuery,    // UseInfiniteQueryResult for not-connected outlets
+  connectedOutlets,     // Outlet[] — flattened from all loaded pages
+  notConnectedOutlets,  // Outlet[] — flattened from all loaded pages
+  hasSearch,            // boolean — true when searchTerm.length > 0
+  handleMembershipAction, // (outletId: string, action: UpdateMembershipAction) => void
+} = useOutlets({ activeTab, searchTerm });
+```
+
+| Param | Type | Notes |
+|---|---|---|
+| `activeTab` | `OutletTabKey` | Controls which query is `enabled`; import from `@/types/outlet` |
+| `searchTerm` | `string` | Pass already-debounced value; empty string → `q: undefined` in query key |
+
+### Query key convention
+
+```ts
+['outlets', { connected: boolean, q: string | undefined }]
+```
+
+Empty search maps to `q: undefined` (not `q: ''`) to avoid cache fragmentation.
+
+### Mutation side effects
+
+| Action | Cache invalidation |
+|---|---|
+| `confirm` | Both `connected: true` and `connected: false` query groups |
+| `reject` | Only `connected: false` query group |
+
+### Usage in OutletListPage
+
+```ts
+const [searchTerm, setSearchTerm] = useState('');
+const debouncedSearchTerm = useDebounce(searchTerm.trim(), 300);
+const { connectedQuery, connectedOutlets, ... } = useOutlets({
+  activeTab,
+  searchTerm: debouncedSearchTerm,
+});
+```
+
+---
 
 ## useAuth.ts — Auth Hook Catalogue
 
@@ -78,7 +142,7 @@ export function useCreateProduct() {
 - One hook file per domain
 - `queryKey` arrays must be consistent across the domain — define them as constants if used in multiple hooks
 - Side effects (cache invalidation, navigation, token storage) belong in `onSuccess` / `onSettled` — never in the service layer
-- Never call `authService.*` or `apiClient.*` directly in a component — always go through a hook
+- Never call any service module (`authService.*`, `outletService.*`) or `apiClient.*` directly in a component — always go through a hook
 
 ## Testing Pages That Use Hooks
 

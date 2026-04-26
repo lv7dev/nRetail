@@ -1,20 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { TabbedView } from '@/components/shared';
-import { Button, Icon, Input } from '@/components/ui';
-import { outletService } from '@/services/outletService';
+import { CollapsibleHeader, TabbedView } from '@/components/shared';
+import { AppHeader, Button, Input } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletStore } from '@/store/useOutletStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { Outlet } from '@/types/outlet';
+import type { OutletTabKey } from '@/types/outlet';
 import { OutletItem } from './OutletItem';
-
-type OutletTabKey = 'connected' | 'not-connected';
-
-function flattenPages(pages: { data: Outlet[] }[] | undefined) {
-  return pages?.flatMap((page) => page.data) ?? [];
-}
+import waveHeader from '@/static/wave-header.svg';
 
 export default function OutletListPage() {
   const { t } = useTranslation(['outlets', 'common']);
@@ -25,50 +20,16 @@ export default function OutletListPage() {
   const { clearAuth } = useAuthStore();
   const [activeTab, setActiveTab] = useState<OutletTabKey>('connected');
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm.trim(), 300);
   const hasAutoForwardedRef = useRef(false);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [searchTerm]);
-
-  const connectedQuery = useInfiniteQuery({
-    queryKey: ['outlets', { connected: true, q: debouncedSearchTerm }],
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) =>
-      outletService.getOutlets({
-        connected: true,
-        q: debouncedSearchTerm || undefined,
-        cursor: pageParam,
-      }),
-    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
-    enabled: activeTab === 'connected',
-    retry: false,
-  });
-
-  const notConnectedQuery = useInfiniteQuery({
-    queryKey: ['outlets', { connected: false, q: debouncedSearchTerm }],
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) =>
-      outletService.getOutlets({
-        connected: false,
-        q: debouncedSearchTerm || undefined,
-        cursor: pageParam,
-      }),
-    getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
-    enabled: activeTab === 'not-connected',
-    retry: false,
-  });
-
-  const connectedOutlets = flattenPages(connectedQuery.data?.pages);
-  const notConnectedOutlets = flattenPages(notConnectedQuery.data?.pages);
-  const hasSearch = debouncedSearchTerm.length > 0;
+  const {
+    connectedQuery,
+    notConnectedQuery,
+    connectedOutlets,
+    notConnectedOutlets,
+    hasSearch,
+    handleMembershipAction,
+  } = useOutlets({ activeTab, searchTerm: debouncedSearchTerm });
 
   useEffect(() => {
     if (!connectedQuery.isPending && !hasSearch && connectedOutlets.length === 1) {
@@ -175,7 +136,12 @@ export default function OutletListPage() {
       <ul className="space-y-3 p-4">
         {notConnectedOutlets.map((outlet) => (
           <li key={outlet.id}>
-            <OutletItem outlet={outlet} connected={false} />
+            <OutletItem
+              outlet={outlet}
+              connected={false}
+              onConnect={() => handleMembershipAction(outlet.id, 'confirm')}
+              onReject={() => handleMembershipAction(outlet.id, 'reject')}
+            />
           </li>
         ))}
       </ul>
@@ -183,52 +149,56 @@ export default function OutletListPage() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-primary/10">
-      <div className="bg-primary px-4 pb-5 pt-safe">
-        <div className="relative pt-4">
-          {canGoBack && (
-            <button
-              type="button"
-              aria-label={t('common:button.back')}
-              onClick={() => navigate(-1)}
-              className="absolute left-0 top-4 text-primary-fg"
-            >
-              <Icon name="chevron-left" size={24} />
-            </button>
-          )}
-          <h1 className="text-center text-xl font-bold text-primary-fg">
-            {t('outlets.selectOutlet')}
-          </h1>
-        </div>
-        <div className="mt-4">
-          <Input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={t('outlets.searchPlaceholder')}
-            aria-label={t('outlets.searchPlaceholder')}
-            className="border-0 bg-white"
-          />
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col rounded-t-3xl bg-background pt-4 dark:bg-background-dark">
-        <TabbedView
-          tabs={[
-            { key: 'connected', label: t('outlets.connectedTab') },
-            { key: 'not-connected', label: t('outlets.notConnectedTab') },
-          ]}
-          activeTab={activeTab}
-          onTabChange={(tabKey) => setActiveTab(tabKey as OutletTabKey)}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <TabbedView
+        tabs={[
+          { key: 'connected', label: t('outlets.connectedTab') },
+          { key: 'not-connected', label: t('outlets.notConnectedTab') },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(tabKey) => setActiveTab(tabKey as OutletTabKey)}
+      >
+        <CollapsibleHeader
+          topBar={
+            <AppHeader
+              title={t('outlets.selectOutlet')}
+              onBack={canGoBack ? () => navigate(-1) : undefined}
+            />
+          }
+          decoration={
+            <img
+              src={waveHeader}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-bottom"
+            />
+          }
         >
-          <div className="px-4">
-            <TabbedView.TabBar className="rounded-2xl bg-surface-muted p-1 dark:bg-surface-dark-muted" />
+          <div className="px-4 py-5">
+            <TabbedView.TabBar variant="on-primary" />
+          </div>
+        </CollapsibleHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col bg-background pt-4 dark:bg-background-dark">
+          <div className="px-4 pb-3">
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={t('outlets.searchPlaceholder')}
+              aria-label={t('outlets.searchPlaceholder')}
+              className="border-0 bg-white"
+            />
           </div>
 
           <TabbedView.Panels mode="self">
             <TabbedView.Panel
               tabKey="connected"
               onLoadMore={
-                connectedQuery.hasNextPage ? () => connectedQuery.fetchNextPage() : undefined
+                connectedQuery.hasNextPage
+                  ? () => {
+                      connectedQuery.fetchNextPage();
+                    }
+                  : undefined
               }
               hasMore={!!connectedQuery.hasNextPage}
               isLoadingMore={connectedQuery.isFetchingNextPage}
@@ -239,7 +209,11 @@ export default function OutletListPage() {
             <TabbedView.Panel
               tabKey="not-connected"
               onLoadMore={
-                notConnectedQuery.hasNextPage ? () => notConnectedQuery.fetchNextPage() : undefined
+                notConnectedQuery.hasNextPage
+                  ? () => {
+                      notConnectedQuery.fetchNextPage();
+                    }
+                  : undefined
               }
               hasMore={!!notConnectedQuery.hasNextPage}
               isLoadingMore={notConnectedQuery.isFetchingNextPage}
@@ -247,8 +221,8 @@ export default function OutletListPage() {
               {renderNotConnectedPanel()}
             </TabbedView.Panel>
           </TabbedView.Panels>
-        </TabbedView>
-      </div>
+        </div>
+      </TabbedView>
     </div>
   );
 }
