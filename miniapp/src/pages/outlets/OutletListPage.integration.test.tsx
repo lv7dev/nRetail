@@ -524,8 +524,12 @@ describe('OutletListPage integration', () => {
       expect(screen.getByRole('button', { name: 'outlets.notMyOutlet' })).toBeInTheDocument();
     });
 
-    const initialConnectedRequests = requests.filter((search) => search === '?connected=true').length;
-    const initialNotConnectedRequests = requests.filter((search) => search === '?connected=false').length;
+    const initialConnectedRequests = requests.filter(
+      (search) => search === '?connected=true',
+    ).length;
+    const initialNotConnectedRequests = requests.filter(
+      (search) => search === '?connected=false',
+    ).length;
 
     await user.click(screen.getByRole('button', { name: 'outlets.notMyOutlet' }));
 
@@ -539,7 +543,9 @@ describe('OutletListPage integration', () => {
       );
     });
 
-    expect(requests.filter((search) => search === '?connected=true').length).toBe(initialConnectedRequests);
+    expect(requests.filter((search) => search === '?connected=true').length).toBe(
+      initialConnectedRequests,
+    );
     expect(screen.queryByRole('button', { name: 'outlets.notMyOutlet' })).not.toBeInTheDocument();
   });
 });

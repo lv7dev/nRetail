@@ -45,7 +45,9 @@ function createResponse(data: Outlet[], nextCursor: string | null = null) {
   };
 }
 
-function createWrapper(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+function createWrapper(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children);
 }

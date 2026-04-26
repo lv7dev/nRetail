@@ -233,9 +233,10 @@ describe('Outlets Integration Tests', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const payload = parseData<{ data: OutletListResponseItem[]; meta: { nextCursor: string | null } }>(
-      res,
-    );
+    const payload = parseData<{
+      data: OutletListResponseItem[];
+      meta: { nextCursor: string | null };
+    }>(res);
 
     expect(payload.meta.nextCursor).toBeNull();
     expect(payload.data).toEqual([
@@ -272,9 +273,10 @@ describe('Outlets Integration Tests', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const payload = parseData<{ data: OutletListResponseItem[]; meta: { nextCursor: string | null } }>(
-      res,
-    );
+    const payload = parseData<{
+      data: OutletListResponseItem[];
+      meta: { nextCursor: string | null };
+    }>(res);
 
     expect(payload.meta.nextCursor).toBeNull();
     expect(payload.data).toEqual(

@@ -1,7 +1,4 @@
-import {
-  NotFoundException,
-  UnprocessableEntityException,
-} from '@nestjs/common';
+import { NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { OutletRole, UserOutletStatus } from '@prisma/client';
 import { OutletsService } from '../outlets.service';
 import { OutletsRepository } from '../outlets.repository';
@@ -132,9 +129,9 @@ describe('OutletsService', () => {
     it('throws when membership does not exist', async () => {
       mockOutletsRepository.findMembership.mockResolvedValue(null);
 
-      await expect(service.updateMembership('user-1', 'outlet-1', 'confirm')).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.updateMembership('user-1', 'outlet-1', 'confirm'),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('throws when rejecting a confirmed membership', async () => {
