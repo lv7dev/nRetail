@@ -42,11 +42,13 @@ Zalo Mini App built with React 18 + TypeScript, targeting the Zalo platform (Vie
 │   │   ├── useOutletStore.ts       # Selected outlet, persisted to localStorage (key: outlet-storage)
 │   │   └── useThemeStore.ts        # Theme preference (light/dark/system) with localStorage persistence
 │   ├── hooks/                      # Custom React hooks
-│   │   └── useAuth.ts              # TanStack Query mutations/queries for all auth operations
+│   │   ├── useAuth.ts              # TanStack Query mutations/queries for all auth operations
+│   │   ├── useDebounce.ts          # Generic debounce hook: useDebounce<T>(value, delay) → T
+│   │   └── useOutlets.ts           # Outlets domain hook: infinite queries + membership mutations
 │   ├── services/                   # API / external service calls
 │   │   ├── axios.ts                # Axios instance, interceptors, typed helpers (get/post/put/del)
 │   │   ├── authService.ts          # Auth API calls (typed functions over axios helpers)
-│   │   └── outletService.ts        # Outlet API calls: getMyOutlets() → GET /outlets/mine
+│   │   └── outletService.ts        # Outlet API calls: getOutlets({ connected, q, cursor }) → GET /outlets
 │   ├── types/                      # Shared TypeScript interfaces & types
 │   │   ├── auth.ts                 # User, TokenPair, AuthResponse, OtpVerifyResponse
 │   │   ├── cart.ts                 # CartItem

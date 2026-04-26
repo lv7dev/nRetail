@@ -2,6 +2,8 @@
 // Do NOT move '@/i18n' above '@/zaloBootstrap'.
 import '@/zaloBootstrap';
 import '@/i18n';
+// CSS reset (normalize browser defaults before any framework styles)
+import '@/css/reset.css';
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
 // Tailwind stylesheet
@@ -14,6 +16,7 @@ import { createRoot } from 'react-dom/client';
 
 // React Query
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 // Router
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -96,5 +99,6 @@ root.render(
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
+    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>,
 );

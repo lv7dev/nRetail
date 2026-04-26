@@ -172,13 +172,14 @@ export default function HomePage() {
               title={t('sections.products')}
               onViewAll={() => {}}
               viewAllLabel={t('sections.viewAll')}
+              className="pb-3"
             />
             <TabbedView
               tabs={productTabs}
               activeTab={activeProductTab}
               onTabChange={(key) => setActiveProductTab(key as ProductTab)}
             >
-              <TabbedView.TabBar className="sticky top-0 z-10" />
+              <TabbedView.TabBar className="sticky top-[-1px] z-10 " />
               <TabbedView.Panels mode="outer" outerScrollRef={scrollRef}>
                 <TabbedView.Panel tabKey="bought">
                   <ProductSection products={boughtProducts} />

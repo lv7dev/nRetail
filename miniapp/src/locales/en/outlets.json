@@ -2,8 +2,14 @@
   "loading": "Loading...",
   "outlets": {
     "selectOutlet": "Select Outlet",
-    "noOutlets": "You don't belong to any outlet",
-    "contactAdmin": "Contact an administrator to be added to an outlet",
-    "logout": "Logout"
+    "logout": "Logout",
+    "notMyOutlet": "Not My Outlet",
+    "connect": "Connect",
+    "connectedTab": "Connected",
+    "notConnectedTab": "Not connected",
+    "searchPlaceholder": "Search outlets",
+    "emptyStateTitle": "You don't belong to any outlet",
+    "emptyStateDescription": "Contact an administrator to be added to an outlet",
+    "noResults": "No outlets match your search"
   }
 }

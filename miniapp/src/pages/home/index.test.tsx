@@ -300,7 +300,7 @@ describe('HomePage', () => {
   it('renders a sticky tab bar for the products section', () => {
     renderPage();
 
-    expect(screen.getByTestId('tabbed-view-tab-bar')).toHaveClass('sticky', 'top-0');
+    expect(screen.getByTestId('tabbed-view-tab-bar')).toHaveClass('sticky', 'top-[-1px]', 'z-10');
   });
 
   it('switches between bought and viewed tabs', async () => {

@@ -1,101 +1,228 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { outletService } from '@/services/outletService';
+import { CollapsibleHeader, TabbedView } from '@/components/shared';
+import { AppHeader, Button, Input } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletStore } from '@/store/useOutletStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { Outlet } from '@/types/outlet';
+import type { OutletTabKey } from '@/types/outlet';
+import { OutletItem } from './OutletItem';
+import waveHeader from '@/static/wave-header.svg';
 
 export default function OutletListPage() {
-  const { t } = useTranslation('outlets');
+  const { t } = useTranslation(['outlets', 'common']);
   const navigate = useNavigate();
+  const location = useLocation();
+  const canGoBack = location.key !== 'default';
   const { setSelectedOutlet } = useOutletStore();
   const { clearAuth } = useAuthStore();
-
-  const { data: outlets = [], isLoading } = useQuery({
-    queryKey: ['outlets', 'mine'],
-    queryFn: () => outletService.getMyOutlets(),
-  });
+  const [activeTab, setActiveTab] = useState<OutletTabKey>('connected');
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm.trim(), 300);
+  const hasAutoForwardedRef = useRef(false);
+  const {
+    connectedQuery,
+    notConnectedQuery,
+    connectedOutlets,
+    notConnectedOutlets,
+    hasSearch,
+    handleMembershipAction,
+  } = useOutlets({ activeTab, searchTerm: debouncedSearchTerm });
 
   useEffect(() => {
-    if (!isLoading && outlets.length === 1) {
-      setSelectedOutlet(outlets[0]);
-      navigate('/', { replace: true });
-    }
-  }, [outlets, isLoading, setSelectedOutlet, navigate]);
+    if (!connectedQuery.isPending && !hasSearch && connectedOutlets.length === 1) {
+      if (hasAutoForwardedRef.current) {
+        return;
+      }
 
-  if (isLoading) {
+      hasAutoForwardedRef.current = true;
+      setSelectedOutlet(connectedOutlets[0]);
+      navigate('/', { replace: true });
+      return;
+    }
+
+    hasAutoForwardedRef.current = false;
+  }, [connectedOutlets, connectedQuery.isPending, hasSearch, setSelectedOutlet, navigate]);
+
+  if (!hasSearch && !connectedQuery.isPending && connectedOutlets.length === 1) {
+    return null;
+  }
+
+  const renderLoadingState = () => {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <p className="text-content-muted dark:text-content-dark-muted">{t('loading')}</p>
       </div>
     );
-  }
+  };
 
-  if (outlets.length === 0) {
+  const renderEmptyState = () => {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
         <div className="text-center space-y-2">
           <p className="text-lg font-semibold text-content dark:text-content-dark">
-            {t('outlets.noOutlets')}
+            {t('outlets.emptyStateTitle')}
           </p>
           <p className="text-sm text-content-muted dark:text-content-dark-muted">
-            {t('outlets.contactAdmin')}
+            {t('outlets.emptyStateDescription')}
           </p>
         </div>
-        <button
-          type="button"
+        <Button
           onClick={() => {
             clearAuth();
             navigate('/login', { replace: true });
           }}
-          className="px-6 py-2 rounded-lg border border-destructive text-destructive hover:bg-destructive hover:text-white transition-colors text-sm font-medium"
+          variant="destructive"
         >
           {t('outlets.logout')}
-        </button>
+        </Button>
       </div>
     );
-  }
+  };
 
-  if (outlets.length === 1) {
-    // auto-navigating via useEffect
-    return null;
-  }
+  const renderNoResults = () => (
+    <div className="flex flex-1 items-center justify-center p-6 text-center">
+      <p className="text-sm text-content-muted dark:text-content-dark-muted">
+        {t('outlets.noResults')}
+      </p>
+    </div>
+  );
+
+  const renderConnectedPanel = () => {
+    if (connectedQuery.isPending) {
+      return renderLoadingState();
+    }
+
+    if (!hasSearch && connectedOutlets.length === 0) {
+      return renderEmptyState();
+    }
+
+    if (connectedOutlets.length === 0) {
+      return renderNoResults();
+    }
+
+    return (
+      <ul className="space-y-3 p-4">
+        {connectedOutlets.map((outlet) => (
+          <li key={outlet.id}>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedOutlet(outlet);
+                navigate('/', { replace: true });
+              }}
+              className="block w-full rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <OutletItem outlet={outlet} connected />
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const renderNotConnectedPanel = () => {
+    if (notConnectedQuery.isPending) {
+      return renderLoadingState();
+    }
+
+    if (notConnectedOutlets.length === 0) {
+      return renderNoResults();
+    }
+
+    return (
+      <ul className="space-y-3 p-4">
+        {notConnectedOutlets.map((outlet) => (
+          <li key={outlet.id}>
+            <OutletItem
+              outlet={outlet}
+              connected={false}
+              onConnect={() => handleMembershipAction(outlet.id, 'confirm')}
+              onReject={() => handleMembershipAction(outlet.id, 'reject')}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   return (
-    <div className="flex flex-1 flex-col p-4 gap-4">
-      <div className="pt-safe">
-        <h1 className="text-xl font-bold text-content dark:text-content-dark text-center mb-6">
-          {t('outlets.selectOutlet')}
-        </h1>
-        <ul className="space-y-3">
-          {outlets.map((outlet: Outlet) => (
-            <li key={outlet.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedOutlet(outlet);
-                  navigate('/', { replace: true });
-                }}
-                className="w-full text-left bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-xl p-4 shadow-sm hover:border-primary hover:shadow-md transition-all group"
-              >
-                <p className="font-semibold text-content dark:text-content-dark group-hover:text-primary">
-                  {outlet.name}
-                </p>
-                {outlet.address && (
-                  <p className="text-sm text-content-muted dark:text-content-dark-muted mt-1">
-                    {outlet.address}
-                  </p>
-                )}
-                <span className="inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  {outlet.role}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <TabbedView
+        tabs={[
+          { key: 'connected', label: t('outlets.connectedTab') },
+          { key: 'not-connected', label: t('outlets.notConnectedTab') },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(tabKey) => setActiveTab(tabKey as OutletTabKey)}
+      >
+        <CollapsibleHeader
+          topBar={
+            <AppHeader
+              title={t('outlets.selectOutlet')}
+              onBack={canGoBack ? () => navigate(-1) : undefined}
+            />
+          }
+          decoration={
+            <img
+              src={waveHeader}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-bottom"
+            />
+          }
+        >
+          <div className="px-4 py-5">
+            <TabbedView.TabBar variant="on-primary" />
+          </div>
+        </CollapsibleHeader>
+
+        <div className="flex min-h-0 flex-1 flex-col bg-background pt-4 dark:bg-background-dark">
+          <div className="px-4 pb-3">
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder={t('outlets.searchPlaceholder')}
+              aria-label={t('outlets.searchPlaceholder')}
+              className="border-0 bg-white"
+            />
+          </div>
+
+          <TabbedView.Panels mode="self">
+            <TabbedView.Panel
+              tabKey="connected"
+              onLoadMore={
+                connectedQuery.hasNextPage
+                  ? () => {
+                      connectedQuery.fetchNextPage();
+                    }
+                  : undefined
+              }
+              hasMore={!!connectedQuery.hasNextPage}
+              isLoadingMore={connectedQuery.isFetchingNextPage}
+            >
+              {renderConnectedPanel()}
+            </TabbedView.Panel>
+
+            <TabbedView.Panel
+              tabKey="not-connected"
+              onLoadMore={
+                notConnectedQuery.hasNextPage
+                  ? () => {
+                      notConnectedQuery.fetchNextPage();
+                    }
+                  : undefined
+              }
+              hasMore={!!notConnectedQuery.hasNextPage}
+              isLoadingMore={notConnectedQuery.isFetchingNextPage}
+            >
+              {renderNotConnectedPanel()}
+            </TabbedView.Panel>
+          </TabbedView.Panels>
+        </div>
+      </TabbedView>
     </div>
   );
 }

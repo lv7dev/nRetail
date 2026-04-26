@@ -10,9 +10,10 @@ export interface TabBarProps {
   activeTab: string;
   onChange: (key: string) => void;
   className?: string;
+  variant?: 'default' | 'on-primary';
 }
 
-export function TabBar({ tabs, activeTab, onChange, className }: TabBarProps) {
+export function TabBar({ tabs, activeTab, onChange, className, variant = 'default' }: TabBarProps) {
   return (
     <div className={cn('flex gap-3 overflow-x-auto', className)}>
       {tabs.map((tab) => {
@@ -25,9 +26,13 @@ export function TabBar({ tabs, activeTab, onChange, className }: TabBarProps) {
             onClick={() => onChange(tab.key)}
             className={cn(
               'flex-1 min-w-max whitespace-nowrap rounded-lg py-2 text-sm',
-              isActive
-                ? 'bg-primary text-content-inverse'
-                : 'border border-border text-content-muted',
+              variant === 'on-primary'
+                ? isActive
+                  ? 'bg-white text-primary'
+                  : 'border border-white/50 bg-transparent text-white/80'
+                : isActive
+                  ? 'bg-primary text-content-inverse'
+                  : 'border border-border text-content-muted',
             )}
           >
             {tab.label}

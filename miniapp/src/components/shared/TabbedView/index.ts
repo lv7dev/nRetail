@@ -8,5 +8,3 @@ export const TabbedView = Object.assign(TabbedViewRoot, {
   Panels: TabbedViewPanels,
   Panel: TabbedViewPanel,
 });
-
-export { TabbedViewPanel } from './TabbedViewPanel';

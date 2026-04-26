@@ -70,9 +70,10 @@ Generic horizontally-scrollable tab row. Used by `TabbedView.TabBar` but also co
 | `tabs` | `Tab[]` | `{ key: string, label: string }[]` — tab definitions |
 | `activeTab` | `string` | Key of the currently active tab |
 | `onChange` | `(key: string) => void` | Called when a tab is clicked |
+| `variant` | `'default' \| 'on-primary'` | Colour scheme. `default` (light surface): active `bg-primary text-content-inverse`, inactive `border border-border text-content-muted`. `on-primary` (red/primary bg): active `bg-white text-primary`, inactive `border border-white/50 text-white/80`. Defaults to `'default'`. |
 | `className` | `string` | Forwarded to the root wrapper via `cn()` |
 
-**Layout:** `flex gap-3 overflow-x-auto`. Each tab is `flex-1 min-w-max whitespace-nowrap` so tabs share space evenly but never wrap. Active tab: `bg-primary text-content-inverse`. Inactive: `border border-border text-content-muted`.
+**Layout:** `flex gap-3 overflow-x-auto`. Each tab is `flex-1 min-w-max whitespace-nowrap` so tabs share space evenly but never wrap. Colours are controlled by `variant` (see above).
 
 **Accessibility:** Each tab renders as `<button type="button" aria-pressed={isActive}>`.
 

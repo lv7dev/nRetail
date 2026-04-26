@@ -38,6 +38,22 @@ describe('TabBar', () => {
     );
   });
 
+  it('applies on-primary variant styles for active and inactive tabs', () => {
+    render(<TabBar tabs={tabs} activeTab="details" onChange={vi.fn()} variant="on-primary" />);
+
+    expect(screen.getByRole('button', { name: 'Details' })).toHaveClass('bg-white', 'text-primary');
+    expect(screen.getByRole('button', { name: 'Overview' })).toHaveClass(
+      'border',
+      'border-white/50',
+      'text-white/80',
+    );
+    expect(screen.getByRole('button', { name: 'Reviews' })).toHaveClass(
+      'border',
+      'border-white/50',
+      'text-white/80',
+    );
+  });
+
   it('calls onChange with the clicked tab key', async () => {
     const onChange = vi.fn();
     render(<TabBar tabs={tabs} activeTab="overview" onChange={onChange} />);

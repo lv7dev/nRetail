@@ -1,0 +1,94 @@
+/* Andy Bell's Modern CSS Reset (2023)
+ * https://andy-bell.co.uk/a-more-modern-css-reset/
+ */
+
+/* Box sizing for all elements */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Prevent font size inflation on mobile */
+html {
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+/* Remove default block-end margin so spacing is explicit */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin-block-end: 0;
+}
+
+/* Remove list styles on role=list elements (accessibility-safe) */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* Core body defaults */
+body {
+  min-height: 100svh;
+  line-height: 1.5;
+}
+
+/* Tighter line heights for headings and interactive elements */
+h1,
+h2,
+h3,
+h4,
+button,
+input,
+label {
+  line-height: 1.1;
+}
+
+/* Balance text wrapping on headings */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+/* Plain links get auto ink-skip and inherit colour */
+a:not([class]) {
+  text-decoration-skip-ink: auto;
+  color: currentColor;
+}
+
+/* Images are block-level and never overflow their container */
+img,
+picture {
+  max-width: 100%;
+  display: block;
+}
+
+/* Form elements inherit the page font */
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Default textarea height when rows attribute is absent */
+textarea:not([rows]) {
+  min-height: 10em;
+}
+
+/* Add scroll margin so anchored elements aren't hidden under sticky headers */
+:target {
+  scroll-margin-block: 5ex;
+}
