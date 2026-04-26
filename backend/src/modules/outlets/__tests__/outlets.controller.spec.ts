@@ -6,6 +6,8 @@ import { OutletsService } from '../outlets.service';
 
 const mockOutletsService = {
   getMyOutlets: jest.fn(),
+  getOutlets: jest.fn(),
+  updateMembership: jest.fn(),
 };
 
 const mockUser = {
@@ -54,6 +56,51 @@ describe('OutletsController', () => {
 
       expect(result).toEqual([]);
       expect(mockOutletsService.getMyOutlets).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('GET /outlets', () => {
+    it('returns filtered outlets for the current user', async () => {
+      const expected = {
+        data: [
+          {
+            id: 'outlet-2',
+            name: 'Pending Outlet',
+            address: null,
+            role: null,
+            membershipStatus: 'PENDING',
+          },
+        ],
+        meta: { nextCursor: null },
+      };
+      mockOutletsService.getOutlets.mockResolvedValue(expected);
+
+      const result = await controller.getOutlets(mockUser as never, false, 'pending', 'cursor-1');
+
+      expect(result).toBe(expected);
+      expect(mockOutletsService.getOutlets).toHaveBeenCalledWith({
+        userId: 'user-1',
+        connected: false,
+        q: 'pending',
+        cursor: 'cursor-1',
+      });
+    });
+  });
+
+  describe('PATCH /outlets/:outletId/membership', () => {
+    it('delegates membership updates to the service', async () => {
+      mockOutletsService.updateMembership.mockResolvedValue({ status: 'CONFIRMED' });
+
+      const result = await controller.updateMembership(mockUser as never, 'outlet-1', {
+        action: 'confirm',
+      });
+
+      expect(result).toEqual({ status: 'CONFIRMED' });
+      expect(mockOutletsService.updateMembership).toHaveBeenCalledWith(
+        'user-1',
+        'outlet-1',
+        'confirm',
+      );
     });
   });
 });

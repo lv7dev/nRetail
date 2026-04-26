@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Authenticated user can retrieve their outlet memberships
 The system SHALL expose `GET /outlets/mine` protected by `JwtAuthGuard`. It SHALL return only outlets where the authenticated user's `UserOutlet.status = CONFIRMED`, including the user's role in each outlet.
@@ -53,6 +53,8 @@ The system SHALL expose `GET /outlets` accepting query parameters `connected` (b
 - **THEN** the system returns `401 Unauthorized`
 
 ---
+
+## ADDED Requirements
 
 ### Requirement: Not-connected outlet response includes membershipStatus
 Each item in the `GET /outlets?connected=false` response SHALL include a `membershipStatus` field indicating whether the membership is `PENDING` or `REJECTED`. This allows the frontend to render the correct UI state without a separate request.

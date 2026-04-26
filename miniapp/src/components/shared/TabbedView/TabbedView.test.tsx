@@ -115,6 +115,20 @@ describe('TabbedView', () => {
     expect(container.querySelector('.sticky')).toHaveClass('sticky', 'top-0', 'bg-surface');
   });
 
+  it('forwards variant from TabbedView.TabBar to TabBar', () => {
+    render(
+      <TabbedView tabs={tabs} defaultTab="bought">
+        <TabbedView.TabBar variant="on-primary" />
+      </TabbedView>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Bought' })).toHaveClass('bg-white', 'text-primary');
+    expect(screen.getByRole('button', { name: 'Viewed' })).toHaveClass(
+      'bg-transparent',
+      'text-white/80',
+    );
+  });
+
   it('keeps all panels mounted and hides inactive panels with display none', async () => {
     const user = userEvent.setup();
 

@@ -68,11 +68,29 @@ describe('OutletItem', () => {
     expect(screen.queryByRole('button', { name: 'outlets.connect' })).not.toBeInTheDocument();
   });
 
-  it('renders informational label and connect button for not-connected outlets', () => {
-    render(<OutletItem outlet={notConnectedOutlet} connected={false} />);
+  it('renders outlined reject button and connect button for pending outlets', () => {
+    render(
+      <OutletItem
+        outlet={{ ...notConnectedOutlet, membershipStatus: 'PENDING' }}
+        connected={false}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'outlets.notMyOutlet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'outlets.connect' })).toBeInTheDocument();
+  });
+
+  it('renders informational label and connect button only for rejected outlets', () => {
+    render(
+      <OutletItem
+        outlet={{ ...notConnectedOutlet, membershipStatus: 'REJECTED' }}
+        connected={false}
+      />,
+    );
 
     expect(screen.getByText('outlets.notMyOutlet')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'outlets.connect' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'outlets.notMyOutlet' })).not.toBeInTheDocument();
   });
 
   it('stops click propagation when connect button is clicked', async () => {
@@ -81,12 +99,36 @@ describe('OutletItem', () => {
 
     render(
       <div role="button" onClick={parentClick}>
-        <OutletItem outlet={notConnectedOutlet} connected={false} />
+        <OutletItem
+          outlet={{ ...notConnectedOutlet, membershipStatus: 'PENDING' }}
+          connected={false}
+        />
       </div>,
     );
 
     await user.click(screen.getByRole('button', { name: 'outlets.connect' }));
 
+    expect(parentClick).not.toHaveBeenCalled();
+  });
+
+  it('calls onReject without bubbling for pending outlets', async () => {
+    const user = userEvent.setup();
+    const parentClick = vi.fn();
+    const onReject = vi.fn();
+
+    render(
+      <div role="button" onClick={parentClick}>
+        <OutletItem
+          outlet={{ ...notConnectedOutlet, membershipStatus: 'PENDING' }}
+          connected={false}
+          onReject={onReject}
+        />
+      </div>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notMyOutlet' }));
+
+    expect(onReject).toHaveBeenCalledTimes(1);
     expect(parentClick).not.toHaveBeenCalled();
   });
 });

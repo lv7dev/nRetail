@@ -97,3 +97,33 @@ describe('outletService.getOutlets', () => {
     ]);
   });
 });
+
+describe('outletService.updateMembership', () => {
+  it('calls PATCH /outlets/:outletId/membership with the requested action', async () => {
+    const seenRequests: Array<{ pathname: string; body: unknown }> = [];
+
+    server.use(
+      http.patch('*/outlets/:outletId/membership', async ({ request }) => {
+        seenRequests.push({
+          pathname: new URL(request.url).pathname,
+          body: await request.json(),
+        });
+
+        return HttpResponse.json({
+          data: {
+            status: 'CONFIRMED',
+          },
+        });
+      }),
+    );
+
+    await outletService.updateMembership('outlet-3', 'confirm');
+
+    expect(seenRequests).toEqual([
+      {
+        pathname: '/outlets/outlet-3/membership',
+        body: { action: 'confirm' },
+      },
+    ]);
+  });
+});

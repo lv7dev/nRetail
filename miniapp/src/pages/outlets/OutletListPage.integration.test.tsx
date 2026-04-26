@@ -338,4 +338,208 @@ describe('OutletListPage integration', () => {
 
     expect(requests).toContain('?connected=true&cursor=next-1');
   });
+
+  it('confirms a membership and refreshes both outlet queries', async () => {
+    const requests: string[] = [];
+    const patchBodies: unknown[] = [];
+    let membershipStatus: 'PENDING' | 'CONFIRMED' = 'PENDING';
+
+    server.use(
+      http.get('*/outlets', ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url.search);
+
+        if (url.searchParams.get('connected') === 'false') {
+          return HttpResponse.json({
+            data:
+              membershipStatus === 'PENDING'
+                ? [
+                    {
+                      id: 'outlet-3',
+                      name: 'Panda Shop',
+                      code: null,
+                      address: '789 Panda Ave',
+                      imageUrl: null,
+                      role: null,
+                      membershipStatus: 'PENDING',
+                    },
+                  ]
+                : [],
+            meta: {
+              nextCursor: null,
+            },
+          });
+        }
+
+        return HttpResponse.json({
+          data: [
+            {
+              id: 'outlet-1',
+              name: 'Main Store',
+              code: 'CU000014603',
+              address: '123 Main St',
+              imageUrl: 'https://example.com/main-store.jpg',
+              role: 'OWNER',
+            },
+            {
+              id: 'outlet-2',
+              name: 'Branch Store',
+              code: 'CU000014604',
+              address: '456 Branch Ave',
+              imageUrl: null,
+              role: 'MANAGER',
+            },
+            ...(membershipStatus === 'CONFIRMED'
+              ? [
+                  {
+                    id: 'outlet-3',
+                    name: 'Panda Shop',
+                    code: null,
+                    address: '789 Panda Ave',
+                    imageUrl: null,
+                    role: 'MANAGER',
+                  },
+                ]
+              : []),
+          ],
+          meta: {
+            nextCursor: null,
+          },
+        });
+      }),
+      http.patch('*/outlets/:outletId/membership', async ({ request }) => {
+        patchBodies.push(await request.json());
+        membershipStatus = 'CONFIRMED';
+
+        return HttpResponse.json({
+          status: 'CONFIRMED',
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notConnectedTab' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Panda Shop')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.connect' }));
+
+    await waitFor(() => {
+      expect(patchBodies).toEqual([{ action: 'confirm' }]);
+    });
+
+    await waitFor(() => {
+      expect(requests.filter((search) => search === '?connected=false').length).toBeGreaterThan(1);
+      expect(screen.getByText('outlets.noResults')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.connectedTab' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Panda Shop')).toBeInTheDocument();
+    });
+  });
+
+  it('rejects a membership and refreshes the not-connected query', async () => {
+    const requests: string[] = [];
+    const patchBodies: unknown[] = [];
+    let membershipStatus: 'PENDING' | 'REJECTED' = 'PENDING';
+
+    server.use(
+      http.get('*/outlets', ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url.search);
+
+        if (url.searchParams.get('connected') === 'false') {
+          return HttpResponse.json({
+            data: [
+              {
+                id: 'outlet-3',
+                name: 'Panda Shop',
+                code: null,
+                address: '789 Panda Ave',
+                imageUrl: null,
+                role: null,
+                membershipStatus,
+              },
+            ],
+            meta: {
+              nextCursor: null,
+            },
+          });
+        }
+
+        return HttpResponse.json({
+          data: [
+            {
+              id: 'outlet-1',
+              name: 'Main Store',
+              code: 'CU000014603',
+              address: '123 Main St',
+              imageUrl: 'https://example.com/main-store.jpg',
+              role: 'OWNER',
+            },
+            {
+              id: 'outlet-2',
+              name: 'Branch Store',
+              code: 'CU000014604',
+              address: '456 Branch Ave',
+              imageUrl: null,
+              role: 'MANAGER',
+            },
+          ],
+          meta: {
+            nextCursor: null,
+          },
+        });
+      }),
+      http.patch('*/outlets/:outletId/membership', async ({ request }) => {
+        patchBodies.push(await request.json());
+        membershipStatus = 'REJECTED';
+
+        return HttpResponse.json({
+          status: 'REJECTED',
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notConnectedTab' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'outlets.notMyOutlet' })).toBeInTheDocument();
+    });
+
+    const initialConnectedRequests = requests.filter((search) => search === '?connected=true').length;
+    const initialNotConnectedRequests = requests.filter((search) => search === '?connected=false').length;
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notMyOutlet' }));
+
+    await waitFor(() => {
+      expect(patchBodies).toEqual([{ action: 'reject' }]);
+    });
+
+    await waitFor(() => {
+      expect(requests.filter((search) => search === '?connected=false').length).toBeGreaterThan(
+        initialNotConnectedRequests,
+      );
+    });
+
+    expect(requests.filter((search) => search === '?connected=true').length).toBe(initialConnectedRequests);
+    expect(screen.queryByRole('button', { name: 'outlets.notMyOutlet' })).not.toBeInTheDocument();
+  });
 });

@@ -16,6 +16,7 @@ import { createRoot } from 'react-dom/client';
 
 // React Query
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 // Router
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -98,5 +99,6 @@ root.render(
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
+    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>,
 );

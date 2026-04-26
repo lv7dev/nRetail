@@ -1,12 +1,76 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  phone         String         @unique
+  name          String
+  role          Role           @default(CUSTOMER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  password      String?
+  refreshTokens RefreshToken[]
+  memberships   UserOutlet[]
+}
+
+model Outlet {
+  id        String       @id @default(cuid())
+  name      String
+  address   String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  members   UserOutlet[]
+}
+
+model UserOutlet {
+  id        String     @id @default(cuid())
+  userId    String
+  outletId  String
+  role      OutletRole
+  status    UserOutletStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  outlet    Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, outletId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  tokenHash   String   @unique
+  userId      String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  tokenPrefix String   @default("")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenPrefix])
+  @@index([userId, expiresAt])
+}
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  otpHash   String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  purpose   String   @default("register")
+
+  @@index([phone])
+}
+
+model PhoneConfig {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  defaultOtp String   @default("999999")
+  createdAt  DateTime @default(now())
 }
 
 enum Role {
@@ -20,72 +84,8 @@ enum OutletRole {
   STAFF
 }
 
-model User {
-  id        String   @id @default(cuid())
-  phone     String   @unique
-  name      String
-  password  String?
-  role      Role     @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  refreshTokens RefreshToken[]
-  memberships   UserOutlet[]
-}
-
-model Outlet {
-  id        String       @id @default(cuid())
-  name      String
-  address   String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-
-  members UserOutlet[]
-}
-
-model UserOutlet {
-  id        String     @id @default(cuid())
-  userId    String
-  outletId  String
-  role      OutletRole
-  createdAt DateTime   @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, outletId])
-  @@index([userId])
-}
-
-model RefreshToken {
-  id          String   @id @default(cuid())
-  tokenHash   String   @unique
-  tokenPrefix String   @default("")
-  userId      String
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([tokenPrefix])
-  @@index([userId, expiresAt])
-}
-
-model OtpVerification {
-  id        String   @id @default(cuid())
-  phone     String
-  otpHash   String
-  purpose   String   @default("register")
-  expiresAt DateTime
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([phone])
-}
-
-model PhoneConfig {
-  id         String   @id @default(cuid())
-  phone      String   @unique
-  defaultOtp String   @default("999999")
-  createdAt  DateTime @default(now())
+enum UserOutletStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
 }

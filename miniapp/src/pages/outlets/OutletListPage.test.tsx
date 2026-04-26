@@ -75,6 +75,7 @@ const notConnectedOutlet: Outlet = {
   address: '789 Panda Ave',
   imageUrl: null,
   role: null,
+  membershipStatus: 'PENDING',
 };
 
 const mockSetSelectedOutlet = vi.fn();
@@ -268,7 +269,7 @@ describe('OutletListPage', () => {
       expect(screen.getByText('Main Store')).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole('button', { name: 'common:button.back' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'back' })).not.toBeInTheDocument();
   });
 
   it('shows a back arrow when navigated from a previous route', async () => {
@@ -282,7 +283,7 @@ describe('OutletListPage', () => {
       expect(screen.getByText('Main Store')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'common:button.back' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'back' })).toBeInTheDocument();
   });
 
   it('calls navigate(-1) when the back arrow is clicked', async () => {
@@ -297,7 +298,7 @@ describe('OutletListPage', () => {
       expect(screen.getByText('Main Store')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'common:button.back' }));
+    await user.click(screen.getByRole('button', { name: 'back' }));
 
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
@@ -334,5 +335,101 @@ describe('OutletListPage', () => {
 
     expect(screen.queryByText('outlets.emptyStateTitle')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'outlets.logout' })).not.toBeInTheDocument();
+  });
+
+  it('calls confirm membership mutation and refetches both outlet queries', async () => {
+    const invalidateQueriesSpy = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+    vi.mocked(outletService.getOutlets).mockImplementation(async ({ connected }) =>
+      connected
+        ? createResponse([connectedOutlet1, connectedOutlet2])
+        : createResponse([notConnectedOutlet]),
+    );
+    vi.mocked(outletService.updateMembership).mockResolvedValue({ status: 'CONFIRMED' });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notConnectedTab' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Panda Shop')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.connect' }));
+
+    await waitFor(() => {
+      expect(vi.mocked(outletService.updateMembership)).toHaveBeenCalledWith('outlet-3', 'confirm');
+    });
+
+    await waitFor(() => {
+      expect(invalidateQueriesSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('calls reject membership mutation and refetches the not-connected query', async () => {
+    const invalidateQueriesSpy = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+    vi.mocked(outletService.getOutlets).mockImplementation(async ({ connected }) =>
+      connected
+        ? createResponse([connectedOutlet1, connectedOutlet2])
+        : createResponse([notConnectedOutlet]),
+    );
+    vi.mocked(outletService.updateMembership).mockResolvedValue({ status: 'REJECTED' });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notConnectedTab' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'outlets.notMyOutlet' })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'outlets.notMyOutlet' }));
+
+    await waitFor(() => {
+      expect(vi.mocked(outletService.updateMembership)).toHaveBeenCalledWith('outlet-3', 'reject');
+    });
+
+    await waitFor(() => {
+      expect(invalidateQueriesSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('renders the tab bar in the header zone and the search input in the white content zone above the panels', async () => {
+    vi.mocked(outletService.getOutlets).mockImplementation(async ({ connected }) =>
+      connected
+        ? createResponse([connectedOutlet1, connectedOutlet2])
+        : createResponse([notConnectedOutlet]),
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    const headerZone = screen
+      .getByRole('heading', { name: 'outlets.selectOutlet' })
+      .closest('.bg-primary');
+    const connectedTab = screen.getByRole('button', { name: 'outlets.connectedTab' });
+    const searchInput = screen.getByRole('textbox', { name: 'outlets.searchPlaceholder' });
+    const whiteZone = searchInput.closest('.bg-background');
+    const panelsContent = screen.getByText('Main Store');
+
+    expect(headerZone).toContainElement(connectedTab);
+    expect(headerZone).not.toContainElement(searchInput);
+    expect(whiteZone).toContainElement(searchInput);
+    expect(whiteZone).toContainElement(panelsContent);
+    expect(
+      searchInput.compareDocumentPosition(panelsContent) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });

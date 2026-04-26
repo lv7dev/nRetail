@@ -165,16 +165,21 @@ const hasMore = activeTab === 'a' ? aHasMore : bHasMore;
 
 **Mode 3 — Header/page split**
 
-TabBar lives inside `CollapsibleHeader`'s `children` slot; panels are the full-page scroll.
+TabBar lives inside `CollapsibleHeader`'s `children` slot; panels are the full-page scroll. Use `variant="on-primary"` so the tab colours are readable against the red header.
 
 ```tsx
-<CollapsibleHeader topBar={<AppHeader />}>
-  <TabbedView.TabBar />       {/* inside header bg zone */}
-</CollapsibleHeader>
+<TabbedView tabs={tabs} activeTab={activeTab} onTabChange={...}>
+  <CollapsibleHeader topBar={<AppHeader title="..." onBack={...} />}>
+    <TabbedView.TabBar variant="on-primary" />   {/* inside red bg zone */}
+  </CollapsibleHeader>
 
-<TabbedView.Panels mode="self">
-  <TabbedView.Panel tabKey="a" onRefresh={...}><List /></TabbedView.Panel>
-</TabbedView.Panels>
+  <div className="flex min-h-0 flex-1 flex-col rounded-t-3xl bg-background">
+    {/* shared content above panels (e.g. search input) */}
+    <TabbedView.Panels mode="self">
+      <TabbedView.Panel tabKey="a" onLoadMore={...}><List /></TabbedView.Panel>
+    </TabbedView.Panels>
+  </div>
+</TabbedView>
 ```
 
 ### `TabbedView` props
@@ -185,6 +190,13 @@ TabBar lives inside `CollapsibleHeader`'s `children` slot; panels are the full-p
 | `defaultTab` | `string` | `tabs[0].key` | Initial active tab (uncontrolled mode) |
 | `activeTab` | `string` | — | Controlled active tab; use when the parent needs to know the active tab (e.g. to route `onLoadMore`) |
 | `onTabChange` | `(key: string) => void` | — | Called on every tab click; required in controlled mode |
+
+### `TabbedView.TabBar` props
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `variant` | `'default' \| 'on-primary'` | `'default'` | Colour scheme. `default`: active `bg-primary text-content-inverse`, inactive `border border-border text-content-muted`. `on-primary`: active `bg-white text-primary`, inactive `border border-white/50 text-white/80` — for use on a primary/red background. |
+| `className` | `string` | — | Forwarded to the root wrapper via `cn()` |
 
 ### `TabbedView.Panels` props
 
