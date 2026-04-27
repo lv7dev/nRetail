@@ -73,7 +73,7 @@ describe('QuickActionsGrid', () => {
     const user = userEvent.setup();
     render(<QuickActionsGrid />);
     await user.click(screen.getByRole('button', { name: /test outlet/i }));
-    expect(mockNavigate).toHaveBeenCalledWith('/outlets');
+    expect(mockNavigate).toHaveBeenCalledWith('/outlets', { state: { canGoBack: true } });
   });
 
   it('renders a chevron-right icon in the outlet header row', () => {

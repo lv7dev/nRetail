@@ -1,9 +1,8 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppHeader, SectionHeader } from '@/components/ui';
+import { AppHeader, SearchInput, SectionHeader } from '@/components/ui';
 import { CollapsibleHeader, ScrollablePage, TabbedView } from '@/components/shared';
 import waveHeader from '@/static/wave-header.svg';
-import SearchBar from './SearchBar';
 import OutletContextCard from './OutletContextCard';
 import BannerCarousel from './BannerCarousel';
 import PromotionSection from './PromotionSection';
@@ -116,7 +115,9 @@ export default function HomePage() {
         collapsed={collapsed}
         scrollContainerRef={scrollRef}
       >
-        <SearchBar />
+        <div className="px-4 pb-3">
+          <SearchInput readOnly placeholder={t('search.placeholder')} />
+        </div>
       </CollapsibleHeader>
 
       <ScrollablePage

@@ -176,7 +176,16 @@ TabBar lives inside `CollapsibleHeader`'s `children` slot; panels are the full-p
   <div className="flex min-h-0 flex-1 flex-col rounded-t-3xl bg-background">
     {/* shared content above panels (e.g. search input) */}
     <TabbedView.Panels mode="self">
-      <TabbedView.Panel tabKey="a" onLoadMore={...}><List /></TabbedView.Panel>
+      <TabbedView.Panel
+        tabKey="a"
+        onRefresh={aQuery.refetch}
+        isRefreshing={aQuery.isFetching && !aQuery.isFetchingNextPage}
+        onLoadMore={...}
+        hasMore={...}
+        isLoadingMore={...}
+      >
+        <List />
+      </TabbedView.Panel>
     </TabbedView.Panels>
   </div>
 </TabbedView>
@@ -218,8 +227,11 @@ TabBar lives inside `CollapsibleHeader`'s `children` slot; panels are the full-p
 
 ### Key implementation notes
 
+**`mode="self"` applies a flex chain so panels always fill available height**
+`TabbedViewPanels` adds `flex flex-col flex-1 min-h-0` to its wrapper div. Each `TabbedViewPanel` receives the same classes via `cloneElement`. This makes `ScrollablePage`'s `flex-1` take effect regardless of content length — touch and wheel events reach the scroll container even when the list is short. The caller's parent must be a flex column (e.g. `flex min-h-0 flex-1 flex-col`). These classes are NOT applied in `mode="outer"`.
+
 **All panels stay mounted (`display: none` for inactive)**
-Inactive panels receive `style={{ display: 'none' }}` — they are never unmounted. This preserves the scroll container's `scrollTop` natively (browser holds it as long as the element stays in the DOM), giving free zero-code scroll memory.
+Inactive panels receive `style={{ display: 'none' }}` — they are never unmounted. This preserves the scroll container's `scrollTop` natively (browser holds it as long as the element stays in the DOM), giving free zero-code scroll memory. Since inactive panels cannot receive touch or wheel events, `onRefresh` can be passed to all panels unconditionally — only the active tab's panel will ever trigger it.
 
 **Outer mode scroll save/restore**
 `TabbedViewPanels` maintains a `Map<tabKey, number>` of saved scroll positions. On tab switch:

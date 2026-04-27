@@ -25,10 +25,7 @@ vi.mock('@/components/ui', () => ({
       <div data-testid="app-header-right">{right}</div>
     </div>
   ),
-}));
-
-vi.mock('./SearchBar', () => ({
-  default: () => <div data-testid="search-bar" />,
+  SearchInput: () => <div data-testid="search-bar" />,
 }));
 
 vi.mock('./OutletContextCard', () => ({

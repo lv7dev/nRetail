@@ -118,19 +118,7 @@ Never write implementation code before a failing test exists for it.
 
 ### Integration Test Prerequisites
 
-Integration tests start their own Docker Postgres container on **port 5433** (separate from dev DB on 5434). You need Docker running, but do **not** need to manually start any container — the global setup does it.
-
-```bash
-# Start Docker (if not already running), then:
-npm run test:integration
-```
-
-- **Config**: `test/jest-integration.config.ts`
-- **Global setup**: `test/global-setup.ts` — starts `postgres:15-alpine` on port 5433, creates `test_nretail` DB, runs `prisma migrate deploy`
-- **Global teardown**: `test/global-teardown.ts` — truncates all tables (container stays running for fast re-runs)
-- **App helper**: `test/helpers/app.ts` — `createTestApp()` / `closeTestApp()` for full NestJS app bootstrap
-- **Response helpers**: `test/helpers/response.ts` — `parseData<T>(res)` / `parseError(res)` for typed response assertions (never use `res.body.data` directly)
-- **OTP bypass**: Insert a `PhoneConfig` row with `defaultOtp` to bypass real SMS in tests (code `999999` by convention)
+Integration tests start their own Docker Postgres container on **port 5433** (separate from dev DB on 5434). You need Docker running but do **not** need to manually start any container — the global setup does it automatically. See `test/CLAUDE.md` for the full setup, file structure, response helpers, and patterns for writing new integration tests.
 
 ---
 
@@ -257,10 +245,6 @@ Install these as you build each domain. All are NestJS-native or well-tested in 
 | Health checks | `@nestjs/terminus` |
 | Domain events | `@nestjs/event-emitter` |
 
-```bash
-npm i @nestjs/config class-validator class-transformer @nestjs/swagger @nestjs/throttler @nestjs/terminus @nestjs/event-emitter
-```
-
 ### Database & ORM
 
 Use **PostgreSQL** as the primary store and **Prisma v7** for type-safe queries.
@@ -269,12 +253,6 @@ Use **PostgreSQL** as the primary store and **Prisma v7** for type-safe queries.
 |---|---|
 | ORM | `prisma` `@prisma/client` |
 | PostgreSQL adapter (required in Prisma v7) | `@prisma/adapter-pg` `pg` `@types/pg` |
-
-```bash
-npm i prisma @prisma/client @prisma/adapter-pg pg
-npm i -D @types/pg
-npx prisma init
-```
 
 > **Prisma v7 note:** `PrismaClient` must be constructed with either an `adapter` or `accelerateUrl` — an empty `new PrismaClient()` throws. `PrismaService` injects `ConfigService` and passes `new PrismaPg({ connectionString })` as the adapter. The `prisma.config.ts` file is used by the Prisma CLI for migrations, generate, and seed — **always run Prisma CLI commands from the `backend/` directory** so it can find `prisma.config.ts`.
 >
@@ -288,21 +266,12 @@ npx prisma init
 | Password hashing | `bcrypt` `@types/bcrypt` |
 | RBAC / CASL | `@casl/ability` `@casl/nestjs` |
 
-```bash
-npm i @nestjs/jwt @nestjs/passport passport passport-jwt bcrypt @casl/ability @casl/nestjs
-npm i -D @types/bcrypt @types/passport-jwt
-```
-
 ### Caching & Performance
 
 | Purpose | Package(s) |
 |---|---|
 | Redis cache | `@nestjs/cache-manager` `cache-manager` `cache-manager-ioredis-yet` |
 | Redis client | `ioredis` |
-
-```bash
-npm i @nestjs/cache-manager cache-manager ioredis cache-manager-ioredis-yet
-```
 
 ### Background Jobs & Queues
 
@@ -312,10 +281,6 @@ Essential for order processing, notification dispatch, report generation.
 |---|---|
 | Job queues (Redis-backed) | `@nestjs/bullmq` `bullmq` |
 | Scheduled tasks | `@nestjs/schedule` |
-
-```bash
-npm i @nestjs/bullmq bullmq @nestjs/schedule
-```
 
 ### Ecommerce-Specific
 
@@ -329,11 +294,6 @@ npm i @nestjs/bullmq bullmq @nestjs/schedule
 | Barcode / QR | `qrcode` `jsbarcode` |
 | PDF receipts | `pdfkit` |
 
-```bash
-npm i stripe @aws-sdk/client-s3 @aws-sdk/lib-storage multer slugify dinero.js
-npm i -D @types/multer
-```
-
 ### HTTP & Integrations
 
 | Purpose | Package(s) |
@@ -342,22 +302,12 @@ npm i -D @types/multer
 | WebSockets (real-time) | `@nestjs/websockets` `@nestjs/platform-socket.io` `socket.io` |
 | Emails | `@nestjs-modules/mailer` `nodemailer` `handlebars` |
 
-```bash
-npm i @nestjs/axios axios @nestjs/websockets @nestjs/platform-socket.io socket.io
-npm i @nestjs-modules/mailer nodemailer handlebars
-```
-
 ### Observability
 
 | Purpose | Package(s) |
 |---|---|
 | Structured logging | `nestjs-pino` `pino-http` `pino-pretty` |
 | Tracing (OpenTelemetry) | `@opentelemetry/sdk-node` `@opentelemetry/auto-instrumentations-node` |
-
-```bash
-npm i nestjs-pino pino-http
-npm i -D pino-pretty
-```
 
 ---
 

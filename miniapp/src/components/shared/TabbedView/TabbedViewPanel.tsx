@@ -4,6 +4,7 @@ import { useTabbedViewContext } from './TabbedView';
 export interface TabbedViewPanelProps {
   tabKey: string;
   children: ReactNode;
+  className?: string;
   onRefresh?: () => void | Promise<void>;
   onLoadMore?: () => void | Promise<void>;
   hasMore?: boolean;
@@ -11,8 +12,12 @@ export interface TabbedViewPanelProps {
   isLoadingMore?: boolean;
 }
 
-export function TabbedViewPanel({ tabKey, children }: TabbedViewPanelProps) {
+export function TabbedViewPanel({ tabKey, children, className }: TabbedViewPanelProps) {
   const { activeTab } = useTabbedViewContext();
 
-  return <div style={tabKey === activeTab ? undefined : { display: 'none' }}>{children}</div>;
+  return (
+    <div className={className} style={tabKey === activeTab ? undefined : { display: 'none' }}>
+      {children}
+    </div>
+  );
 }

@@ -155,6 +155,25 @@ describe('TabbedView', () => {
     expect(screen.getByLabelText('bought-input')).toHaveValue('kept');
   });
 
+  it('forwards className from TabbedView.Panel to the panel element', () => {
+    render(
+      <TabbedView tabs={tabs} defaultTab="bought">
+        <TabbedView.Panels mode="outer" outerScrollRef={{ current: null }}>
+          <TabbedView.Panel tabKey="bought" className="flex flex-col flex-1 min-h-0">
+            <div>Bought panel</div>
+          </TabbedView.Panel>
+        </TabbedView.Panels>
+      </TabbedView>,
+    );
+
+    expect(screen.getByText('Bought panel').parentElement).toHaveClass(
+      'flex',
+      'flex-col',
+      'flex-1',
+      'min-h-0',
+    );
+  });
+
   it('wraps each panel in ScrollablePage for self mode and forwards scroll props', () => {
     const onRefresh = vi.fn();
     const onLoadMore = vi.fn();
@@ -192,6 +211,33 @@ describe('TabbedView', () => {
     );
   });
 
+  it('applies flex fill classes to the panels wrapper and panel elements in self mode', () => {
+    render(
+      <TabbedView tabs={tabs} defaultTab="bought">
+        <TabbedView.Panels mode="self">
+          <TabbedView.Panel tabKey="bought">
+            <div>Bought panel</div>
+          </TabbedView.Panel>
+          <TabbedView.Panel tabKey="viewed">
+            <div>Viewed panel</div>
+          </TabbedView.Panel>
+        </TabbedView.Panels>
+      </TabbedView>,
+    );
+
+    const activePanel = screen.getByText('Bought panel').parentElement?.parentElement;
+    const panelsWrapper = activePanel?.parentElement;
+
+    expect(panelsWrapper).toHaveClass('flex', 'flex-col', 'flex-1', 'min-h-0');
+    expect(activePanel).toHaveClass('flex', 'flex-col', 'flex-1', 'min-h-0');
+    expect(screen.getByText('Viewed panel').parentElement?.parentElement).toHaveClass(
+      'flex',
+      'flex-col',
+      'flex-1',
+      'min-h-0',
+    );
+  });
+
   it('does not render ScrollablePage wrappers in outer mode', () => {
     render(
       <TabbedView tabs={tabs} defaultTab="bought">
@@ -207,6 +253,27 @@ describe('TabbedView', () => {
     );
 
     expect(screen.queryByTestId('scrollable-page')).not.toBeInTheDocument();
+  });
+
+  it('does not apply self-mode flex classes in outer mode', () => {
+    render(
+      <TabbedView tabs={tabs} defaultTab="bought">
+        <TabbedView.Panels mode="outer" outerScrollRef={{ current: null }}>
+          <TabbedView.Panel tabKey="bought">
+            <div>Bought panel</div>
+          </TabbedView.Panel>
+          <TabbedView.Panel tabKey="viewed">
+            <div>Viewed panel</div>
+          </TabbedView.Panel>
+        </TabbedView.Panels>
+      </TabbedView>,
+    );
+
+    const activePanel = screen.getByText('Bought panel').parentElement;
+    const panelsWrapper = activePanel?.parentElement;
+
+    expect(panelsWrapper).not.toHaveClass('flex', 'flex-col', 'flex-1', 'min-h-0');
+    expect(activePanel).not.toHaveClass('flex', 'flex-col', 'flex-1', 'min-h-0');
   });
 
   it('saves outgoing outer scroll position, restores visited tabs, and scrolls first visits using element rects', async () => {

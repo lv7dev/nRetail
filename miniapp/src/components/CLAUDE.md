@@ -50,6 +50,40 @@ All components are re-exported from `src/components/ui/index.ts`.
 
 Always wire `isPending` from a TanStack Query mutation to the submit button. Never manage submit loading state with `useState`.
 
+## SearchInput
+
+Generic search field — rounded-xl wrapper with a leading magnifying-glass icon and a real `<input>`. Clicking anywhere on the wrapper (including padding/dead space) focuses the input.
+
+```tsx
+<SearchInput
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  onClear={() => setSearchTerm('')}
+  placeholder={t('search.placeholder')}
+  aria-label={t('search.placeholder')}
+/>
+```
+
+**Props:**
+
+| Prop | Type | Description |
+|---|---|---|
+| `value` | `string` | Controlled value |
+| `onChange` | `ChangeEventHandler` | Standard input onChange |
+| `onClear` | `() => void` | Optional — when provided and `value` is non-empty, shows an `xmark` icon button that calls this on click |
+| `placeholder` | `string` | Input placeholder |
+| `readOnly` | `boolean` | Prevents editing (home page placeholder usage) |
+| `className` | `string` | Applied to the outer wrapper `div`, not the `<input>` |
+
+**Behaviours:**
+- Wrapper `onClick` → `inputRef.current?.focus()` — clicking anywhere in the container focuses the input
+- Clear button (`xmark`) appears only when `value` is non-empty AND `onClear` is provided; hidden when `readOnly` (since `onClear` is never passed in that case)
+- `forwardRef` is supported — external ref merges with the internal focus ref
+
+**Home page usage:** rendered with `readOnly` and no `onClear` — purely a visual placeholder until the search feature is implemented.
+
+**Outlet page usage:** rendered with `value`, `onChange`, and `onClear` — fully interactive, drives debounced server-side search.
+
 ## TabBar
 
 Generic horizontally-scrollable tab row. Used by `TabbedView.TabBar` but also consumable standalone.

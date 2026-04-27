@@ -59,7 +59,7 @@ describe('OutletContextCard', () => {
 
     await user.click(screen.getByRole('button', { name: /test outlet/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/outlets');
+    expect(mockNavigate).toHaveBeenCalledWith('/outlets', { state: { canGoBack: true } });
   });
 
   it('navigates to /outlets when the collapsed pill is tapped', async () => {
@@ -68,6 +68,6 @@ describe('OutletContextCard', () => {
 
     await user.click(screen.getByRole('button', { name: /test outlet/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/outlets');
+    expect(mockNavigate).toHaveBeenCalledWith('/outlets', { state: { canGoBack: true } });
   });
 });

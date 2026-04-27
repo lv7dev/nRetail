@@ -1,7 +1,24 @@
 ## ADDED Requirements
 
+### Requirement: Back arrow appears only when navigated from within the app via explicit intent
+`OutletListPage` SHALL show the back arrow only when `location.state?.canGoBack` is truthy. The `OutletGuard` redirect (`<Navigate replace />`) never carries this state, so the back arrow is hidden on first app open. Any in-app navigation that pushes to `/outlets` with intent to allow going back MUST pass `{ state: { canGoBack: true } }`.
+
+#### Scenario: Back arrow hidden on first app open
+- **WHEN** `OutletGuard` redirects to `/outlets` on first boot (no `canGoBack` in router state)
+- **THEN** no back button is rendered in `AppHeader`
+
+#### Scenario: Back arrow visible when navigated from home
+- **WHEN** the user taps the outlet card on the home page and is pushed to `/outlets` with `{ state: { canGoBack: true } }`
+- **THEN** a back button is visible in `AppHeader`
+
+#### Scenario: Back arrow navigates to previous page
+- **WHEN** the user taps the back button on the outlet list page
+- **THEN** the app navigates back (history.go(-1))
+
+---
+
 ### Requirement: OutletListPage layout uses CollapsibleHeader with TabBar in the header zone
-`OutletListPage` SHALL use `CollapsibleHeader` as the top-of-page header. The `topBar` slot SHALL contain the back arrow (when `canGoBack`) and the page title rendered via `AppHeader`. The `children` slot SHALL contain `TabbedView.TabBar` rendered with `variant="on-primary"`. No `card` prop is used. The search `Input` SHALL be rendered in the white content zone (`rounded-t-3xl bg-background`) immediately below `CollapsibleHeader`, outside `TabbedView.Panels`, so it remains visible while the list scrolls.
+`OutletListPage` SHALL use `CollapsibleHeader` as the top-of-page header. The `topBar` slot SHALL contain the back arrow (when `canGoBack`) and the page title rendered via `AppHeader`. The `children` slot SHALL contain `TabbedView.TabBar` rendered with `variant="on-primary"`. No `card` prop is used. The `SearchInput` component SHALL be rendered in the white content zone (`rounded-t-3xl bg-background`) immediately below `CollapsibleHeader`, outside `TabbedView.Panels`, so it remains visible while the list scrolls.
 
 #### Scenario: TabBar appears inside the red header zone
 - **WHEN** `OutletListPage` renders
@@ -9,7 +26,7 @@
 
 #### Scenario: Search bar appears in the white content zone below the header
 - **WHEN** `OutletListPage` renders
-- **THEN** the search `Input` is rendered below `CollapsibleHeader` and above `TabbedView.Panels`, inside the `bg-background` wrapper
+- **THEN** the `SearchInput` is rendered below `CollapsibleHeader` and above `TabbedView.Panels`, inside the `bg-background` wrapper
 
 #### Scenario: Search bar is always visible while the list scrolls
 - **WHEN** the user scrolls the outlet list
@@ -131,3 +148,30 @@ The existing auto-forward (1 outlet) and empty state (0 outlets) logic SHALL rem
 #### Scenario: Auto-forward is suppressed during search
 - **WHEN** the connected query returns exactly 1 result but a search term is active
 - **THEN** the result is shown in the list without auto-navigating
+
+---
+
+### Requirement: Both outlet tabs support pull-to-refresh
+`OutletListPage` SHALL pass `onRefresh` and `isRefreshing` to both `TabbedView.Panel` components. `onRefresh` SHALL call the panel's corresponding TanStack Query `refetch` (`connectedQuery.refetch()` for the connected panel, `notConnectedQuery.refetch()` for the not-connected panel). `isRefreshing` SHALL be `true` when the query is fetching AND not fetching the next page (`isFetching && !isFetchingNextPage`), so the spinner appears during a full refresh but not during incremental load-more.
+
+Since inactive panels are hidden via `display: none`, only the active tab's panel can receive touch or wheel events — "refresh active tab only" is enforced by layout without conditional prop logic.
+
+#### Scenario: Pull-to-refresh triggers connected query refetch
+- **WHEN** the Connected tab is active and the user completes a pull-to-refresh gesture
+- **THEN** `connectedQuery.refetch()` is called and the connected outlet list refreshes from page 1
+
+#### Scenario: Pull-to-refresh triggers not-connected query refetch
+- **WHEN** the Not Connected tab is active and the user completes a pull-to-refresh gesture
+- **THEN** `notConnectedQuery.refetch()` is called and the not-connected outlet list refreshes from page 1
+
+#### Scenario: Refresh spinner shows during a full refresh
+- **WHEN** a pull-to-refresh gesture has been triggered and the query is refetching
+- **THEN** `isRefreshing` is `true` and the pull indicator shows a spinner
+
+#### Scenario: Refresh spinner does not show during load-more
+- **WHEN** the user scrolls to the bottom and a next-page fetch is in progress
+- **THEN** `isRefreshing` is `false` (the refresh spinner is not visible; only the load-more spinner at the bottom is shown)
+
+#### Scenario: Pull-to-refresh works when content is shorter than the viewport
+- **WHEN** a tab has fewer outlets than the visible screen height
+- **THEN** the user can still complete a pull-to-refresh gesture anywhere in the panel area and `onRefresh` is called

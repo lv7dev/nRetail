@@ -116,14 +116,14 @@ function renderPage() {
   );
 }
 
-function renderPageWithHistory() {
+function renderPageWithBackState() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/', '/outlets']} initialIndex={1}>
+      <MemoryRouter initialEntries={[{ pathname: '/outlets', state: { canGoBack: true } }]}>
         <OutletListPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -272,12 +272,26 @@ describe('OutletListPage', () => {
     expect(screen.queryByRole('button', { name: 'back' })).not.toBeInTheDocument();
   });
 
-  it('shows a back arrow when navigated from a previous route', async () => {
+  it('hides the back arrow when router state does not allow going back', async () => {
     vi.mocked(outletService.getOutlets).mockResolvedValue(
       createResponse([connectedOutlet1, connectedOutlet2]),
     );
 
-    renderPageWithHistory();
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Main Store')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: 'back' })).not.toBeInTheDocument();
+  });
+
+  it('shows a back arrow when router state allows going back', async () => {
+    vi.mocked(outletService.getOutlets).mockResolvedValue(
+      createResponse([connectedOutlet1, connectedOutlet2]),
+    );
+
+    renderPageWithBackState();
 
     await waitFor(() => {
       expect(screen.getByText('Main Store')).toBeInTheDocument();
@@ -292,7 +306,7 @@ describe('OutletListPage', () => {
     );
 
     const user = userEvent.setup();
-    renderPageWithHistory();
+    renderPageWithBackState();
 
     await waitFor(() => {
       expect(screen.getByText('Main Store')).toBeInTheDocument();
