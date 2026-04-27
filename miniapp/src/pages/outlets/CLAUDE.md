@@ -41,12 +41,24 @@ Uses `TabbedView` Mode 3: the `TabbedView` root wraps the whole page, `TabbedVie
   </CollapsibleHeader>
 
   <div className="rounded-t-3xl bg-background">
-    <Input ... />
+    <SearchInput value={searchTerm} onChange={...} onClear={() => setSearchTerm('')} placeholder={...} />
     <TabbedView.Panels mode="self">
-      <TabbedView.Panel tabKey="connected" onLoadMore={...} hasMore={...} isLoadingMore={...}>
+      <TabbedView.Panel
+        tabKey="connected"
+        onRefresh={() => connectedQuery.refetch()}
+        isRefreshing={connectedQuery.isFetching && !connectedQuery.isFetchingNextPage}
+        onLoadMore={...}
+        hasMore={...}
+        isLoadingMore={...}
+      >
         ...
       </TabbedView.Panel>
-      <TabbedView.Panel tabKey="not-connected" ...>
+      <TabbedView.Panel
+        tabKey="not-connected"
+        onRefresh={() => notConnectedQuery.refetch()}
+        isRefreshing={notConnectedQuery.isFetching && !notConnectedQuery.isFetchingNextPage}
+        ...
+      >
         ...
       </TabbedView.Panel>
     </TabbedView.Panels>
@@ -64,6 +76,8 @@ const debouncedSearchTerm = useDebounce(searchTerm.trim(), 300);
 const { connectedQuery, connectedOutlets, notConnectedQuery, notConnectedOutlets,
         hasSearch, handleMembershipAction } = useOutlets({ activeTab, searchTerm: debouncedSearchTerm });
 ```
+
+**Pull-to-refresh:** Each panel passes `onRefresh` and `isRefreshing` directly to its `TabbedView.Panel`. Since inactive panels are hidden (`display: none`) they cannot receive touch or wheel events — "refresh active tab only" is enforced by layout, not conditional logic. `isRefreshing` uses `isFetching && !isFetchingNextPage` so the refresh spinner does not appear during load-more scrolling.
 
 `useOutlets` runs two `useInfiniteQuery` calls with cursor-based pagination. Each query is only `enabled` when its tab is active. Query key convention:
 
@@ -100,12 +114,12 @@ No empty state on the not-connected tab — zero results always shows "no result
 ### Back arrow
 
 ```tsx
-const canGoBack = location.key !== 'default';
-// 'default' = first navigation after app boot (no history stack)
-// Any other key = user navigated here from another route
+const canGoBack = !!location.state?.canGoBack;
+// Push navigations to /outlets that should show the back arrow must pass:
+navigate('/outlets', { state: { canGoBack: true } });
 ```
 
-When `canGoBack` is true, `AppHeader` renders a back button (`aria-label="back"`) and calls `navigate(-1)` via the `onBack` prop. This handles the home → `/outlets` re-selection flow.
+When `canGoBack` is true, `AppHeader` renders a back button (`aria-label="back"`) and calls `navigate(-1)` via the `onBack` prop. The first-boot `OutletGuard` redirect does not carry this state, so the picker does not show a dead back arrow.
 
 ### Outlet selection
 
@@ -170,18 +184,18 @@ vi.mock('@/services/outletService', () => ({
   },
 }));
 
-// Render with history stack (back arrow visible)
+// Render with canGoBack state (back arrow visible)
 function renderPageWithHistory() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <MemoryRouter initialEntries={['/', '/outlets']} initialIndex={1}>
+      <MemoryRouter initialEntries={[{ pathname: '/outlets', state: { canGoBack: true } }]}>
         <OutletListPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-// Render without history (back arrow hidden)
+// Render without canGoBack state (back arrow hidden — covers first-boot redirect)
 function renderPage() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

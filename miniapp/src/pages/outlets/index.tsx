@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CollapsibleHeader, TabbedView } from '@/components/shared';
-import { AppHeader, Button, Input } from '@/components/ui';
+import { AppHeader, Button, SearchInput } from '@/components/ui';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useOutlets } from '@/hooks/useOutlets';
 import { useOutletStore } from '@/store/useOutletStore';
@@ -15,7 +15,7 @@ export default function OutletListPage() {
   const { t } = useTranslation(['outlets', 'common']);
   const navigate = useNavigate();
   const location = useLocation();
-  const canGoBack = location.key !== 'default';
+  const canGoBack = !!location.state?.canGoBack;
   const { setSelectedOutlet } = useOutletStore();
   const { clearAuth } = useAuthStore();
   const [activeTab, setActiveTab] = useState<OutletTabKey>('connected');
@@ -180,13 +180,14 @@ export default function OutletListPage() {
         </CollapsibleHeader>
 
         <div className="flex min-h-0 flex-1 flex-col bg-background pt-4 dark:bg-background-dark">
-          <div className="px-4 pb-3">
-            <Input
+          <div className="px-4">
+            <SearchInput
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
+              onClear={() => setSearchTerm('')}
               placeholder={t('outlets.searchPlaceholder')}
               aria-label={t('outlets.searchPlaceholder')}
-              className="border-0 bg-white"
+              className="bg-white"
             />
           </div>
 
@@ -201,6 +202,10 @@ export default function OutletListPage() {
                   : undefined
               }
               hasMore={!!connectedQuery.hasNextPage}
+              onRefresh={async () => {
+                await connectedQuery.refetch();
+              }}
+              isRefreshing={connectedQuery.isFetching && !connectedQuery.isFetchingNextPage}
               isLoadingMore={connectedQuery.isFetchingNextPage}
             >
               {renderConnectedPanel()}
@@ -216,6 +221,10 @@ export default function OutletListPage() {
                   : undefined
               }
               hasMore={!!notConnectedQuery.hasNextPage}
+              onRefresh={async () => {
+                await notConnectedQuery.refetch();
+              }}
+              isRefreshing={notConnectedQuery.isFetching && !notConnectedQuery.isFetchingNextPage}
               isLoadingMore={notConnectedQuery.isFetchingNextPage}
             >
               {renderNotConnectedPanel()}

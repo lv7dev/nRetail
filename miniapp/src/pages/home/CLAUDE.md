@@ -10,8 +10,6 @@ The home page (`src/pages/home/`) is composed of self-contained sub-components. 
 src/pages/home/
 ├── index.tsx                  ← page root, composes CollapsibleHeader + ScrollablePage + sections
 ├── index.test.tsx
-├── SearchBar.tsx              ← search input bar (rendered inside CollapsibleHeader children slot)
-├── SearchBar.test.tsx
 ├── OutletContextCard.tsx      ← outlet name + 4 quick actions; accepts collapsed prop (pill mode)
 ├── OutletContextCard.test.tsx
 ├── QuickActionsGrid.tsx       ← thin wrapper — delegates to OutletContextCard (kept for compat)
@@ -38,7 +36,7 @@ AppLayout (page-content: flex column)
   └── HomePage (flex:1 flex-col)
         ├── CollapsibleHeader        ← static zone, not scrollable
         │    ├── topBar: AppHeader   ← always visible
-        │    ├── children: SearchBar ← inside primary bg
+        │    ├── children: div(px-4 pb-3) > SearchInput(readOnly) ← inside primary bg
         │    └── card: OutletContextCard  ← collapses to pill on scroll
         │
         └── ScrollablePage          ← flex:1, overflow-y:auto — owns the scroll
@@ -69,7 +67,7 @@ AppLayout (page-content: flex column)
 - `collapsed={false}` (default): shows outlet name row + 4 quick action buttons
 - `collapsed={true}` (pill): outlet name + chevron visible; quick-actions grid animates to zero height
 - **Animation**: Uses CSS `grid-template-rows` transition (`1fr` ↔ `0fr`, 200ms ease-in-out) with `overflow-hidden` wrapper — the quick-actions DOM stays mounted in both states (required for CSS animation, no conditional render)
-- Reads `selectedOutlet.name` from `useOutletStore`; tapping outlet name navigates to `/outlets`
+- Reads `selectedOutlet.name` from `useOutletStore`; tapping outlet name calls `navigate('/outlets', { state: { canGoBack: true } })`
 - 4 actions: `outletManagement`, `suggestedOrder`, `tradePrograms`, `orderHistory`
 - **`collapsed` is injected automatically by `CollapsibleHeader` via `cloneElement`** — do not pass it manually when using inside `CollapsibleHeader`
 
@@ -82,15 +80,6 @@ const { refetch, isRefreshing } = useHomeRefresh();
 - `refetch`: async function passed to `ScrollablePage onRefresh`; sets `isRefreshing` true while running
 - `isRefreshing`: boolean passed to `ScrollablePage isRefreshing`; keeps spinner alive after finger-lift until refresh resolves
 - Currently a stub (2 s timeout) — replace with real TanStack Query `refetch` + `isRefetching` when queries are added
-
-### `SearchBar`
-
-```tsx
-<SearchBar className? />
-```
-
-- Reads `search.placeholder` from `home` namespace
-- Uses `Icon name="magnifying-glass"`
 
 ### `BannerCarousel`
 

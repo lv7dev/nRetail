@@ -134,129 +134,25 @@ index.html → src/app.tsx
 
 ### API Client (Axios)
 
-All HTTP calls go through `services/axios.ts`. It exports:
+All HTTP calls go through `services/axios.ts`. It exports typed helpers `get<T>`, `post<T>`, `put<T>`, `del<T>` that automatically unwrap the backend `{ data: T }` envelope. A request interceptor attaches the Bearer token and a response interceptor handles silent 401 token refresh. **Never use `fetch` or create a second Axios instance** for app requests.
 
-- `apiClient` — Axios instance with base URL + `Content-Type: application/json`
-- `get<T>(path)`, `post<T>(path, body?)`, `put<T>(path, body?)`, `del<T>(path)` — typed helpers that automatically unwrap the `{ data: T }` envelope from the backend `ResponseInterceptor`
-
-**Never use `fetch` or create a second Axios instance** for app requests. Always use the typed helpers.
-
-```ts
-// services/productService.ts
-import { get, post } from './axios';
-
-export const productService = {
-  getList: () => get<Product[]>('/products'),
-  create: (dto: CreateProductDto) => post<Product>('/products', dto),
-};
-```
-
-#### Request Interceptor
-
-Automatically attaches the Bearer token from `storage.getAccessToken()` to every request. No manual header management needed in services.
-
-#### Response Interceptor (Silent Refresh)
-
-On `401` responses:
-
-1. **Checks `Authorization` header presence** — if the original request had no Bearer token (e.g., login, OTP verify), the 401 is a business error, not a session expiry. Rejects immediately with `ApiError` so the caller can display it.
-2. If request was authenticated, reads refresh token from `storage.getRefreshToken()`
-3. If no refresh token → clears tokens, redirects to `/login`
-4. Calls `POST /auth/refresh` via a bare `refreshClient` (no interceptors — avoids loops)
-5. Uses a singleton `refreshPromise` — concurrent 401s wait on the same refresh call
-6. Retries the original request with the new token
-7. If refresh fails → clears tokens, redirects to `/login`
-
-The `_retry` flag on the config prevents a retry loop if the retried request also returns 401.
-
-**Key rule:** Only authenticated requests (those with `Authorization: Bearer <token>`) trigger the refresh/redirect logic. Unauthenticated requests that receive 401 (wrong OTP, bad credentials) propagate the error normally — the page's `onError` handler displays it.
+See `src/services/CLAUDE.md` for the full API surface, interceptor behaviour, silent refresh details, error normalisation, and testing patterns.
 
 ### Error Handling
 
-```ts
-// utils/apiError.ts
-export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly code?: string,
-  ) {}
-}
+Errors thrown by the response interceptor are typed as `ApiError { status, message, code? }`. Use `resolveApiError(err, t)` from `@/utils/apiError` in mutation `onError` handlers — it returns an i18n-translated user-facing string by looking up `err.code` in `locales/{vi,en}/errors.json`.
 
-export function resolveApiError(err: unknown, t: TFunction): string;
-// Returns a translated user-facing message based on err.code → errors.json key,
-// falling back to err.message, then a generic 'errors.unknown' key.
-```
-
-**Pattern in mutation `onError` handlers:**
-
-```tsx
-import { resolveApiError } from '@/utils/apiError';
-import { useTranslation } from 'react-i18next';
-
-const { t } = useTranslation(['auth', 'errors']);
-const { mutate, isPending } = useLogin();
-
-const onSubmit = (data) => {
-  mutate(data, {
-    onError: (err) => setError(resolveApiError(err, t)),
-  });
-};
-```
-
-**i18n error codes** (in `locales/{vi,en}/errors.json`):
-`PHONE_ALREADY_EXISTS`, `PHONE_NOT_FOUND`, `OTP_INVALID`, `OTP_EXPIRED`, `OTP_PURPOSE_MISMATCH`, `INVALID_CREDENTIALS`, `PASSWORD_MISMATCH`, `REFRESH_TOKEN_INVALID`, `RATE_LIMIT_EXCEEDED`, `unknown`
+See `src/utils/CLAUDE.md` for `ApiError` and `resolveApiError` API. See `src/services/CLAUDE.md` for how errors are produced by the interceptor.
 
 ### Token Storage (nativeStorage)
 
-Tokens are stored via `utils/storage.ts`. It uses `nativeStorage` from `zmp-sdk` inside the Zalo container and falls back to `localStorage` in browser dev and tests.
+Tokens are stored via `storage` from `utils/storage.ts` — uses `nativeStorage` from `zmp-sdk` inside the Zalo container, falls back to `localStorage` in browser dev and tests. Platform is detected once at module load via `window.APP_ID`.
 
-**Platform detection:** `window.APP_ID` is set by the Zalo container before the mini app boots — it is `undefined` in a plain browser tab or test runner. The check runs once at module load, not per call.
-
-```ts
-import { storage } from '@/utils/storage';
-
-storage.getAccessToken(); // string | null
-storage.getRefreshToken(); // string | null
-storage.setTokens(access, refresh); // persist both tokens
-storage.clearTokens(); // remove both tokens
-```
-
-**Rules:**
-
-- Never read/write tokens directly — always use `storage.*`
-- `storage.clearTokens()` is called automatically by the response interceptor and `clearAuth()` on logout
-- Do NOT set `window.APP_ID` in tests unless deliberately mocking the Zalo environment — it routes all storage calls to `nativeStorage`, which throws outside Zalo
-- Do NOT store other sensitive data in nativeStorage without a similar wrapper
+Always use `storage.getAccessToken()`, `.getRefreshToken()`, `.setTokens()`, `.clearTokens()` — never read/write token keys directly. See `src/utils/CLAUDE.md`.
 
 ### State (Zustand)
 
-One store file per domain. Use for **client/UI state only** — not server data.
-
-**Auth store shape:**
-
-```ts
-// store/useAuthStore.ts
-interface AuthState {
-  user: User | null;
-  isReady: boolean; // true once rehydration attempt is complete
-  setAuth: (user: User) => void; // sets user + isReady = true
-  clearAuth: () => void; // clears tokens + sets user = null + clears selected outlet
-}
-```
-
-`isReady` gates the app: `ProtectedRoute` renders `null` while `!isReady` to prevent a flash of the login page during rehydration. `clearAuth()` also calls `useOutletStore.getState().clearSelectedOutlet()` — logging out always resets the outlet context.
-
-```ts
-// Other stores follow the same pattern
-import { create } from 'zustand';
-
-export const useCartStore = create<CartStore>((set) => ({
-  items: [],
-  add: (item) => set((s) => ({ items: [...s.items, item] })),
-  remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
-}));
-```
+One store file per domain in `src/store/`. Stores hold **client/UI state only** — not server data (use TanStack Query for that). See `src/store/CLAUDE.md` for the full store catalogue, shapes, and testing patterns.
 
 ### Theme System
 
@@ -266,26 +162,9 @@ Dark/light/system theme is managed by three cooperating pieces:
 |---|---|---|
 | `useThemeStore` | `store/useThemeStore.ts` | Holds `preference` (`'light' \| 'dark' \| 'system'`), persisted to `localStorage` under key `theme-preference`. Default: `'system'`. |
 | `ThemeProvider` | `components/ThemeProvider.tsx` | Reads `preference`, resolves to `'light'` or `'dark'` (system follows `prefers-color-scheme`), then syncs two DOM attributes: `html.dark` class (Tailwind `dark:`) and `body[zaui-theme]` (zmp-ui dark styling). Listens for OS `change` events when preference is `'system'`. Renders children directly — no markup. |
-| `ThemeSwitcher` | `components/shared/ThemeSwitcher/` | Dropdown component (follows `LanguageSwitcher` pattern) with three options: Light / System / Dark. Calls `useThemeStore.setTheme`. Placed in `AuthLayout`, `AppLayout` header row, and the Profile page. |
+| `ThemeSwitcher` | `components/shared/ThemeSwitcher/` | Dropdown component with three options: Light / System / Dark. Calls `useThemeStore.setTheme`. Placed in `AuthLayout`, `AppLayout` header row, and the Profile page. |
 
-**Dark mode in components:**
-
-- Use `dark:` Tailwind variant alongside every semantic token class: `bg-surface dark:bg-surface-dark`
-- Token mapping: `surface` → `surface.dark`, `surface-muted` → `surface.dark-muted`, `border` → `border.dark`, `content` → `content.dark`, `content-muted` → `content.dark-muted`, `content-subtle` → `content.dark-subtle`
-- Tokens `primary`, `destructive`, `success` have no dark variants — they remain the same in both modes
-- Never use `[zaui-theme="dark"]` selectors in JSX — use `dark:` prefix only (covered in `components/CLAUDE.md`)
-- `.section-container` in `app.css` uses `html.dark .section-container { background: ... }` (CSS-defined class can't use `dark:` inline). **Note:** use `html.dark` (element + class selector), never `[html.dark]` (attribute selector — invalid for class-based dark mode).
-
-```ts
-import { useThemeStore } from '@/store/useThemeStore';
-
-// Read current preference
-const preference = useThemeStore((s) => s.preference);
-
-// Change theme
-const setTheme = useThemeStore((s) => s.setTheme);
-setTheme('dark'); // 'light' | 'dark' | 'system'
-```
+**Dark mode in components:** use `dark:` Tailwind variant alongside semantic token classes — never `[zaui-theme="dark"]` selectors. See `src/components/CLAUDE.md` for the token mapping and styling rules. Store API and test helpers are in `src/store/CLAUDE.md`.
 
 ### Zalo WebView Routing
 
@@ -355,49 +234,15 @@ React Router navigation in Zalo's WebView respects the browser history stack. Th
 
 ### Server State (TanStack Query)
 
-Use `@tanstack/react-query` for all data fetching. Mutations return `isPending` — use it for button loading state instead of `useState`.
-
-```ts
-// hooks/useProducts.ts
-import { useQuery } from '@tanstack/react-query';
-import { productService } from '@/services/productService';
-
-export function useProducts() {
-  return useQuery({ queryKey: ['products'], queryFn: productService.getList });
-}
-```
-
-Auth mutations live in `hooks/useAuth.ts` — see `src/hooks/CLAUDE.md` for the full catalogue.
+Use `@tanstack/react-query` for all async data fetching. Custom hooks in `src/hooks/` wrap all queries and mutations — pages and components never call services directly. Mutations return `isPending` — use it for button loading state instead of `useState`. See `src/hooks/CLAUDE.md` for the full hook catalogue and testing patterns.
 
 ### Forms (react-hook-form + zod)
 
-Define a zod schema, then pass it via `zodResolver`. Keep schemas co-located with the form or in `src/types/`.
-
-```ts
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-const schema = (t: TFunction) =>
-  z.object({
-    phone: z.string().regex(/^0\d{9}$/, t('validation.phone')),
-    password: z.string().min(6, t('validation.passwordMin')),
-  });
-// NEVER wrap fields in z.preprocess — it changes the inferred input type to `unknown`,
-// breaking the zodResolver type contract with react-hook-form.
-```
+All forms use `react-hook-form` + `zodResolver`. Schema factories are co-located with the page as `schema.ts`, exported as `(t: TFunction) => z.object(...)`. **Never wrap fields in `z.preprocess`** — it changes the inferred input type to `unknown`, breaking the zodResolver type contract. See `src/pages/CLAUDE.md` for form conventions, the PasswordInput mock, and testing patterns for forms.
 
 ### Button Loading State
 
-The `Button` component accepts a `loading?: boolean` prop. When `true`, it shows an SVG spinner and applies `pointer-events-none` to prevent double-submission:
-
-```tsx
-<Button loading={isPending} type="submit">
-  {t('login.submit')}
-</Button>
-```
-
-**Always pass `isPending` from the mutation to the submit button.** Never manage loading state manually with `useState`.
+The `Button` component accepts `loading?: boolean`. When `true`, it shows an SVG spinner and applies `pointer-events-none`. Always wire `isPending` from a TanStack Query mutation to the submit button — never manage submit loading state with `useState`. See `src/components/CLAUDE.md`.
 
 ### Zalo SDK
 
@@ -531,163 +376,16 @@ Never write implementation code before a failing test exists for it.
 - `src/services/authService.ts` — thin API wrapper, fully covered by integration tests
 - `src/services/axios.ts` — interceptor paths covered by `axios.integration.test.ts`
 
-**v8 ignore markers** — use `/* v8 ignore next */` (single line) or `/* v8 ignore start */` / `/* v8 ignore stop */` (block) for:
+**v8 ignore markers** — use `/* v8 ignore next */` (single line) or `/* v8 ignore start */` / `/* v8 ignore stop */` (block) for architecturally unreachable branches only (defensive null checks, platform detection, dynamic imports). Never ignore real logic.
 
-- Defensive null checks that can never be false in jsdom (e.g. `if (ref.current)`)
-- Platform detection branches (e.g. `isZalo` in `storage.ts`)
-- Dynamic imports (e.g. SVG lazy loading in `Icon.tsx`)
+### Detailed Patterns (per-directory CLAUDE.md files)
 
-**Rule:** Never ignore real logic — only architecturally unreachable branches.
-
-### Unit / Component Tests
-
-- **Framework**: Vitest + React Testing Library + @testing-library/jest-dom
-- **Run all tests**: `npm run test`
-- **Run single file**: `npx vitest run path/to/file.test.tsx`
-- **Test location**: Co-located as `*.test.tsx` next to source files
-- **TDD**: RED → GREEN → REFACTOR
-- **TypeScript globals**: `globals: true` in `vite.config.mts` makes `describe`/`it`/`expect`/`vi` available at runtime. `"vitest/globals"` in `tsconfig.json` `types` array makes them visible to the type checker and IDE. Do NOT install `@types/jest` — it conflicts with Vitest.
-
-**Wrapping with QueryClientProvider (required for any component using hooks):**
-
-Any component that calls a TanStack Query hook (`useMutation`, `useQuery`) must be rendered inside a `QueryClientProvider`. Create a fresh client per test to avoid state bleed:
-
-```tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-}
-
-const renderPage = () => {
-  const Wrapper = createWrapper();
-  return render(
-    <Wrapper>
-      <MemoryRouter>
-        <MyPage />
-      </MemoryRouter>
-    </Wrapper>,
-  );
-};
-```
-
-**Mocking the service layer for mutation tests:**
-
-Mock `@/services/authService` (or any service) rather than mocking the hook module. This lets real TanStack Query lifecycle run (`isPending`, `isSuccess`, `isError`) while preventing real HTTP calls:
-
-```tsx
-vi.mock('@/services/authService', () => ({
-  authService: {
-    login: vi.fn().mockResolvedValue({
-      accessToken: 'token',
-      refreshToken: 'refresh',
-      user: { id: '1', phone: '0901234567', name: 'Test', role: 'customer' },
-    }),
-    requestRegisterOtp: vi.fn().mockResolvedValue(undefined),
-    // add only methods called by the component under test
-  },
-}));
-```
-
-**Mocking TanStack Query mutations (alternative — use when testing hook behaviour directly):**
-
-```tsx
-// Mock the entire hook module
-vi.mock('@/hooks/useAuth', () => ({
-  useLogin: () => ({
-    mutate: vi.fn(),
-    isPending: false,
-  }),
-}));
-```
-
-**Mocking navigation:**
-
-```tsx
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return { ...actual, useNavigate: () => mockNavigate };
-});
-```
-
-**Mocking i18n** (makes assertions language-neutral):
-
-```tsx
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
-```
-
-**Testing pages with `isPending`:**
-
-```tsx
-vi.mock('@/hooks/useAuth', () => ({
-  useLogin: () => ({ mutate: vi.fn(), isPending: true }),
-}));
-
-render(<LoginPage />);
-expect(screen.getByRole('button', { name: 'login.submit' })).toBeDisabled();
-```
-
-### Integration Tests (MSW)
-
-- **Framework**: Vitest + MSW (`msw/node` server, wildcard-origin handlers)
-- **Config**: `vitest.integration.config.ts` (separate from unit config)
-- **Run**: `npm run test:integration`
-- **File naming**: `*.integration.test.{ts,tsx}` — co-located next to source files
-- **Setup**: `src/setupTests.integration.ts` starts the MSW server; `src/mocks/handlers/auth.ts` defines all auth endpoint handlers; `src/mocks/server.ts` wires them together
-- **Key rule**: MSW Node mode requires absolute URLs. Vitest config sets `VITE_API_BASE_URL: 'http://localhost'` so axios has a base URL to work with.
-- **MSW handler shape**: All endpoints return `{ data: T }` (matching backend ResponseInterceptor), **including `/auth/refresh`** which is called by `refreshClient` and reads `response.data.data.accessToken`.
-
-### E2E Tests (Playwright)
-
-- **Run**: `npx playwright test`
-- **Run with UI**: `npx playwright test --ui`
-- **Test location**: `e2e/`
-- **Prerequisite**: Redis must be running (`docker compose up -d` in `backend/`) — the backend webServer won't start without it
-- **Global setup**: `e2e/global-setup.ts` connects to the test DB directly to seed `PhoneConfig` rows (enabling OTP bypass with code `999999`)
-- **Fixtures**: `e2e/fixtures/auth.ts` — `seedUser`, `loginAs`, `setExpiredAccessToken`, `fillOtpBoxes`, `API_BASE`
-
-**Auth flow patterns:**
-
-```ts
-// Seed test tokens before visiting protected pages
-await page.evaluate(() => {
-  localStorage.setItem('accessToken', 'test-token');
-  localStorage.setItem('refreshToken', 'test-refresh');
-});
-await page.goto('/');
-
-// Test a full register flow
-await page.goto('/register');
-await page.fill('input[name="phone"]', '0901234567');
-await page.click('button[type="submit"]');
-// → should navigate to /otp
-await expect(page).toHaveURL('/otp');
-```
-
-**API mocking in E2E:**
-
-```ts
-await page.route('**/auth/login', (route) =>
-  route.fulfill({
-    status: 200,
-    body: JSON.stringify({
-      data: {
-        accessToken: 'tok',
-        refreshToken: 'ref',
-        user: { id: '1', phone: '0901234567', name: 'Test', role: 'customer' },
-      },
-    }),
-  }),
-);
-```
+| Topic | Where to find it |
+|---|---|
+| QueryClientProvider wrapper, service mocking, i18n mocking, PasswordInput mock | `src/pages/CLAUDE.md` |
+| `vi.hoisted()` pattern, testing hooks directly | `src/hooks/CLAUDE.md` |
+| MSW server setup, handler shapes, per-test overrides | `src/mocks/CLAUDE.md` |
+| Playwright fixtures, OTP bypass, phone number conventions | `e2e/CLAUDE.md` |
 
 ## Zalo Safe Area
 

@@ -30,7 +30,7 @@ export default function OutletContextCard({ collapsed = false, onAction }: Outle
     <div className="rounded-xl bg-surface shadow-sm">
       <button
         type="button"
-        onClick={() => navigate('/outlets')}
+        onClick={() => navigate('/outlets', { state: { canGoBack: true } })}
         className="flex w-full items-center gap-3 px-3 py-3"
       >
         <Icon name="store" size={24} className="shrink-0 text-content-muted" />

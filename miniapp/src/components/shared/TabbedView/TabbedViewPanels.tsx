@@ -12,6 +12,8 @@ import { ScrollablePage } from '../ScrollablePage';
 import { useTabbedViewContext } from './TabbedView';
 import type { TabbedViewPanelProps } from './TabbedViewPanel';
 
+const SELF_MODE_PANEL_CLASS_NAME = 'flex flex-col flex-1 min-h-0';
+
 export interface TabbedViewPanelsProps {
   children: ReactNode;
   mode: 'self' | 'outer';
@@ -95,14 +97,19 @@ export function TabbedViewPanels({ children, mode, outerScrollRef }: TabbedViewP
     previousActiveTabRef.current = activeTab;
   }, [activeTab, mode, outerScrollRef]);
 
+  const panelsClassName = mode === 'self' ? SELF_MODE_PANEL_CLASS_NAME : undefined;
+
   return (
-    <div ref={panelsRef}>
+    <div ref={panelsRef} className={panelsClassName}>
       {Children.map(children, (child) => {
         if (!isValidElement<TabbedViewPanelProps>(child) || mode !== 'self') {
           return child;
         }
 
         return cloneElement(child, {
+          className: child.props.className
+            ? `${child.props.className} ${SELF_MODE_PANEL_CLASS_NAME}`
+            : SELF_MODE_PANEL_CLASS_NAME,
           children: (
             <ScrollablePage
               onRefresh={child.props.onRefresh}
